@@ -5,7 +5,6 @@ import {
     uuid,
     timestamp,
 } from 'drizzle-orm/pg-core';
-import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
 export abstract class BaseEntity {
     id!: string;
@@ -31,12 +30,14 @@ export function createBaseTable<
 
 export const baseTable = createBaseTable('base', {});
 
-// ✅ Recommended ways to infer types
 export type BaseTableRow = typeof baseTable.$inferSelect;
 export type BaseTableInsert = typeof baseTable.$inferInsert;
 
-export type BaseTableRow2 = InferSelectModel<typeof baseTable>;
-export type BaseTableInsert2 = InferInsertModel<typeof baseTable>;
+export type BaseColumns = {
+    id: typeof baseTable.id;
+    created_at: typeof baseTable.created_at;
+    updated_at: typeof baseTable.updated_at;
+    deleted_at: typeof baseTable.deleted_at;
+};
 
-export type WithBaseColumns<T extends AnyPgTable> =
-    T & { _: { row: typeof baseTable.$inferSelect } };
+export type WithBaseColumns<T extends AnyPgTable> = T & BaseColumns;
