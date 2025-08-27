@@ -19,7 +19,12 @@
       }
     ],
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "auth": ["./src/auth.ts"],
+      "utils": ["./src/lib/utils.ts"],
+      "ui/*": ["./src/components/ui/*"],
+      "types": ["./src/types/global.d.ts"],
+      "styles": ["./src/styles/globals.css"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
