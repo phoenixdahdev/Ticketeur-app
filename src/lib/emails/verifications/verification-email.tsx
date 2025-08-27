@@ -36,7 +36,7 @@ export const VerificationEmail = ({
               <Text style={otpText}>{otp}</Text>
             </Section>
             <Text style={text}>
-              This code will expire in 10 minutes. If you didn't create an
+              This code will expire in 10 minutes. If you didn&apos;t create an
               account, you can safely ignore this email.
             </Text>
             <Hr style={hr} />
