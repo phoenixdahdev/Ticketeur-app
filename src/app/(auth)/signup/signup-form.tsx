@@ -18,11 +18,13 @@ import { useState, useTransition } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { signup } from '../actions'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const router = useRouter()
   const form = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -45,6 +47,8 @@ export function SignUpForm({
             duration: 8000,
           })
           form.reset()
+          localStorage.setItem('current-user-email', values.email)
+          router.push('/verify-account')
         } else {
           toast.error(res.error || 'Failed to create account', {
             description: 'Please try again later.',
