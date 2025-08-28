@@ -7,18 +7,18 @@ import {
   FormLabel,
   FormMessage,
 } from 'ui/form'
+import Link from 'next/link'
+import { toast } from 'sonner'
 import { cn } from '~/lib/utils'
-import { Button } from 'ui/button'
 import { Input } from 'ui/input'
+import { Button } from 'ui/button'
+import { signup } from '../actions'
 import { useForm } from 'react-hook-form'
+import { Eye, EyeOff } from 'lucide-react'
+import { useRouter } from '@bprogress/next/app'
+import { useState, useTransition } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type SignupFormType, signupSchema } from '../schema'
-import Link from 'next/link'
-import { useState, useTransition } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
-import { signup } from '../actions'
-import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 export function SignUpForm({
   className,

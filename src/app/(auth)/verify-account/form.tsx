@@ -4,9 +4,9 @@ import { toast } from 'sonner'
 import { Button } from 'ui/button'
 import { delay } from '~/lib/utils'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { useState, useTransition } from 'react'
+import { useRouter } from '@bprogress/next/app'
 import { OtpFormType, otpschema } from '../schema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resendverificationotp, verifyotp } from '../actions'
@@ -15,8 +15,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from 'ui/input-otp'
 import { Form, FormControl, FormField, FormItem, FormMessage } from 'ui/form'
 
 export function EmailVerificationForm() {
-  const [type, setType] = useState('')
   const router = useRouter()
+  const [type, setType] = useState('')
   const [counterNumber, setCount] = useState(1)
   const [canResendEmail, setCanResendEmail] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -76,7 +76,7 @@ export function EmailVerificationForm() {
           Verify your email
         </h1>
         <p className="text-muted-foreground text-sm">
-          We've sent a 6-digit code to your email. Please enter it below to
+          We&apos;ve sent a 6-digit code to your email. Please enter it below to
           continue.
         </p>
       </div>
@@ -133,7 +133,7 @@ export function EmailVerificationForm() {
 
         <div className="text-center">
           <p className="text-muted-foreground text-sm">
-            Didn't get the code?{' '}
+            Didn&apos;t get the code?{' '}
             <button
               onClick={handleResend}
               disabled={
