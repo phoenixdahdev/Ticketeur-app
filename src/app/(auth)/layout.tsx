@@ -1,3 +1,4 @@
+'use client'
 import Image from 'next/image'
 import React, { Suspense } from 'react'
 import BlurImage from '~/components/miscellaneous/blur-image'

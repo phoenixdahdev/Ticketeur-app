@@ -1,15 +1,16 @@
 "use server"
 
 import { resend } from "~/lib/resend";
-import { SignupFormType } from "./schema";
+import { cookies } from "next/headers";
 import { from_email } from '../../lib/resend';
+import { NewUser } from '../../db/schema/user';
 import { UserService } from "~/services/user-service";
 import { OTPService } from "~/services/otp-service";
+import { LoginFormType, SignupFormType } from "./schema";
 import { VerificationEmail } from "~/lib/emails/verifications/verification-email";
-import { cookies } from "next/headers";
 
-const userService = new UserService();
 const otpService = new OTPService()
+const userService = new UserService();
 
 export async function signup(props: SignupFormType) {
     const cookie = await cookies()
@@ -35,8 +36,6 @@ export async function signup(props: SignupFormType) {
             user
         };
     } catch (error) {
-
-        console.error("Signup error:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : "Failed to create user"
@@ -76,11 +75,12 @@ export async function verifyotp(otp: string) {
             };
         }
         cookie.delete("verify-with");
+        const updatedUser = await userService.updateUser(userId, { is_verified: true, is_active: true, email_verified_at: new Date() });
         return {
-            success: true
+            success: true,
+            user: updatedUser
         };
     } catch (error) {
-        console.error("OTP verification error:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : "Failed to verify OTP"
@@ -118,11 +118,93 @@ export async function resendverificationotp() {
             success: true
         };
     } catch (error) {
-        console.error("Resend OTP error:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : "Failed to resend OTP"
         };
     }
+}
 
+
+export const login = async (props: LoginFormType) => {
+    try {
+        const user = await userService.findByEmail(props.email);
+        if (!user) {
+            return {
+                success: false,
+                error: "User not found"
+            };
+        }
+
+        if (!user.password) {
+            return {
+                success: false,
+                error: "User created using social login"
+            };
+        }
+        const isValid = await userService.comparePassword(props.password, user.password as string);
+        if (!isValid) {
+            return {
+                success: false,
+                error: "Invalid password"
+            };
+        }
+
+        if (!user.is_verified) {
+            return {
+                success: false,
+                error: "Account is not verified"
+            }
+        }
+        return {
+            success: true,
+            user
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to login"
+        };
+    }
+};
+
+
+export async function get_user_by_email(email: string) {
+    try {
+        const user = await userService.findByEmail(email);
+        if (!user) {
+            return {
+                success: false,
+                error: "User not found"
+            };
+        }
+        return {
+            success: true,
+            user
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to get user"
+        };
+    }
+}
+
+export async function google_login(props: { email: string, name: string, providerId: string } & Partial<NewUser>) {
+    try {
+        const user = await userService.findOrCreateSocialUser(props.providerId, {
+            email: props.email,
+            first_name: props.name,
+            user_type: "normal",
+        })
+        return {
+            success: true,
+            user
+        }
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to get user"
+        };
+    }
 }

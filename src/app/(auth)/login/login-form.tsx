@@ -11,46 +11,48 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '~/lib/utils'
 import { Input } from 'ui/input'
+import { login } from '../actions'
 import { Button } from 'ui/button'
-import { signup } from '../actions'
+import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from '@bprogress/next/app'
 import { useState, useTransition } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signIn } from 'next-auth/react'
-import { type SignupFormType, signupSchema } from '../schema'
+import { type LoginFormType, loginSchema } from '../schema'
 
-export function SignUpForm({
+export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
   const router = useRouter()
-  const form = useForm<SignupFormType>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<LoginFormType>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
-      confirm_password: '',
     },
   })
 
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  function onSubmit(values: SignupFormType) {
+  function onSubmit(values: LoginFormType) {
     startTransition(async () => {
-      await signup(values).then((res) => {
+      await login(values).then(async (res) => {
         if (res.success) {
-          toast.success('Account created successfully!', {
-            description: 'Please check your email to verify your account.',
+          toast.success('Logged in successfully!', {
+            description: 'Welcome back!',
             duration: 8000,
           })
+          await signIn('credentials', {
+            email: values.email,
+            password: values.password,
+          })
+          router.push('/')
           form.reset()
-          router.push('/verify-account')
         } else {
-          toast.error(res.error || 'Failed to create account', {
+          toast.error(res.error || 'Login Error', {
             description: 'Please try again later.',
             duration: 8000,
           })
@@ -68,11 +70,9 @@ export function SignUpForm({
       {...props}
     >
       <div className="flex flex-col gap-2 text-left">
-        <h1 className="text-2xl font-bold">
-          Let&apos;s create your organizer account
-        </h1>
+        <h1 className="text-2xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          Input your Credentials
+          Please enter your credentials to log in
         </p>
       </div>
 
@@ -130,48 +130,13 @@ export function SignUpForm({
             )}
           />
 
-          {/* Confirm Password */}
-          <FormField
-            control={form.control}
-            name="confirm_password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...field}
-                      placeholder="************"
-                      disabled={isPending}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Submit */}
           <Button
             type="submit"
             className="h-12 w-full rounded-xl"
             disabled={isPending}
           >
-            {isPending ? 'Creating Account...' : 'Create Account'}
+            {isPending ? 'Logging in...' : 'Login'}
           </Button>
         </form>
       </Form>
@@ -212,9 +177,9 @@ export function SignUpForm({
       </Button>
 
       <div className="text-center text-sm">
-        Already have an account?{' '}
-        <Link href="/login" className="underline underline-offset-4">
-          Sign in
+        Don&apos;t have an account?{' '}
+        <Link href="/signup" className="underline underline-offset-4">
+          Sign up
         </Link>
       </div>
     </div>

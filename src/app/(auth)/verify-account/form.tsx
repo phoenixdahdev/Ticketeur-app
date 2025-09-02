@@ -3,6 +3,7 @@
 import { toast } from 'sonner'
 import { Button } from 'ui/button'
 import { delay } from '~/lib/utils'
+import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { useState, useTransition } from 'react'
@@ -31,10 +32,14 @@ export function EmailVerificationForm() {
   function onSubmit(values: OtpFormType) {
     setType('verify')
     startTransition(async () => {
-      await verifyotp(values.pin).then((res) => {
+      await verifyotp(values.pin).then(async (res) => {
         if (res.success) {
           toast.success('OTP verified successfully!', {
             description: 'You can now access your account.',
+          })
+          await signIn('credentials', {
+            email: res.user?.email,
+            from_onboarding: true,
           })
           form.reset()
           router.push('/onboarding')
