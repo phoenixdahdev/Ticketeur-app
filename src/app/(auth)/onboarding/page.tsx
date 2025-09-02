@@ -1,7 +1,8 @@
 import React from 'react'
+import BusinessVerification from './form'
 
 const OnboardingPage = () => {
-  return <div>OnboardingPage</div>
+  return <BusinessVerification />
 }
 
 export default OnboardingPage
