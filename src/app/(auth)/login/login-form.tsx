@@ -46,16 +46,26 @@ export function LoginForm({
             description: 'Welcome back!',
             duration: 8000,
           })
-          await signIn('credentials', {
-            email: values.email,
-            password: values.password,
-            redirectTo: '/',
-          })
+          if (res.user?.is_verified) {
+            await signIn('credentials', {
+              email: values.email,
+              password: values.password,
+              redirectTo: '/',
+            })
+          }
         } else {
-          toast.error(res.error || 'Login Error', {
-            description: 'Please try again later.',
-            duration: 8000,
-          })
+          if (res.type === 'account-verification') {
+            router.push('/verify-account')
+            toast.info('Please verify your email to log in.', {
+              description: 'A verification email has been sent to your inbox.',
+              duration: 8000,
+            })
+          } else {
+            toast.error(res.error || 'Login Error', {
+              description: 'Please try again later.',
+              duration: 8000,
+            })
+          }
         }
       })
     })

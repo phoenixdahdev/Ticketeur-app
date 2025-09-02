@@ -127,33 +127,46 @@ export async function resendverificationotp() {
 
 
 export const login = async (props: LoginFormType) => {
+    const cookie = await cookies()
     try {
         const user = await userService.findByEmail(props.email);
         if (!user) {
             return {
                 success: false,
-                error: "User not found"
+                error: "User not found",
+                type: "user-not-found"
             };
         }
 
         if (!user.password) {
             return {
                 success: false,
-                error: "User created using social login"
+                error: "User created using social login",
+                type: "social-login"
             };
         }
         const isValid = await userService.comparePassword(props.password, user.password as string);
         if (!isValid) {
             return {
                 success: false,
-                error: "Invalid password"
+                error: "Invalid password",
+                type: "invalid-password"
             };
         }
 
         if (!user.is_verified) {
+            const otp = await otpService.createOTP(user.id, "email_verification");
+            await resend.emails.send({
+                from: from_email,
+                to: [user.email],
+                subject: "Email Verification Code",
+                react: VerificationEmail({ firstName: user.first_name || "User", otp: otp.otp }),
+            });
+            cookie.set("verify-with", user.id);
             return {
                 success: false,
-                error: "Account is not verified"
+                error: "Account is not verified",
+                type: "account-verification"
             }
         }
         return {
@@ -163,7 +176,8 @@ export const login = async (props: LoginFormType) => {
     } catch (error) {
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to login"
+            error: error instanceof Error ? error.message : "Failed to login",
+            type: "general"
         };
     }
 };
