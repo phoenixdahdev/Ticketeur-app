@@ -1,12 +1,62 @@
+'use client'
+
 import Image from 'next/image'
-import React from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { cn } from '~/lib/utils'
+
+const navLinks = [
+  { name: 'Dashboard', href: '/' },
+  { name: 'My Events', href: '/events' },
+  { name: 'Analytics', href: '/analytics' },
+]
 
 const SideBar = () => {
+  const pathname = usePathname()
+
   return (
-    <div className="flex h-full w-[264px] shrink-0 flex-col items-start rounded-[24px] bg-[rgba(102,51,255,0.04)] py-8">
+    <div className="flex h-full w-[264px] shrink-0 flex-col rounded-[24px] bg-[rgba(102,51,255,0.04)] py-8">
       <div className="flex w-full items-start justify-start px-6">
         <Image src="/logo.png" alt="Ticketeur Logo" width={132} height={50} />
       </div>
+
+      <nav className="mt-8 flex flex-col space-y-1">
+        {navLinks.map((link) => {
+          const isActive =
+            pathname === link.href ||
+            (link.href !== '/' && pathname.startsWith(link.href))
+
+          return (
+            <Link
+              key={link.href}
+              // @ts-expect-error next line
+              href={link.href}
+              className="relative flex items-center px-6 py-2"
+            >
+              {isActive && (
+                <motion.span
+                  layoutId="activeIndicator"
+                  className="absolute top-0 left-0 h-full w-1 rounded-r bg-black"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+
+              {/* Text */}
+              <span
+                className={cn(
+                  'leading-trim-both text-edge-cap liga-off text-black transition-all duration-200',
+                  isActive
+                    ? 'text-[15px] leading-6 font-bold tracking-[0.75px]'
+                    : 'text-[15px] leading-5 font-normal tracking-[0.75px]'
+                )}
+              >
+                {link.name}
+              </span>
+            </Link>
+          )
+        })}
+      </nav>
     </div>
   )
 }
