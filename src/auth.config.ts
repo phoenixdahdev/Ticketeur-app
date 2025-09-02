@@ -90,12 +90,12 @@ const authConfig: NextAuthConfig = {
             return { ...token, user }
         },
         async session({ session, token }) {
-            console.dir({ token }, { depth: null })
             session.user = {
                 ...session,
                 ...token as unknown as User,
                 emailVerified: (token.email_verified_at as Date) ?? new Date()
             }
+            console.log(session)
             return session
         }
 

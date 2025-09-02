@@ -49,9 +49,8 @@ export function LoginForm({
           await signIn('credentials', {
             email: values.email,
             password: values.password,
+            redirectTo: '/',
           })
-          router.push('/')
-          form.reset()
         } else {
           toast.error(res.error || 'Login Error', {
             description: 'Please try again later.',
