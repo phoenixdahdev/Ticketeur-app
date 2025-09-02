@@ -2,7 +2,13 @@ import z from "zod";
 
 export const signupSchema = z
     .object({
-        email: z.email({
+        first_name: z.string().min(1, {
+            message: 'First name is required.',
+        }),
+        last_name: z.string().min(1, {
+            message: 'Last name is required.',
+        }),
+        email: z.string().email({
             message: 'Please enter a valid email address.',
         }),
         password: z.string().min(8, {
@@ -14,8 +20,6 @@ export const signupSchema = z
         message: "Passwords don't match",
         path: ['confirm_password'],
     })
-
-
 export const loginSchema = z
     .object({
         email: z.email({

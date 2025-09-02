@@ -29,6 +29,8 @@ export function SignUpForm({
   const form = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      first_name: '',
+      last_name: '',
       email: '',
       password: '',
       confirm_password: '',
@@ -78,6 +80,36 @@ export function SignUpForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+          {/* First Name */}
+          <FormField
+            control={form.control}
+            name="first_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John" {...field} disabled={isPending} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Last Name */}
+          <FormField
+            control={form.control}
+            name="last_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Doe" {...field} disabled={isPending} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Email */}
           <FormField
             control={form.control}

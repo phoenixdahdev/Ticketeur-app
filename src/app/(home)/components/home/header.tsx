@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react'
 
 const Top = () => {
   const { data: session } = useSession()
-  return <div>Top</div>
+  return <div></div>
 }
 
 export default Top

@@ -40,9 +40,9 @@ export function EmailVerificationForm() {
           await signIn('credentials', {
             email: res.user?.email,
             from_onboarding: true,
+            redirectTo: '/onboarding',
           })
           form.reset()
-          router.push('/onboarding')
         } else {
           toast.error('Failed to verify OTP. Please try again.', {
             description: res.error,

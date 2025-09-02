@@ -23,7 +23,7 @@ export default function AuthLayout({
           alt="Ticketeur Logo"
           width={135}
           height={50}
-          className="mb-5 sm:hidden"
+          className="my-5 lg:hidden"
         />
         <Suspense>{children}</Suspense>
       </div>
