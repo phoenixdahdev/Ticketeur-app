@@ -7,25 +7,30 @@ import {
   FormLabel,
   FormMessage,
 } from 'ui/form'
-import { cn } from '~/lib/utils'
-import { Button } from 'ui/button'
-import { Input } from 'ui/input'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { type SignupFormType, signupSchema } from '../schema'
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
-import { signup } from '../actions'
 import { toast } from 'sonner'
+import { cn } from '~/lib/utils'
+import { Input } from 'ui/input'
+import { Button } from 'ui/button'
+import { signup } from '../actions'
+import { useForm } from 'react-hook-form'
+import { Eye, EyeOff } from 'lucide-react'
+import { useRouter } from '@bprogress/next/app'
+import { useState, useTransition } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { signIn } from 'next-auth/react'
+import { type SignupFormType, signupSchema } from '../schema'
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const router = useRouter()
   const form = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      first_name: '',
+      last_name: '',
       email: '',
       password: '',
       confirm_password: '',
@@ -45,6 +50,7 @@ export function SignUpForm({
             duration: 8000,
           })
           form.reset()
+          router.push('/verify-account')
         } else {
           toast.error(res.error || 'Failed to create account', {
             description: 'Please try again later.',
@@ -74,6 +80,36 @@ export function SignUpForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+          {/* First Name */}
+          <FormField
+            control={form.control}
+            name="first_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John" {...field} disabled={isPending} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Last Name */}
+          <FormField
+            control={form.control}
+            name="last_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Doe" {...field} disabled={isPending} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Email */}
           <FormField
             control={form.control}
@@ -182,6 +218,9 @@ export function SignUpForm({
       <Button
         variant="outline"
         className="h-12 w-full rounded-xl bg-transparent"
+        onClick={() => {
+          signIn('google', { redirectTo: '/' })
+        }}
       >
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
           <path

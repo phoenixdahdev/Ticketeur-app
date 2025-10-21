@@ -51,7 +51,6 @@ export class UserService extends BaseService<typeof users> {
     async findOrCreateSocialUser(
         providerId: string,
         data: Omit<NewUser, 'id'>
-        // providerKey?: 'google_id',
     ): Promise<User> {
         const [existing] = await db
             .select()
@@ -60,15 +59,49 @@ export class UserService extends BaseService<typeof users> {
 
         if (existing) return existing;
 
+        const [userbyemail] = await db.select().from(users).where(eq(users.email, data.email));
+        if (userbyemail) {
+            await db
+                .update(users)
+                .set({
+                    google_id: providerId,
+                    is_active: true,
+                    is_verified: true,
+                })
+                .where(eq(users.id, userbyemail.id));
+            return userbyemail;
+        }
+
         const [newUser] = await db
             .insert(users)
             .values({
                 ...data,
                 google_id: providerId,
+                is_active: true,
+                is_verified: true,
+                email_verified_at: new Date(),
             })
             .returning();
 
         return newUser;
+    }
+
+    /**
+   * Update any user field(s) by id
+   */
+    async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+        const updateData = { ...updates };
+        if (updateData.password) {
+            updateData.password = await this.hashPassword(updateData.password);
+        }
+
+        const [user] = await db
+            .update(users)
+            .set(updateData)
+            .where(eq(users.id, id))
+            .returning();
+
+        return user;
     }
 
 }
