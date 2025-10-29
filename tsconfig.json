@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -11,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -19,14 +23,34 @@
       }
     ],
     "paths": {
-      "~/*": ["./src/*"],
-      "auth": ["./src/auth.ts"],
-      "utils": ["./src/lib/utils.ts"],
-      "ui/*": ["./src/components/ui/*"],
-      "types": ["./src/types/global.d.ts"],
-      "styles": ["./src/styles/globals.css"]
+      "~/*": [
+        "./src/*"
+      ],
+      "auth": [
+        "./src/auth.ts"
+      ],
+      "utils": [
+        "./src/lib/utils.ts"
+      ],
+      "ui/*": [
+        "./src/components/ui/*"
+      ],
+      "types": [
+        "./src/types/global.d.ts"
+      ],
+      "styles": [
+        "./src/styles/globals.css"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

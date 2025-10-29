@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 client_secret_670559115541-db2vovd0tnnpkvmfpcdou3163dfbasc2.apps.googleusercontent.com.json
 client.json
+package-lock.json
