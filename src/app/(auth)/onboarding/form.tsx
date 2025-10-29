@@ -1,66 +1,65 @@
 'use client'
 
-import { useState } from 'react'
-import { useDropzone } from 'react-dropzone'
+import { useState, useTransition } from 'react'
 import { Button } from '~/components/ui/button'
-import { Card, CardContent } from '~/components/ui/card'
-import { Upload } from 'lucide-react'
-import { useRouter } from '@bprogress/next/app'
-
-interface FileUploadProps {
-  label: string
-  onFileSelect: (files: File[]) => void
-  acceptedFiles?: File[]
-}
-
-function FileUpload({
-  label,
-  onFileSelect,
-  acceptedFiles = [],
-}: FileUploadProps) {
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'image/png': ['.png'],
-      'image/svg+xml': ['.svg'],
-      'application/pdf': ['.pdf'],
-    },
-    onDrop: onFileSelect,
-    multiple: false,
-  })
-
-  return (
-    <div className="space-y-2">
-      <label className="text-foreground text-sm font-medium">{label}</label>
-      <div
-        {...getRootProps()}
-        className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-accent/50'} `}
-      >
-        <input {...getInputProps()} />
-        <Upload className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-        <p className="text-muted-foreground text-sm">
-          {acceptedFiles.length > 0
-            ? `${acceptedFiles[0].name} selected`
-            : 'PNG,SVG,PDF'}
-        </p>
-      </div>
-    </div>
-  )
-}
+import { CardContent } from '~/components/ui/card'
+import { useRouter } from 'next/navigation'
+import { useFilePreview } from '~/hook/use-file-preview'
+import { uploadBusinessDocument } from '~/lib/upload'
+import { FileUploadWithPreview } from '~/components/miscellaneous/file-upload-with-preview'
 
 export default function BusinessVerification() {
   const router = useRouter()
-  const [businessDoc, setBusinessDoc] = useState<File[]>([])
-  const [validId, setValidId] = useState<File[]>([])
+  const [isLoading, startTransition] = useTransition()
+  const {
+    filePreview: businessDocPreview,
+    handleFileSelect: handleBusinessDocSelect,
+  } = useFilePreview()
+  const { filePreview: validIdPreview, handleFileSelect: handleValidIdSelect } =
+    useFilePreview()
 
-  const handleSubmit = () => {
-    console.log('Submitting for review...', { businessDoc, validId })
-    router.push('/')
-    console.log('Skipping verification...')
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async () => {
+    startTransition(async () => {
+      setError(null)
+
+      if (!businessDocPreview.file || !validIdPreview.file) {
+        setError('Please upload both documents')
+        return
+      }
+      const businessId = `business-${Date.now()}`
+      try {
+        const [businessDocResult, validIdResult] = await Promise.all([
+          uploadBusinessDocument(
+            businessDocPreview.file,
+            businessId,
+            'business-doc'
+          ),
+          uploadBusinessDocument(validIdPreview.file, businessId, 'valid-id'),
+        ])
+
+        if (!businessDocResult.success || !validIdResult.success) {
+          setError(
+            businessDocResult.error || validIdResult.error || 'Upload failed'
+          )
+          return
+        }
+
+        console.log('Documents uploaded successfully:', {
+          businessDoc: businessDocResult.url,
+          validId: validIdResult.url,
+        })
+
+        router.push('/')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      }
+    })
   }
 
   const handleSkip = () => {
-    router.push('/')
-    console.log('Skipping verification...')
+    router.push('/tour')
   }
 
   return (
@@ -78,18 +77,26 @@ export default function BusinessVerification() {
           </div>
 
           <div className="space-y-6">
-            <FileUpload
+            <FileUploadWithPreview
               label="Upload your business registration document"
-              onFileSelect={setBusinessDoc}
-              acceptedFiles={businessDoc}
+              onFileSelect={handleBusinessDocSelect}
+              selectedFile={businessDocPreview.file}
+              preview={businessDocPreview.preview}
             />
 
-            <FileUpload
+            <FileUploadWithPreview
               label="Upload a valid ID"
-              onFileSelect={setValidId}
-              acceptedFiles={validId}
+              onFileSelect={handleValidIdSelect}
+              selectedFile={validIdPreview.file}
+              preview={validIdPreview.preview}
             />
           </div>
+
+          {error && (
+            <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+              {error}
+            </div>
+          )}
 
           <p className="text-muted-foreground text-xs">
             Verification usually takes 1-2 business days. You can skip for now
@@ -99,15 +106,19 @@ export default function BusinessVerification() {
           <div className="space-y-3">
             <Button
               onClick={handleSubmit}
-              className="w-full bg-purple-600 text-white hover:bg-purple-700"
+              disabled={
+                isLoading || !businessDocPreview.file || !validIdPreview.file
+              }
+              className="w-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
               size="lg"
             >
-              Submit for Review
+              {isLoading ? 'Uploading...' : 'Submit for Review'}
             </Button>
 
             <button
               onClick={handleSkip}
-              className="text-muted-foreground hover:text-foreground w-full cursor-pointer text-sm transition-colors"
+              disabled={isLoading}
+              className="text-muted-foreground hover:text-foreground w-full cursor-pointer text-sm transition-colors disabled:opacity-50"
             >
               Skip for now
             </button>

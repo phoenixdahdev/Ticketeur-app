@@ -3,12 +3,15 @@ import { inDevEnvironment } from '~/lib/utils'
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
-  experimental: {
-    typedEnv: true,
-  },
+  cacheComponents: true,
   compiler: {
     removeConsole: !inDevEnvironment
   },
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+    browserDebugInfoInTerminal: true,
+    typedEnv: true,
+  }
 }
 
 export default nextConfig
