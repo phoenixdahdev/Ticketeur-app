@@ -7,7 +7,6 @@ import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { useState, useTransition } from 'react'
-import { useRouter } from '@bprogress/next/app'
 import { OtpFormType, otpschema } from '../schema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resendverificationotp, verifyotp } from '../actions'
@@ -16,7 +15,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from 'ui/input-otp'
 import { Form, FormControl, FormField, FormItem, FormMessage } from 'ui/form'
 
 export function EmailVerificationForm() {
-  const router = useRouter()
   const [type, setType] = useState('')
   const [counterNumber, setCount] = useState(1)
   const [canResendEmail, setCanResendEmail] = useState(false)
