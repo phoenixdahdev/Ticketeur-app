@@ -35,8 +35,6 @@ export const users = createBaseTable('users', {
 
 
     google_id: varchar('google_id', { length: 255 }),
-    // facebook_id: varchar('facebook_id', { length: 255 }),
-    // github_id: varchar('github_id', { length: 255 }),
 
     last_login_at: timestamp('last_login_at'),
     email_verified_at: timestamp('email_verified_at'),

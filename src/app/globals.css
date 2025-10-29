@@ -171,3 +171,7 @@
     font-feature-settings: 'liga' off, 'clig' off;
   }
 } */
+
+button {
+  cursor: pointer;
+}

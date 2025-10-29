@@ -61,7 +61,6 @@ const authConfig: NextAuthConfig = {
                 return token
             }
             if (trigger === 'signIn' && account?.provider === 'credentials' && user) {
-                console.log({ token, user })
                 return { ...token, ...user }
             }
             if (account && account.provider === 'google') {
@@ -75,7 +74,6 @@ const authConfig: NextAuthConfig = {
                     avatar: profile.picture
 
                 })
-                console.log({ res })
                 if (!res.success) {
                     return null
                 }
@@ -95,7 +93,6 @@ const authConfig: NextAuthConfig = {
                 ...token as unknown as User,
                 emailVerified: (token.email_verified_at as Date) ?? new Date()
             }
-            console.log(session)
             return session
         }
 
