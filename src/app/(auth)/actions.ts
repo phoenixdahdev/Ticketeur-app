@@ -222,3 +222,40 @@ export async function google_login(props: { email: string, name: string, provide
         };
     }
 }
+
+export async function trigger_verification_for_user(userId: string) {
+    const cookie = await cookies()
+    try {
+        const user = await userService.findById(userId);
+        if (!user) {
+            return {
+                success: false,
+                error: "User not found"
+            };
+        }
+
+        if (user.is_verified) {
+            return {
+                success: true,
+                message: "User is already verified"
+            };
+        }
+
+        const otp = await otpService.createOTP(user.id, "email_verification");
+        await resend.emails.send({
+            from: from_email,
+            to: [user.email],
+            subject: "Email Verification Code",
+            react: VerificationEmail({ firstName: user.first_name || "User", otp: otp.otp }),
+        });
+        cookie.set("verify-with", user.id);
+        return {
+            success: true
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to trigger verification"
+        };
+    }
+}

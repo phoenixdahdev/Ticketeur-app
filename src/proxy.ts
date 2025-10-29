@@ -2,8 +2,9 @@ import { auth } from './auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { apiAuthPrefix, authRoutes } from './routes'
+import { trigger_verification_for_user } from './app/(auth)/actions'
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const { nextUrl } = req
     const session = await auth()
     const isLoggedIn = !!session
@@ -19,7 +20,8 @@ export async function middleware(req: NextRequest) {
             if (session.user.is_verified) {
                 return NextResponse.redirect(new URL('/', req.url))
             }
-            return NextResponse.redirect(new URL('/onboarding', req.url))
+            await trigger_verification_for_user(session.user.id)
+            return NextResponse.redirect(new URL('/verify-account', req.url))
         }
         return NextResponse.next()
     }
