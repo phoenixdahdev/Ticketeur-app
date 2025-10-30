@@ -10,11 +10,14 @@ import {
 import { BaseEntity, createBaseTable } from './base-table'
 import { users } from './user'
 
-export const eventTypes = ['admin', 'normal'] as const
+// Event Types
+export const eventTypes = ['conference', 'workshop', 'meetup', 'webinar', 'concert', 'festival', 'networking', 'hackathon'] as const
 export type EventType = (typeof eventTypes)[number]
 
-export const venueTypes = ['admin', 'normal'] as const
+// Venue Types
+export const venueTypes = ['online', 'physical', 'hybrid'] as const
 export type VenueType = (typeof venueTypes)[number]
+
 
 export const events = createBaseTable('events', {
   user_id: uuid('user_id')

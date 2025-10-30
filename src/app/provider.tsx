@@ -19,11 +19,11 @@ export default function Provider({ children }: { children: React.ReactNode }) {
         {children}
       </ProgressProvider>
       <Toaster richColors />
-      <ReactQueryDevtools
+      {/* <ReactQueryDevtools
         initialIsOpen={false}
         position="left"
         buttonPosition="top-right"
-      />
+      /> */}
     </QueryClientProvider>
   )
 }
