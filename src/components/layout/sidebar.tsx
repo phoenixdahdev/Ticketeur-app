@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { LogOut } from 'lucide-react'
 
-const navLinks = [
+export const navLinks = [
   { name: 'Dashboard', href: '/dashboard/home' },
   { name: 'My Events', href: '/dashboard/events' },
   { name: 'Analytics', href: '/dashboard/analytics' },
