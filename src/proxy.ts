@@ -1,17 +1,23 @@
 import { auth } from './auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { apiAuthPrefix, authRoutes } from './routes'
+import { apiAuthPrefix, authRoutes, publicRoutes } from './routes'
 import { trigger_verification_for_user } from './app/(auth)/actions'
 
 export async function proxy(req: NextRequest) {
     const { nextUrl } = req
     const session = await auth()
+    console.log("Session in proxy:", session);
     const isLoggedIn = !!session
     const isAuthRoute = authRoutes.includes(nextUrl.pathname)
     const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix)
+    const isPublicRoute = publicRoutes.some(route => nextUrl.pathname.startsWith(route))
 
     if (isApiAuthRoute) {
+        return NextResponse.next()
+    }
+
+    if (isPublicRoute) {
         return NextResponse.next()
     }
 

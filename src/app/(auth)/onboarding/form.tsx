@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import { useFilePreview } from '~/hook/use-file-preview'
 import { uploadBusinessDocument } from '~/lib/upload'
 import { FileUploadWithPreview } from '~/components/miscellaneous/file-upload-with-preview'
+import { send_onboarding_response } from '../actions'
+import { toast } from 'sonner'
 
 export default function BusinessVerification() {
   const router = useRouter()
@@ -45,13 +47,16 @@ export default function BusinessVerification() {
           )
           return
         }
+        const documents = [businessDocResult.url, validIdResult.url].filter((url): url is string => !!url)
+        const result = await send_onboarding_response({ documents })
 
-        console.log('Documents uploaded successfully:', {
-          businessDoc: businessDocResult.url,
-          validId: validIdResult.url,
-        })
+        if (!result.success) {
+          setError(result.error || 'Failed to submit onboarding')
+          return
+        }
 
-        router.push('/')
+        toast.success('Documents submitted successfully! Admin will review your submission.')
+        router.push('/tour')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       }

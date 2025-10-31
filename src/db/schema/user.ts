@@ -32,6 +32,7 @@ export const users = createBaseTable('users', {
     is_active: boolean('is_active').default(true),
     is_verified: boolean('is_verified').default(false),
     is_onboarded: boolean('is_onboarded').default(false),
+    onboarding_status: varchar('onboarding_status', { length: 20 }).default('pending'), // pending, approved, declined
 
 
     google_id: varchar('google_id', { length: 255 }),
