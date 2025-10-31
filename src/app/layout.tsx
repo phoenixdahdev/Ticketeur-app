@@ -2,7 +2,7 @@ import './globals.css'
 import { cn } from '~/lib/utils'
 import Provider from './provider'
 import type { Metadata } from 'next'
-import { montserrat, nunito, inter } from '~/fonts'
+import { montserrat, nunito, inter, trap, transforma } from '~/fonts'
 import AuthProvider from './auth-provider'
 import { Suspense } from 'react'
 
@@ -23,7 +23,9 @@ export default function RootLayout({
           'scroll-smooth antialiased',
           montserrat.variable,
           nunito.variable,
-          inter.variable
+          inter.variable,
+          trap.variable,
+          transforma.variable
         )}
       >
         <Suspense>

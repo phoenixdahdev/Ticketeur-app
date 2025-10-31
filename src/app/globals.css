@@ -9,6 +9,8 @@
   --font-inter: var(--font-inter);
   --font-nunito: var(--font-nunito);
   --font-montserrat: var(--font-montserrat);
+  --font-trap: var(--font-trap);
+  --font-transforma-sans: var(--font-transforma-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -175,3 +177,5 @@
 button {
   cursor: pointer;
 }
+
+
