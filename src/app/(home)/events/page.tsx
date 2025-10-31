@@ -13,10 +13,7 @@ export default function Page() {
       </p>
 
       <Button asChild className="font-semibold">
-        <Link
-          // @ts-expect-error next line
-          href="/dashboard/events/create"
-        >
+        <Link href="/events/create">
           <Plus className="h-3 w-3" />
           Create Event
         </Link>

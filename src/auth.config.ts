@@ -57,7 +57,7 @@ const authConfig: NextAuthConfig = {
         },
         async jwt({ token, user, account, profile, trigger, session }) {
             if (trigger === 'update') {
-                token = { ...token, ...session }
+                token = { ...token, ...session.user }
                 return token
             }
             if (trigger === 'signIn' && account?.provider === 'credentials' && user) {
@@ -77,13 +77,14 @@ const authConfig: NextAuthConfig = {
                 if (!res.success) {
                     return null
                 }
-                const user = {
+                const google_user = {
                     ...res.user,
                     email: profile.email,
                     name: profile?.name,
-                    profile_image: profile.picture
+                    profile_image: profile.picture,
+                    id: res?.user?.id,
                 }
-                return { ...token, user, ...res }
+                return { ...token, ...google_user }
             }
             return { ...token, user }
         },

@@ -5,20 +5,27 @@ import Image from 'next/image'
 import { cn } from '~/lib/utils'
 import { motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
-import { LogOut } from 'lucide-react'
+import { signOut, useSession } from 'next-auth/react'
+import { LogOut, AlertCircle, Clock } from 'lucide-react'
 
 const navLinks = [
-  { name: 'Dashboard', href: '/dashboard/home' },
-  { name: 'My Events', href: '/dashboard/events' },
-  { name: 'Analytics', href: '/dashboard/analytics' },
+  { name: 'Dashboard', href: '/' },
+  { name: 'My Events', href: '/events' },
+  { name: 'Analytics', href: '/analytics' },
 ]
 
 const SideBar = () => {
   const pathname = usePathname()
+  const { data: session } = useSession()
+
+  const user = session?.user
+  const showOnboardingCTA = !user?.is_onboarded
+  const hasSubmittedDocuments =
+    user?.registration_documents && user.registration_documents.length > 0
+  const isPending = user?.onboarding_status === 'pending'
 
   return (
-    <div className="flex h-full w-[264px] shrink-0 flex-col justify-between rounded-[24px] bg-[rgba(102,51,255,0.04)] py-8">
+    <div className="hidden lg:flex h-full w-[264px] shrink-0 flex-col justify-between rounded-3xl bg-[rgba(102,51,255,0.04)] py-8">
       <div>
         <div className="flex w-full items-start justify-start px-6">
           <Image src="/logo.png" alt="Ticketeur Logo" width={132} height={50} />
@@ -61,16 +68,53 @@ const SideBar = () => {
           })}
         </nav>
       </div>
-      <button
-        type="button"
-        className="mx-6 mt-6 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
-        onClick={() => {
-          signOut({ redirectTo: '/login' })
-        }}
-      >
-        <LogOut />
-        Logout
-      </button>
+        <div className="flex flex-col">
+          {showOnboardingCTA && (
+            <div className="mx-4 mt-6">
+              {!hasSubmittedDocuments || !isPending ? (
+                <Link href="/onboarding">
+                  <div className="cursor-pointer rounded-lg border border-purple-200 bg-purple-100 p-4 transition-colors hover:bg-purple-200">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-purple-600" />
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm font-semibold text-purple-900">
+                          Complete Verification
+                        </p>
+                        <p className="text-xs text-purple-700">
+                          Upload your documents to unlock all features
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-start gap-2">
+                    <Clock className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-semibold text-blue-900">
+                        Under Review
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Your documents are being reviewed by our team
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className="mx-6 mt-6 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+            onClick={() => {
+              signOut({ redirectTo: '/login' })
+            }}
+          >
+            <LogOut />
+            Logout
+          </button>
+        </div>
     </div>
   )
 }
