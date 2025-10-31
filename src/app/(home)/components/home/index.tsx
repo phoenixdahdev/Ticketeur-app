@@ -9,6 +9,7 @@ import EventsContent from './events-content'
 import { useSearch } from '~/hook/use-search'
 import FilterDropdowns from './filter-dropdowns'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('explore')
@@ -37,9 +38,11 @@ export default function Home() {
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
           <FilterDropdowns />
-          <Button className="w-full text-white md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Event
+          <Button className="w-full text-white md:w-auto" asChild>
+            <Link href="/events/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Event
+            </Link>
           </Button>
         </div>
       </div>
