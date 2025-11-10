@@ -1,0 +1,10 @@
+{
+  "extends": "@useticketeur/typescript-config/react-library.json",
+  "compilerOptions": {
+    "paths": {
+      "@useticketeur/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}
