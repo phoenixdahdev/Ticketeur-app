@@ -3,8 +3,8 @@ import { createEnv } from "@t3-oss/env-nextjs";
 
 export const env = createEnv({
     server: {
-        RESEND_KEY: z.string().min(1),
-        MONGO_URL: z.string().min(1),
+        RESEND_API_KEY: z.string().min(1),
+        MONGODB_URI: z.string().min(1),
     },
     experimental__runtimeEnv: process.env
 });
