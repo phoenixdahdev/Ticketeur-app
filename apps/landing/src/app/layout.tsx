@@ -1,4 +1,5 @@
 import './styles.css'
+import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
@@ -6,6 +7,37 @@ import { cn } from '@useticketeur/ui/lib/utils'
 import { Toaster } from '@useticketeur/ui/components/sonner'
 import { ThemeProvider } from '@useticketeur/ui/theme-provider'
 import { FloatingThemeToggle } from '@useticketeur/ui/components/floating-theme-toogle'
+
+export const metadata: Metadata = {
+  title: 'Ticketeur: One App, Endless Events',
+  description:
+    'From booking tickets to managing events, Ticketeur is your comprehensive, easy-to-use platform for all event experiences.',
+  keywords: ['events', 'tickets', 'event management', 'booking'],
+  authors: [{ name: '@useticketeur-team' }],
+  openGraph: {
+    title: 'Ticketeur: One App, Endless Events',
+    description:
+      'From booking tickets to managing events, Ticketeur is your comprehensive, easy-to-use platform for all event experiences.',
+    url: 'https://useticketeur.com',
+    siteName: 'Ticketeur',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 800,
+        height: 600,
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ticketeur: One App, Endless Events',
+    description:
+      'From booking tickets to managing events, Ticketeur is your comprehensive, easy-to-use platform for all event experiences.',
+    images: ['/og-image.png'],
+  },
+}
 
 const transformaSans = localFont({
   src: [
