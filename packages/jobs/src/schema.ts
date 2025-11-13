@@ -1,6 +1,6 @@
-import { z } from "zod"
+import { z } from 'zod'
 
 export const WaitlistJoinedPayloadSchema = z.object({
-    email: z.email(),
-    name: z.string(),
+  email: z.email(),
+  name: z.string(),
 })

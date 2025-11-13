@@ -20,8 +20,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
-          cache: "pnpm"
+          node-version: '22.x'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
