@@ -1,7 +1,11 @@
-import '@useticketeur/ui/globals.css'
+import './styles.css'
 import localFont from 'next/font/local'
+import Navbar from '@/components/navbar'
+import Footer from '@/components/footer'
 import { cn } from '@useticketeur/ui/lib/utils'
+import { Toaster } from '@useticketeur/ui/components/sonner'
 import { ThemeProvider } from '@useticketeur/ui/theme-provider'
+import { FloatingThemeToggle } from '@useticketeur/ui/components/floating-theme-toogle'
 
 const transformaSans = localFont({
   src: [
@@ -100,9 +104,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={cn('antialiased', transformaSans.variable, trap.variable)}
+        className={cn(
+          'bg-background antialiased',
+          transformaSans.variable,
+          trap.variable
+        )}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider defaultTheme="light">
+          <header>
+            <Navbar />
+          </header>
+          {children}
+          <FloatingThemeToggle />
+          <Footer />
+        </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   )
