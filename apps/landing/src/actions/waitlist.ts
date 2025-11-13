@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import connectDB from "@/lib/mongodb";
+import { tasks } from "@trigger.dev/sdk";
 import WaitList, { waitListSchema } from "@/model";
 
 export type ActionResponse<T = unknown> = {
@@ -24,6 +25,13 @@ export async function addToWaitlist(email: string): Promise<ActionResponse> {
         const waitlistEntry = await WaitList.create({
             email: validatedData.email,
         });
+        await tasks.trigger("send-waitlist-email", {
+            email: waitlistEntry.email,
+            name: (() => {
+                const local = waitlistEntry.email?.split("@")[0] ?? "";
+                return local ? local.charAt(0).toUpperCase() + local.slice(1) : "";
+            })(),
+        })
 
         return {
             success: true,
