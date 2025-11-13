@@ -10,14 +10,20 @@
   },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.13.8",
+    "@trigger.dev/sdk": "4.0.7",
     "@useticketeur/ui": "workspace:*",
+    "gsap": "^3.13.0",
     "lucide-react": "^0.553.0",
     "mongoose": "^8.19.3",
     "next": "16.0.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-icons": "^5.5.0",
     "resend": "^6.4.2",
-    "zod": "^4.1.12"
+    "sonner": "^2.0.7",
+    "tailwindcss": "^4.1.16",
+    "zod": "^4.1.12",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
