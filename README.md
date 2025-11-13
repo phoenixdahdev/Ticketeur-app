@@ -101,6 +101,7 @@ pnpm dev
 ```
 
 This will start all apps concurrently:
+
 - Admin: http://localhost:3000
 - Landing: http://localhost:3001
 - Web: http://localhost:3002
@@ -250,12 +251,12 @@ MONGODB_URI=mongodb://localhost:27017/tickeur
 
 ## Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start all apps in development mode |
-| `pnpm build` | Build all apps for production |
-| `pnpm lint` | Lint all workspaces |
-| `pnpm format` | Format all files with Prettier |
+| Command       | Description                        |
+| ------------- | ---------------------------------- |
+| `pnpm dev`    | Start all apps in development mode |
+| `pnpm build`  | Build all apps for production      |
+| `pnpm lint`   | Lint all workspaces                |
+| `pnpm format` | Format all files with Prettier     |
 
 ## Adding UI Components
 
@@ -302,16 +303,16 @@ Database models are defined using Mongoose with Zod validation:
 
 ```typescript
 // apps/landing/src/model.ts
-import { z } from "zod";
-import mongoose from "mongoose";
+import { z } from 'zod'
+import mongoose from 'mongoose'
 
 // Zod schema for validation
 export const waitListSchema = z.object({
-  email: z.string().email()
-});
+  email: z.string().email(),
+})
 
 // Mongoose model
-const WaitList = mongoose.model("WaitList", schema);
+const WaitList = mongoose.model('WaitList', schema)
 ```
 
 ### Server Actions
@@ -320,7 +321,7 @@ This project uses Next.js Server Actions instead of API routes:
 
 ```typescript
 // apps/landing/src/actions/waitlist.ts
-"use server";
+'use server'
 
 export async function addToWaitlist(email: string) {
   // Server-side logic here

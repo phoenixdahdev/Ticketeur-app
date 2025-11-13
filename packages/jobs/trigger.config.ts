@@ -1,10 +1,10 @@
-import { defineConfig } from "@trigger.dev/sdk";
-import "dotenv/config";
+import { defineConfig } from '@trigger.dev/sdk'
+import 'dotenv/config'
 
 export default defineConfig({
   project: process.env.TRIGGER_PROJECT_ID!,
-  runtime: "node",
-  logLevel: "log",
+  runtime: 'node',
+  logLevel: 'log',
   maxDuration: 60,
   experimental_processKeepAlive: true,
   retries: {
@@ -17,5 +17,5 @@ export default defineConfig({
       randomize: true,
     },
   },
-  dirs: ["./src/tasks"],
-});
+  dirs: ['./src/tasks'],
+})
