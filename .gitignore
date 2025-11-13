@@ -1,9 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # Dependencies
-node_modules
+node_modules/
+**/node_modules/
 .pnp
 .pnp.js
+package-lock.json
+yarn.lock
 
 # Local env files
 .env
@@ -34,3 +37,5 @@ npm-debug.log*
 # Misc
 .DS_Store
 *.pem
+
+.react-email
