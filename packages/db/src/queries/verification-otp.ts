@@ -122,6 +122,15 @@ export const verificationOtpQueries = {
      * Generate a random 6-digit OTP
      */
     generateOTP(): string {
-        return Math.floor(100000 + Math.random() * 900000).toString();
-    },
+        const digits = "123456789";
+        let otp = "";
+
+        for (let i = 0; i < 6; i++) {
+            const index = Math.floor(Math.random() * digits.length);
+            otp += digits[index];
+        }
+
+        return otp;
+    }
+
 };
