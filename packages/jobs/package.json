@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.0",
-    "@trigger.dev/sdk": "4.0.7",
+    "@trigger.dev/sdk": "4.1.0",
     "@useticketeur/email": "workspace:*",
     "nanoid": "^5.1.6",
     "react": "^19.2.0",
     "resend": "^6.4.2",
-    "trigger.dev": "^4.0.7",
+    "trigger.dev": "^4.1.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
