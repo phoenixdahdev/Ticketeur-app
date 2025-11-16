@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "packages/jobs/**"
+      - "packages/db/**"
+      - "packages/email/**"
 jobs:
   deploy:
     runs-on: ubuntu-latest
