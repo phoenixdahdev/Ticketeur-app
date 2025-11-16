@@ -1,5 +1,5 @@
 import { db } from '../drizzle';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { hash, compare } from 'bcrypt-ts';
 import { users, type NewUser, type User, type UserType } from '../schema/user';
 
@@ -121,7 +121,6 @@ export const userQueries = {
         const [user] = await db
             .update(users)
             .set({
-                is_verified: true,
                 email_verified_at: new Date(),
                 updated_at: new Date()
             })
@@ -129,6 +128,77 @@ export const userQueries = {
             .returning();
 
         return user;
+    },
+
+    /**
+     * Submit documents for admin verification (event organizer verification)
+     */
+    async submitVerificationDocuments(
+        userId: string,
+        documents: string[],
+        validId?: string
+    ): Promise<User | undefined> {
+        const [user] = await db
+            .update(users)
+            .set({
+                registration_documents: documents,
+                valid_id: validId,
+                updated_at: new Date()
+            })
+            .where(eq(users.id, userId))
+            .returning();
+
+        return user;
+    },
+
+    /**
+     * Admin verifies user (allows user to create events)
+     */
+    async adminVerify(userId: string): Promise<User | undefined> {
+        const [user] = await db
+            .update(users)
+            .set({
+                is_verified: true,
+                updated_at: new Date()
+            })
+            .where(eq(users.id, userId))
+            .returning();
+
+        return user;
+    },
+
+    /**
+     * Admin rejects user verification
+     */
+    async adminRejectVerification(userId: string): Promise<User | undefined> {
+        const [user] = await db
+            .update(users)
+            .set({
+                is_verified: false,
+                registration_documents: null,
+                valid_id: null,
+                updated_at: new Date()
+            })
+            .where(eq(users.id, userId))
+            .returning();
+
+        return user;
+    },
+
+    /**
+     * Find users pending admin verification (have documents but not verified)
+     */
+    async findPendingVerification(): Promise<User[]> {
+        return db
+            .select()
+            .from(users)
+            .where(
+                and(
+                    eq(users.is_verified, false),
+                    eq(users.is_active, true)
+                )
+            )
+            .orderBy(desc(users.created_at));
     },
 
     /**
