@@ -247,3 +247,45 @@ export async function get_user_by_email(email: string) {
         };
     }
 };
+
+
+
+export async function trigger_verification_for_user(userId: string) {
+    const cookie = await cookies()
+    try {
+        const user = await userQueries.findById(userId);
+        if (!user) {
+            return {
+                success: false,
+                error: "User not found"
+            };
+        }
+
+        if (user.is_verified) {
+            return {
+                success: true,
+                message: "User is already verified"
+            };
+        }
+
+        const otp = await verificationOtpQueries.create({
+            user_id: user.id,
+            type: "email-verification",
+            otp: verificationOtpQueries.generateOTP(),
+        })
+        await tasks.trigger("send-email-verification-otp", {
+            email: user.email,
+            otp: otp.otp,
+            name: user.first_name,
+        })
+        cookie.set("verify-with", user.id);
+        return {
+            success: true
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to trigger verification"
+        };
+    }
+}
