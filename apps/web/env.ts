@@ -3,8 +3,12 @@ import { createEnv } from '@t3-oss/env-nextjs'
 
 export const env = createEnv({
   server: {
-    RESEND_KEY: z.string().min(1),
-    MONGO_URL: z.string().min(1),
+    AUTH_SECRET: z.string(),
+    APP_NAME: z.string(),
+    VERCEL_URL: z.string().optional(),
+    AUTH_GOOGLE_ID: z.string(),
+    AUTH_GOOGLE_SECRET: z.string(),
+    DATABASE_URL: z.string(),
   },
   experimental__runtimeEnv: process.env,
 })
