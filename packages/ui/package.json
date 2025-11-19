@@ -41,6 +41,7 @@
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./theme-provider": "./src/provider/theme-provider.tsx",
+    "./query-provider": "./src/provider/query-provider.tsx",
     "./query-client": "./src/tools/query-client.ts",
     "./fonts": "./src/fonts/index.ts",
     "./fonts/*": "./src/fonts/**/*"
