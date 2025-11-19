@@ -1,0 +1,271 @@
+================================================================================
+                        TICKEUR DATABASE SCHEMA - VISUAL MAP
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         CORE USER SYSTEM                            │
+    └─────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────┐
+                              │    USERS     │
+                              ├──────────────┤
+                              │ id (PK)      │
+                              │ email (UK)   │
+                              │ username     │
+                              │ user_type    │◄─── admin | normal
+                              │ is_verified  │◄─── Admin must approve
+                              │ is_onboarded │
+                              └──────┬───────┘
+                                     │
+            ┌────────────────────────┼────────────────────────┐
+            │                        │                        │
+            ▼                        ▼                        ▼
+   ┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+   │VERIFICATION_OTPS│    │USER_VERIFICATIONS│    │   NOTIFICATIONS  │
+   ├─────────────────┤    ├──────────────────┤    ├──────────────────┤
+   │ user_id (FK)    │    │ user_id (FK)     │    │ user_id (FK)     │
+   │ otp             │    │ admin_id (FK)    │    │ type             │
+   │ type            │    │ status           │    │ message          │
+   │ expires_at      │    │ rejection_reason │    │ is_read          │
+   └─────────────────┘    └──────────────────┘    └──────────────────┘
+   Email/Phone Verify      Admin Verification      System Notifications
+
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         TEAM MANAGEMENT                             │
+    └─────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────┐
+                              │    USERS     │
+                              └──────┬───────┘
+                                     │
+                         ┌───────────┴───────────┐
+                         │                       │
+                         ▼                       │
+                  ┌──────────────┐               │
+                  │    TEAMS     │               │
+                  ├──────────────┤               │
+                  │ id (PK)      │               │
+                  │ owner_id(FK) │◄──────────────┘
+                  │ name         │
+                  │ description  │
+                  └──────┬───────┘
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+            ▼                         ▼
+   ┌─────────────────┐      ┌──────────────────┐
+   │  TEAM_MEMBERS   │      │ TEAM_INVITATIONS │
+   ├─────────────────┤      ├──────────────────┤
+   │ team_id (FK)    │      │ team_id (FK)     │
+   │ user_id (FK) ◄──┼──┐   │ invited_by (FK)  │
+   │ role            │  │   │ invited_user(FK) │◄─── Existing user
+   │ joined_at       │  │   │ email            │◄─── Or by email
+   └─────────────────┘  │   │ status           │
+                        │   │ token            │
+   owner|admin|member   │   └──────────────────┘
+                        │   pending|accepted|declined|expired
+                        │
+                        └─── References USERS
+
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         EVENT MANAGEMENT                            │
+    └─────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────┐     ┌──────────────┐
+                    │    USERS     │     │    TEAMS     │
+                    └──────┬───────┘     └──────┬───────┘
+                           │                    │
+                           └────────┬───────────┘
+                                    │
+                                    ▼
+                            ┌──────────────┐
+                            │    EVENTS    │
+                            ├──────────────┤
+                            │ id (PK)      │
+                            │ organizer_id │◄─── Must be verified user
+                            │ team_id      │◄─── Optional team
+                            │ title        │
+                            │ status ──────┼──┐
+                            │ start_date   │  │
+                            │ end_date     │  │
+                            │ venue_*      │  │
+                            │ is_free      │  │
+                            └──────┬───────┘  │
+                                   │          │
+                  ┌────────────────┤          │
+                  │                │          │
+                  ▼                ▼          ▼
+        ┌──────────────┐  ┌───────────────────────────────────┐
+        │EVENT_APPROVALS│  │         EVENT STATUS FLOW         │
+        ├──────────────┤  ├───────────────────────────────────┤
+        │ event_id(FK) │  │                                   │
+        │ admin_id(FK) │  │  draft ──► pending_approval      │
+        │ type         │  │                  │                │
+        │ admin_notes  │  │           ┌──────┴──────┐         │
+        │ rejection_   │  │           ▼             ▼         │
+        │   reason     │  │       approved      rejected      │
+        └──────────────┘  │           │                       │
+                          │           ▼                       │
+                          │       published                   │
+                          │           │                       │
+                          │     ┌─────┴─────┐                 │
+                          │     ▼           ▼                 │
+                          │  cancelled   completed            │
+                          └───────────────────────────────────┘
+
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                      TICKETING & PAYMENTS                           │
+    └─────────────────────────────────────────────────────────────────────┘
+
+            ┌──────────────┐                    ┌──────────────┐
+            │    EVENTS    │                    │    USERS     │
+            └──────┬───────┘                    └──────┬───────┘
+                   │                                   │
+                   ▼                                   │
+          ┌─────────────────┐                          │
+          │  TICKET_TYPES   │                          │
+          ├─────────────────┤                          │
+          │ event_id (FK)   │                          │
+          │ name            │◄─── VIP|Regular|Early Bird
+          │ price           │                          │
+          │ quantity_       │                          │
+          │   available     │                          │
+          │ quantity_sold   │                          │
+          │ sales_start     │                          │
+          │ sales_end       │                          │
+          │ benefits (JSON) │                          │
+          └────────┬────────┘                          │
+                   │                                   │
+                   └──────────────┬────────────────────┘
+                                  │
+                                  ▼
+                          ┌──────────────┐
+                          │   TICKETS    │
+                          ├──────────────┤
+                          │ event_id(FK) │
+                          │ ticket_type_ │
+                          │   id (FK)    │
+                          │ user_id (FK) │◄─── Purchaser
+                          │ payment_id   │
+                          │ ticket_number│◄─── Unique
+                          │ qr_code      │◄─── For check-in
+                          │ status ──────┼──┐
+                          │ attendee_*   │  │
+                          │ checked_in_at│  │
+                          └──────┬───────┘  │
+                                 │          │
+                                 │          ▼
+                                 │  ┌─────────────────────┐
+                                 │  │  TICKET STATUS FLOW │
+                                 │  ├─────────────────────┤
+                                 │  │ reserved ──► paid   │
+                                 │  │     │         │     │
+                                 │  │     ▼         ▼     │
+                                 │  │ cancelled    used   │
+                                 │  │     │               │
+                                 │  │     ▼               │
+                                 │  │  refunded           │
+                                 │  └─────────────────────┘
+                                 │
+                                 ▼
+                         ┌───────────────┐
+                         │   PAYMENTS    │
+                         ├───────────────┤
+                         │ user_id (FK)  │
+                         │ ticket_id(FK) │
+                         │ transaction_  │
+                         │   reference   │◄─── Unique
+                         │ amount        │
+                         │ fee           │
+                         │ net_amount    │
+                         │ currency      │◄─── NGN|USD|etc
+                         │ payment_method│◄─── card|bank|etc
+                         │ payment_      │
+                         │   provider    │◄─── paystack|flutterwave
+                         │ status        │
+                         │ paid_at       │
+                         └───────────────┘
+
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         COMPLETE FLOW                               │
+    └─────────────────────────────────────────────────────────────────────┘
+
+    1. USER REGISTRATION & VERIFICATION
+    ────────────────────────────────────
+    User Signs Up ──► Email OTP ──► Email Verified ──► Submit Docs
+                                                           │
+                                                           ▼
+                                                    Admin Reviews
+                                                           │
+                                                      ┌────┴────┐
+                                                      ▼         ▼
+                                                  Approved   Rejected
+                                                      │
+                                                      ▼
+                                              Can Create Events
+
+
+    2. EVENT CREATION & APPROVAL
+    ─────────────────────────────
+    Verified User ──► Create Event (Draft) ──► Submit for Approval
+                                                       │
+                                                       ▼
+                                                 Admin Reviews
+                                                       │
+                                                  ┌────┴────┐
+                                                  ▼         ▼
+                                              Approved   Rejected
+                                                  │
+                                                  ▼
+                                          Publish Event ──► Live!
+
+
+    3. TICKET PURCHASE
+    ──────────────────
+    User Browses ──► Select Event ──► Choose Ticket Type ──► Reserve
+                                                                │
+                                                                ▼
+                                                          Make Payment
+                                                                │
+                                                           ┌────┴────┐
+                                                           ▼         ▼
+                                                       Success    Failed
+                                                           │
+                                                           ▼
+                                                   Ticket Confirmed
+                                                   QR Code Generated
+
+
+    4. TEAM COLLABORATION
+    ─────────────────────
+    Team Owner ──► Create Team ──► Invite Members ──► Send Invitation
+                                                            │
+                                                            ▼
+                                                      Member Accepts
+                                                            │
+                                                            ▼
+                                                     Joins Team
+                                                     Can Manage Events
+
+
+================================================================================
+                              KEY RELATIONSHIPS
+================================================================================
+
+    USERS (1) ────────< (N) TEAMS                    One user owns many teams
+    USERS (1) ────────< (N) TEAM_MEMBERS             User can be in many teams
+    TEAMS (1) ────────< (N) TEAM_MEMBERS             Team has many members
+    USERS (1) ────────< (N) EVENTS                   User creates many events
+    TEAMS (1) ────────< (N) EVENTS                   Team organizes many events
+    EVENTS (1) ───────< (N) TICKET_TYPES             Event has many ticket types
+    EVENTS (1) ───────< (N) TICKETS                  Event sells many tickets
+    TICKET_TYPES (1) ─< (N) TICKETS                  Type categorizes tickets
+    USERS (1) ────────< (N) TICKETS                  User buys many tickets
+    TICKETS (1) ──────< (N) PAYMENTS                 Ticket has payment(s)
+    USERS (1) ────────< (N) PAYMENTS                 User makes many payments
+
+================================================================================

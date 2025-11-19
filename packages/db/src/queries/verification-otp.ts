@@ -2,7 +2,7 @@ import { db } from '../drizzle';
 import { eq, and, gt, lt } from 'drizzle-orm';
 import { verification_otps, type NewVerificationOTP, type VerificationOTP } from '../schema/user';
 
-const OTP_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_MINUTES = 15;
 const MAX_ATTEMPTS = 5;
 
 export const verificationOtpQueries = {

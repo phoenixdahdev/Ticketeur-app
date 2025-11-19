@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickeur Database Schema</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .mermaid {
+            background: white;
+        }
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .legend h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .legend-item {
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .status-flow {
+            margin-top: 20px;
+        }
+        .status-flow h4 {
+            color: #495057;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tickeur Database Schema</h1>
+
+        <div class="mermaid">
+erDiagram
+    USERS ||--o{ VERIFICATION_OTPS : has
+    USERS ||--o{ TEAMS : owns
+    USERS ||--o{ TEAM_MEMBERS : belongs_to
+    USERS ||--o{ TEAM_INVITATIONS : receives
+    USERS ||--o{ EVENTS : creates
+    USERS ||--o{ TICKETS : purchases
+    USERS ||--o{ PAYMENTS : makes
+    USERS ||--o{ USER_VERIFICATIONS : requests
+
+    TEAMS ||--o{ TEAM_MEMBERS : has
+    TEAMS ||--o{ TEAM_INVITATIONS : sends
+    TEAMS ||--o{ EVENTS : organizes
+
+    EVENTS ||--o{ EVENT_APPROVALS : requires
+    EVENTS ||--o{ TICKET_TYPES : has
+    EVENTS ||--o{ TICKETS : sold_for
+
+    TICKET_TYPES ||--o{ TICKETS : categorizes
+
+    TICKETS ||--o{ PAYMENTS : paid_via
+
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar username UK
+        varchar first_name
+        varchar last_name
+        varchar user_type
+        varchar password
+        text avatar
+        jsonb registration_documents
+        varchar valid_id
+        boolean is_active
+        boolean is_verified
+        boolean is_onboarded
+        timestamp last_login_at
+        timestamp email_verified_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    VERIFICATION_OTPS {
+        uuid id PK
+        uuid user_id FK
+        varchar otp
+        varchar type
+        timestamp expires_at
+        integer attempts
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    USER_VERIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        uuid admin_id FK
+        varchar status
+        text rejection_reason
+        jsonb documents
+        timestamp reviewed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TEAMS {
+        uuid id PK
+        uuid owner_id FK
+        varchar name
+        text description
+        text logo
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TEAM_MEMBERS {
+        uuid id PK
+        uuid team_id FK
+        uuid user_id FK
+        varchar role
+        timestamp joined_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TEAM_INVITATIONS {
+        uuid id PK
+        uuid team_id FK
+        uuid invited_by FK
+        uuid invited_user_id FK
+        varchar email
+        varchar role
+        varchar status
+        varchar token UK
+        timestamp expires_at
+        timestamp responded_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    EVENTS {
+        uuid id PK
+        uuid organizer_id FK
+        uuid team_id FK
+        varchar title
+        text description
+        text banner_image
+        varchar venue_name
+        text venue_address
+        decimal latitude
+        decimal longitude
+        varchar event_type
+        varchar status
+        timestamp start_date
+        timestamp end_date
+        integer max_attendees
+        boolean is_free
+        boolean is_featured
+        jsonb metadata
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    EVENT_APPROVALS {
+        uuid id PK
+        uuid event_id FK
+        uuid admin_id FK
+        varchar type
+        text admin_notes
+        text rejection_reason
+        timestamp reviewed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TICKET_TYPES {
+        uuid id PK
+        uuid event_id FK
+        varchar name
+        text description
+        decimal price
+        integer quantity_available
+        integer quantity_sold
+        integer max_per_order
+        timestamp sales_start
+        timestamp sales_end
+        boolean is_active
+        jsonb benefits
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TICKETS {
+        uuid id PK
+        uuid event_id FK
+        uuid ticket_type_id FK
+        uuid user_id FK
+        uuid payment_id FK
+        varchar ticket_number UK
+        varchar qr_code UK
+        varchar status
+        varchar attendee_name
+        varchar attendee_email
+        timestamp checked_in_at
+        jsonb metadata
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PAYMENTS {
+        uuid id PK
+        uuid user_id FK
+        uuid ticket_id FK
+        varchar transaction_reference UK
+        decimal amount
+        decimal fee
+        decimal net_amount
+        varchar currency
+        varchar payment_method
+        varchar payment_provider
+        varchar status
+        jsonb provider_response
+        text failure_reason
+        timestamp paid_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    EVENT_CATEGORIES {
+        uuid id PK
+        varchar name UK
+        text description
+        varchar slug UK
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        varchar type
+        varchar title
+        text message
+        jsonb data
+        boolean is_read
+        timestamp read_at
+        timestamp created_at
+    }
+        </div>
+
+        <div class="legend">
+            <h3>Key Components</h3>
+
+            <div class="legend-item">
+                <strong>User Management</strong><br>
+                <code>USERS</code> - Core user table (admin/normal types)<br>
+                <code>USER_VERIFICATIONS</code> - Admin approval for event organizers<br>
+                <code>VERIFICATION_OTPS</code> - Email/phone verification codes
+            </div>
+
+            <div class="legend-item">
+                <strong>Team Management</strong><br>
+                <code>TEAMS</code> - Organizations that can organize events<br>
+                <code>TEAM_MEMBERS</code> - Users in teams (owner/admin/member roles)<br>
+                <code>TEAM_INVITATIONS</code> - Pending team invites
+            </div>
+
+            <div class="legend-item">
+                <strong>Event Management</strong><br>
+                <code>EVENTS</code> - Main events with approval workflow<br>
+                <code>EVENT_APPROVALS</code> - Admin approval history<br>
+                <code>EVENT_CATEGORIES</code> - Event categorization
+            </div>
+
+            <div class="legend-item">
+                <strong>Ticketing & Payments</strong><br>
+                <code>TICKET_TYPES</code> - VIP, Regular, Early Bird, etc.<br>
+                <code>TICKETS</code> - Individual tickets with QR codes<br>
+                <code>PAYMENTS</code> - Payment transactions
+            </div>
+
+            <div class="status-flow">
+                <h4>Event Status Flow</h4>
+                <code>draft</code> → <code>pending_approval</code> → <code>approved</code>/<code>rejected</code> → <code>published</code> → <code>completed</code>/<code>cancelled</code>
+            </div>
+
+            <div class="status-flow">
+                <h4>Ticket Status Flow</h4>
+                <code>reserved</code> → <code>paid</code> → <code>used</code>/<code>cancelled</code>/<code>refunded</code>
+            </div>
+
+            <div class="status-flow">
+                <h4>Payment Status Flow</h4>
+                <code>pending</code> → <code>processing</code> → <code>successful</code>/<code>failed</code> → <code>refunded</code>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                layoutDirection: 'TB',
+                minEntityWidth: 100,
+                minEntityHeight: 75,
+                entityPadding: 15
+            }
+        });
+    </script>
+</body>
+</html>

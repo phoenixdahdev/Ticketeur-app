@@ -4,9 +4,9 @@ import localFont from 'next/font/local'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { cn } from '@useticketeur/ui/lib/utils'
-import { Toaster } from '@useticketeur/ui/components/sonner'
+import { Toaster } from '@useticketeur/ui/sonner'
 import { ThemeProvider } from '@useticketeur/ui/theme-provider'
-import { FloatingThemeToggle } from '@useticketeur/ui/components/floating-theme-toogle'
+import { FloatingThemeToggle } from '@useticketeur/ui/floating-theme-toogle'
 
 export const metadata: Metadata = {
   title: 'Ticketeur: One App, Endless Events',
