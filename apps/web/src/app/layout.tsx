@@ -1,6 +1,7 @@
 import './styles.css'
 import localFont from 'next/font/local'
 import { cn } from '@useticketeur/ui/lib/utils'
+import { SessionProvider } from 'next-auth/react'
 import { DefaultProvider } from '@useticketeur/ui/default-provider'
 
 const transformaSans = localFont({
@@ -102,7 +103,9 @@ export default function RootLayout({
       <body
         className={cn('antialiased', transformaSans.variable, trap.variable)}
       >
-        <DefaultProvider defaultTheme="light">{children}</DefaultProvider>
+        <SessionProvider>
+          <DefaultProvider defaultTheme="light">{children}</DefaultProvider>
+        </SessionProvider>
       </body>
     </html>
   )
