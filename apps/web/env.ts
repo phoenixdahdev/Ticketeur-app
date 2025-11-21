@@ -11,6 +11,8 @@ export const env = createEnv({
     DATABASE_URL: z.string(),
     TRIGGER_SECRET_KEY: z.string(),
     TRIGGER_PROJECT_ID: z.string(),
+    BLOB_READ_WRITE_TOKEN: z.string(),
+    VERCEL_OIDC_TOKEN: z.string()
   },
   experimental__runtimeEnv: process.env,
 })
