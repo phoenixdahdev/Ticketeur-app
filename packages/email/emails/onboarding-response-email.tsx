@@ -1,16 +1,14 @@
 import {
-  Html,
-  Head,
-  Preview,
-  Body,
   Container,
-  Section,
   Heading,
+  Preview,
   Text,
-  Hr,
   Link,
+  Section,
+  Hr,
   Button,
 } from '@react-email/components'
+import EmailContainer from '../components/container'
 
 interface OnboardingResponseEmailProps {
   userName: string
@@ -26,172 +24,87 @@ export const OnboardingResponseEmail = ({
   userId,
   documents,
   verificationUrl,
-}: OnboardingResponseEmailProps) => {
-  return (
-    <Html>
-      <Head />
-      <Preview>New onboarding response from {userName}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={box}>
-            <Heading style={h1}>New Onboarding Response</Heading>
-            <Text style={text}>
-              A new user has completed their onboarding process.
+}: OnboardingResponseEmailProps) => (
+  <EmailContainer
+    preview={<Preview>New onboarding response from {userName}</Preview>}
+  >
+    <Container className="mx-auto px-3">
+      <Heading className="font-montserrat my-10 p-0 text-2xl font-bold text-black">
+        New Onboarding Response
+      </Heading>
+      <Text className="font-nunito my-6 text-sm text-black">
+        A new user has completed their onboarding process and is awaiting
+        review.
+      </Text>
+
+      <Hr className="my-5 border-[#e6ebf1]" />
+
+      <Section className="my-5">
+        <Text className="font-montserrat mb-3 text-base font-bold text-black">
+          User Information
+        </Text>
+        <Text className="font-nunito my-2 text-sm text-black">
+          <strong>Name:</strong> {userName}
+        </Text>
+        <Text className="font-nunito my-2 text-sm text-black">
+          <strong>Email:</strong> {userEmail}
+        </Text>
+        <Text className="font-nunito my-2 text-sm text-black">
+          <strong>User ID:</strong> {userId}
+        </Text>
+      </Section>
+
+      <Hr className="my-5 border-[#e6ebf1]" />
+
+      <Section className="my-5">
+        <Text className="font-montserrat mb-3 text-base font-bold text-black">
+          Submitted Documents
+        </Text>
+        {documents.length > 0 ? (
+          documents.map((doc, index) => (
+            <Text key={index} className="font-nunito my-2 text-sm text-black">
+              {index + 1}.{' '}
+              <Link href={doc} className="text-brand underline">
+                View Document
+              </Link>
             </Text>
+          ))
+        ) : (
+          <Text className="font-nunito my-2 text-sm text-gray-500">
+            No documents submitted.
+          </Text>
+        )}
+      </Section>
 
-            <Hr style={hr} />
+      <Hr className="my-5 border-[#e6ebf1]" />
 
-            <Section style={infoSection}>
-              <Heading style={h2}>User Information</Heading>
-              <Text style={infoText}>
-                <strong>Name:</strong> {userName}
-              </Text>
-              <Text style={infoText}>
-                <strong>Email:</strong> {userEmail}
-              </Text>
-              <Text style={infoText}>
-                <strong>User ID:</strong> {userId}
-              </Text>
-            </Section>
+      <Section className="my-6 text-center">
+        <Button
+          href={verificationUrl}
+          className="bg-brand rounded-lg px-8 py-3 text-sm font-bold text-white"
+        >
+          Review and Verify User
+        </Button>
+      </Section>
 
-            <Hr style={hr} />
+      <Hr className="my-5 border-[#e6ebf1]" />
 
-            <Section style={documentsSection}>
-              <Heading style={h2}>Submitted Documents</Heading>
-              {documents.length > 0 ? (
-                <Section>
-                  {documents.map((doc, index) => (
-                    <Section key={index} style={documentItem}>
-                      <Text style={documentText}>
-                        {index + 1}.{' '}
-                        <Link href={doc} style={link}>
-                          {doc}
-                        </Link>
-                      </Text>
-                    </Section>
-                  ))}
-                </Section>
-              ) : (
-                <Text style={text}>No documents submitted.</Text>
-              )}
-            </Section>
+      <Text className="font-jetbrains mt-3 mb-6 text-xs leading-5 text-gray-500">
+        This is an automated notification from your Ticketeur application.
+      </Text>
+    </Container>
+  </EmailContainer>
+)
 
-            <Hr style={hr} />
+OnboardingResponseEmail.PreviewProps = {
+  userName: 'John Doe',
+  userEmail: 'john@example.com',
+  userId: '123e4567-e89b-12d3-a456-426614174000',
+  documents: [
+    'https://example.com/document1.pdf',
+    'https://example.com/document2.pdf',
+  ],
+  verificationUrl: 'https://useticketeur.com/admin/verify/123',
+} as OnboardingResponseEmailProps
 
-            <Section style={actionSection}>
-              <Button href={verificationUrl} style={buttonStyle}>
-                Review and Verify User
-              </Button>
-            </Section>
-
-            <Hr style={hr} />
-
-            <Text style={footer}>
-              This is an automated notification from your Ticketuer application.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
-  )
-}
-
-const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-}
-
-const container = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  padding: '20px 0 48px',
-  marginBottom: '64px',
-}
-
-const box = {
-  padding: '0 48px',
-}
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: '600',
-  lineHeight: '40px',
-  margin: '0 0 20px',
-}
-
-const h2 = {
-  color: '#333',
-  fontSize: '20px',
-  fontWeight: '600',
-  lineHeight: '32px',
-  margin: '16px 0 12px',
-}
-
-const text = {
-  color: '#333',
-  fontSize: '16px',
-  lineHeight: '26px',
-}
-
-const infoSection = {
-  marginBottom: '16px',
-}
-
-const infoText = {
-  color: '#333',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '8px 0',
-}
-
-const documentsSection = {
-  marginTop: '16px',
-}
-
-const documentItem = {
-  marginBottom: '8px',
-}
-
-const documentText = {
-  color: '#333',
-  fontSize: '14px',
-  lineHeight: '24px',
-  margin: '4px 0',
-}
-
-const link = {
-  color: '#007ee6',
-  textDecoration: 'underline',
-}
-
-const hr = {
-  borderColor: '#e6ebf1',
-  margin: '20px 0',
-}
-
-const actionSection = {
-  textAlign: 'center' as const,
-  marginTop: '20px',
-  marginBottom: '20px',
-}
-
-const buttonStyle = {
-  backgroundColor: '#007ee6',
-  borderRadius: '8px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: '600',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-}
-
-const footer = {
-  color: '#8898aa',
-  fontSize: '12px',
-  lineHeight: '16px',
-  marginTop: '20px',
-}
+export default OnboardingResponseEmail
