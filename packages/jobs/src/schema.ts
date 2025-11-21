@@ -10,3 +10,30 @@ export const VerificationEmailPayloadSchema = z.object({
   otp: z.string(),
   name: z.string(),
 })
+
+export const OnboardingSubmittedPayloadSchema = z.object({
+  email: z.email(),
+  firstName: z.string(),
+})
+
+export const OnboardingAcceptedPayloadSchema = z.object({
+  email: z.email(),
+  firstName: z.string(),
+  dashboardUrl: z.string().optional(),
+})
+
+export const OnboardingDeclinedPayloadSchema = z.object({
+  email: z.email(),
+  firstName: z.string(),
+  reason: z.string().optional(),
+  supportUrl: z.string().optional(),
+})
+
+export const OnboardingResponseAdminPayloadSchema = z.object({
+  adminEmail: z.email(),
+  userName: z.string(),
+  userEmail: z.email(),
+  userId: z.string(),
+  documents: z.array(z.string()),
+  verificationUrl: z.string(),
+})
