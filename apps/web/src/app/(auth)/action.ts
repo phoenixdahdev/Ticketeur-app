@@ -32,7 +32,7 @@ export async function login(props: LoginFormType) {
                 type: "email-verification",
                 otp: verificationOtpQueries.generateOTP(),
             })
-            await tasks.trigger("send-email-verification-otp", {
+            await tasks.trigger("send-verification-email", {
                 email: user.email,
                 otp: otp.otp,
                 name: user.first_name,
@@ -91,7 +91,7 @@ export async function signup(props: SignupFormType) {
             type: "email-verification",
             otp: verificationOtpQueries.generateOTP(),
         })
-        await tasks.trigger("send-email-verification-otp", {
+        await tasks.trigger("send-verification-email", {
             email: newUser.email,
             otp: otp.otp,
             name: newUser.first_name,
@@ -134,7 +134,7 @@ export async function verifyotp(otp: string) {
                 error: "User is already verified"
             };
         }
-        const isValid = await verificationOtpQueries.verify(userId, otp, "email_verification");
+        const isValid = await verificationOtpQueries.verify(userId, otp, "email-verification");
         if (!isValid) {
             return {
                 success: false,
@@ -187,7 +187,7 @@ export async function resendverificationotp() {
             type: "email-verification",
             otp: verificationOtpQueries.generateOTP(),
         })
-        await tasks.trigger("send-email-verification-otp", {
+        await tasks.trigger("send-verification-email", {
             email: user.email,
             otp: otp.otp,
             name: user.first_name,
@@ -274,7 +274,7 @@ export async function trigger_verification_for_user(userId: string) {
             type: "email-verification",
             otp: verificationOtpQueries.generateOTP(),
         })
-        await tasks.trigger("send-email-verification-otp", {
+        await tasks.trigger("send-verification-email", {
             email: user.email,
             otp: otp.otp,
             name: user.first_name,
