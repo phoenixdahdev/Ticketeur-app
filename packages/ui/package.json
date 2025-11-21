@@ -11,6 +11,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.7",
     "@tanstack/react-query-devtools": "^5.90.2",
+    "@vercel/blob": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -110,6 +111,9 @@
     "./toggle-group": "./src/components/toggle-group.tsx",
     "./toggle": "./src/components/toggle.tsx",
     "./tooltip": "./src/components/tooltip.tsx",
-    "./in-dev": "./src/tools/indev.ts"
+    "./in-dev": "./src/tools/indev.ts",
+    "./count-down": "./src/components/count-down.tsx",
+    "./upload": "./src/lib/upload.ts",
+    "./use-file-preview": "./src/hooks/use-file-preview.ts"
   }
 }
