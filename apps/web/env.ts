@@ -9,6 +9,8 @@ export const env = createEnv({
     AUTH_GOOGLE_ID: z.string(),
     AUTH_GOOGLE_SECRET: z.string(),
     DATABASE_URL: z.string(),
+    TRIGGER_SECRET_KEY: z.string(),
+    TRIGGER_PROJECT_ID: z.string(),
   },
   experimental__runtimeEnv: process.env,
 })

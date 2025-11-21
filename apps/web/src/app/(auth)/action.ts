@@ -289,3 +289,9 @@ export async function trigger_verification_for_user(userId: string) {
         };
     }
 }
+
+
+// TODO: update this to change when the admin ui is ready
+export async function send_onboarding_response({ documents }: { documents: string[] }) {
+    const admin_email = "giftobafaiye@gmail.com"
+}
