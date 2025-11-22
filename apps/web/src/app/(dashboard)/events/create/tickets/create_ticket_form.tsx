@@ -23,27 +23,44 @@ import {
 import { Calendar } from '@useticketeur/ui/calendar'
 import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react'
 import { Switch } from '@useticketeur/ui/switch'
-export function CreateTicketForm({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+import {
+  useEventStore,
+  type TicketTypeDetails,
+} from '@/hooks/use-event-store'
+
+export function CreateTicketForm() {
   const router = useRouter()
+  const { ticketTypes, setTicketTypes, setCurrentStep } = useEventStore()
+
   const form = useForm<CreateTicketType>({
     resolver: zodResolver(createTicketSchema),
     defaultValues: {
-      tickets: [
-        {
-          name: '',
-          description: null,
-          image: null,
-          price: 0,
-          currency: 'NGN',
-          start: undefined as unknown as Date,
-          end: undefined as unknown as Date,
-          enable_sit_selection: false,
-          benefits: [],
-        },
-      ],
+      tickets:
+        ticketTypes.length > 0
+          ? ticketTypes.map((t) => ({
+              name: t.name || '',
+              description: t.description || null,
+              image: null,
+              price: parseFloat(t.price) || 0,
+              currency: 'NGN',
+              start: t.sales_start || (undefined as unknown as Date),
+              end: t.sales_end || (undefined as unknown as Date),
+              enable_sit_selection: false,
+              benefits: t.benefits || [],
+            }))
+          : [
+              {
+                name: '',
+                description: null,
+                image: null,
+                price: 0,
+                currency: 'NGN',
+                start: undefined as unknown as Date,
+                end: undefined as unknown as Date,
+                enable_sit_selection: false,
+                benefits: [],
+              },
+            ],
     },
   })
 
@@ -58,7 +75,21 @@ export function CreateTicketForm({
 
   function onSubmit(values: CreateTicketType) {
     startTransition(async () => {
-      // call request here
+      // Save to Zustand store
+      const formattedTickets: TicketTypeDetails[] = values.tickets.map((t) => ({
+        name: t.name,
+        description: t.description || null,
+        price: t.price.toString(),
+        quantity_available: 100,
+        max_per_order: 10,
+        sales_start: t.start,
+        sales_end: t.end,
+        is_active: true,
+        benefits: t.benefits.filter((b) => b.trim() !== ''),
+      }))
+      setTicketTypes(formattedTickets)
+      setCurrentStep(4)
+      router.push('/events/create/roles')
     })
   }
 
@@ -88,7 +119,7 @@ export function CreateTicketForm({
             className="font-transforma-sans text-xs font-bold text-black lg:text-sm"
           >
             <Plus className="mr-1 h-3 w-3" />
-            Add Session
+            Add Ticket
           </Button>
         </div>
         <div className="mt-5 rounded-xl border border-[#dfdfdf] bg-[#fcfcfc]">
@@ -134,7 +165,10 @@ export function CreateTicketForm({
                           <Input
                             {...field}
                             type="number"
-                            placeholder="Track name"
+                            placeholder="0"
+                            onChange={(e) =>
+                              field.onChange(parseFloat(e.target.value) || 0)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -149,7 +183,7 @@ export function CreateTicketForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
-                          Start Sales Period
+                          Sales Start Time
                         </FormLabel>
                         <FormControl>
                           <Popover
@@ -199,7 +233,7 @@ export function CreateTicketForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
-                          End Sales Period
+                          Sales End Time
                         </FormLabel>
                         <FormControl>
                           <Popover
@@ -245,7 +279,7 @@ export function CreateTicketForm({
                       Benefits
                     </FormLabel>
 
-                    {benefits.map((benefit, bIndex) => (
+                    {benefits.map((_, bIndex) => (
                       <div
                         key={bIndex}
                         className="mt-2 flex items-center gap-2"
