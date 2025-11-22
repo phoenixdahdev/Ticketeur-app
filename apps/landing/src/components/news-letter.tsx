@@ -6,7 +6,7 @@ import { FaXTwitter } from 'react-icons/fa6'
 import { LuInstagram } from 'react-icons/lu'
 import { useState, useTransition } from 'react'
 import { addToWaitlist } from '@/actions/waitlist'
-import { Button } from '@useticketeur/ui/components/button'
+import { Button } from '@useticketeur/ui/button'
 
 const NewsletterSection = () => {
   const [email, setEmail] = useState('')

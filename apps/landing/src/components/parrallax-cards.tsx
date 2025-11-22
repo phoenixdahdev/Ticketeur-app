@@ -1,17 +1,12 @@
 'use client'
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@useticketeur/ui/components/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@useticketeur/ui/card'
 import gsap from 'gsap'
 import Image from 'next/image'
 import { cn } from '@useticketeur/ui/lib/utils'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@useticketeur/ui/components/button'
+import { Button } from '@useticketeur/ui/button'
 
 interface CardData {
   id: number
@@ -145,10 +140,10 @@ const ParallaxCards = () => {
                       : "opacity-0 translate-y-8 pointer-events-none"
                   )}
                 >
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-6 font-[family-name:var(--font-trap)]">
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-6 font-mono">
                     {item.title}
                   </h1>
-                  <p className="text-base lg:text-lg text-black font-[family-name:var(--font-transforma-sans)]">
+                  <p className="text-base lg:text-lg text-black font-sans">
                     {item.description}
                   </p>
                 </div>
@@ -162,10 +157,10 @@ const ParallaxCards = () => {
                   'translate-y-0 opacity-100'
                 )}
               >
-                <h1 className="mb-6 font-[family-name:var(--font-trap)] text-4xl font-bold tracking-tighter md:text-5xl">
+                <h1 className="mb-6 font-mono text-4xl font-bold tracking-tighter md:text-5xl">
                   Your Ultimate Event Companion
                 </h1>
-                <p className="font-[family-name:var(--font-transforma-sans)] text-base text-black lg:text-lg">
+                <p className="font-sans text-base text-black lg:text-lg">
                   Ticketeur streamlines the entire event experience—from
                   effortlessly buying tickets and smoothly organizing events, to
                   discovering exciting local happenings.
@@ -173,7 +168,7 @@ const ParallaxCards = () => {
 
                 <Button
                   disabled
-                  className="mt-5 rounded-4xl bg-[#1A0D42] p-2 font-[family-name:var(--font-transforma-sans)] text-xs font-bold text-white hover:animate-pulse disabled:opacity-100 lg:p-5"
+                  className="mt-5 rounded-4xl bg-[#1A0D42] p-2 font-sans text-xs font-bold text-white hover:animate-pulse disabled:opacity-100 lg:p-5"
                 >
                   Coming Soon
                 </Button>
@@ -235,13 +230,13 @@ const ParallaxCards = () => {
                       </div>
                       <CardHeader className="p-0"></CardHeader>
                       <CardContent className="p-6 pt-0">
-                        <span className="text-secondary inline w-auto rounded-sm bg-[#fee6fe] px-3 py-1.5 font-[family-name:var(--font-trap)] text-sm font-medium capitalize">
+                        <span className="text-secondary inline w-auto rounded-sm bg-[#fee6fe] px-3 py-1.5 font-mono text-sm font-medium capitalize">
                           {item.label}
                         </span>
-                        <CardTitle className="mt-5 font-[family-name:var(--font-trap)] text-lg font-bold lg:text-3xl">
+                        <CardTitle className="mt-5 font-mono text-lg font-bold lg:text-3xl">
                           {item.title}
                         </CardTitle>
-                        <p className="mt-3 font-[family-name:var(--font-transforma-sans)] text-sm text-black">
+                        <p className="mt-3 font-mono text-sm text-black">
                           {item.description}
                         </p>
                       </CardContent>
