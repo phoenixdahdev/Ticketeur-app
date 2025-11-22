@@ -1,5 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@useticketeur/ui/components/card'
-import { Button } from '@useticketeur/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@useticketeur/ui/card'
+import { Button } from '@useticketeur/ui/button'
 import { Plus } from 'lucide-react'
 
 export default function MyEventsPage() {
@@ -37,4 +43,3 @@ export default function MyEventsPage() {
     </div>
   )
 }
-

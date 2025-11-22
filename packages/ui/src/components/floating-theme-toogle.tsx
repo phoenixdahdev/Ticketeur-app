@@ -12,6 +12,10 @@ export function FloatingThemeToggle() {
     setTheme(darkMode ? 'dark' : 'light')
   }
 
+  if (process.env.NODE_ENV === 'production') {
+    return null
+  }
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 20 }}
