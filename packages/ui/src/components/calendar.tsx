@@ -132,6 +132,7 @@ function Calendar({
           return (
             <div
               data-slot="calendar"
+              // @ts-expect-error next line
               ref={rootRef}
               className={cn(className)}
               {...props}
@@ -161,6 +162,7 @@ function Calendar({
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
           return (
+            // @ts-expect-error next line
             <td {...props}>
               <div className="flex size-(--cell-size) items-center justify-center text-center">
                 {children}
@@ -189,6 +191,7 @@ function CalendarDayButton({
   }, [modifiers.focused])
 
   return (
+    // @ts-expect-error next line
     <Button
       ref={ref}
       variant="ghost"

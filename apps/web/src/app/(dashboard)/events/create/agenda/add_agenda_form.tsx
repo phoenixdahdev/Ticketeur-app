@@ -77,12 +77,12 @@ export function AddAgendaForm() {
       })
 
       const formattedSessions: SessionDetails[] = values.sessions.map((s) => ({
-        title: s.title,
+        title: s.title || '',
         description: null,
         location: null,
-        start_time: s.start,
-        end_time: s.end,
-        track: s.track,
+        start_time: s.start || null,
+        end_time: s.end || null,
+        track: s.track || '',
         speaker_name: s.speaker_name || null,
         speaker_image: s.speaker_image || null,
       }))

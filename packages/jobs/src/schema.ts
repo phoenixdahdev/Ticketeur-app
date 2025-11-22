@@ -37,3 +37,14 @@ export const OnboardingResponseAdminPayloadSchema = z.object({
   documents: z.array(z.string()),
   verificationUrl: z.string(),
 })
+
+export const EventInvitationPayloadSchema = z.object({
+  email: z.email(),
+  inviteeName: z.string().optional(),
+  inviterName: z.string(),
+  eventName: z.string(),
+  eventDate: z.string().optional(),
+  role: z.string(),
+  acceptUrl: z.string(),
+  declineUrl: z.string(),
+})
