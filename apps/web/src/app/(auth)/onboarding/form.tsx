@@ -25,7 +25,6 @@ export default function BusinessVerification() {
   const handleSubmit = async () => {
     startTransition(async () => {
       setError(null)
-
       if (!businessDocPreview.file || !validIdPreview.file) {
         setError('Please upload both documents')
         return

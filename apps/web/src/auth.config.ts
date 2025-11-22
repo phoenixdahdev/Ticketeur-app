@@ -3,7 +3,7 @@ import Google from 'next-auth/providers/google'
 import type { NextAuthConfig } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { inDevEnvironment } from "@useticketeur/ui/in-dev"
-import { get_user_by_email, google_login, login } from './app/(auth)/action';
+import { get_use_by_id, get_user_by_email, google_login, login } from './app/(auth)/action';
 
 
 
@@ -57,7 +57,8 @@ const authConfig: NextAuthConfig = {
         },
         async jwt({ token, user, account, profile, trigger, session }) {
             if (trigger === 'update') {
-                token = { ...token, ...session }
+                const updatedUser = await get_user_by_email(token.email!)
+                token = { ...token, ...updatedUser.user }
                 return token
             }
             if (trigger === 'signIn' && account?.provider === 'credentials' && user) {

@@ -80,7 +80,7 @@ export function LoginForm({
       {...props}
     >
       <div className="flex flex-col gap-2 text-left">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="font-mono text-2xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground text-sm text-balance">
           Please enter your credentials to log in
         </p>
