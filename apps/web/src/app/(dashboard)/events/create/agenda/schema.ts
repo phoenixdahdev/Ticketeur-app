@@ -1,39 +1,50 @@
 import z from 'zod'
 
 export const eventSessionSchema = z
-    .object({
-        title: z
-            .string()
-            .min(1, { message: 'Title is required.' })
-            .max(100, { message: 'Title cannot exceed 100 characters.' }),
-        track: z
-            .string()
-            .min(1, { message: 'Track is required.' })
-            .max(100, { message: 'Track cannot exceed 100 characters.' }),
-        start: z.date({}),
-        end: z.date({}),
-        speaker_name: z
-            .string()
-            .max(100, { message: 'Speaker name cannot exceed 100 characters.' })
-            .optional()
-            .nullable(),
-        speaker_image: z.string().optional().nullable(),
-    })
-    .refine((data) => data.end >= data.start, {
-        message: 'Session end date must be after the start date.',
-        path: ['start'],
-    })
+  .object({
+    title: z
+      .string()
+      .max(100, { message: 'Title cannot exceed 100 characters.' })
+      .optional()
+      .or(z.literal('')),
+    track: z
+      .string()
+      .max(100, { message: 'Track cannot exceed 100 characters.' })
+      .optional()
+      .or(z.literal('')),
+    start: z.date().optional().nullable(),
+    end: z.date().optional().nullable(),
+    speaker_name: z
+      .string()
+      .max(100, { message: 'Speaker name cannot exceed 100 characters.' })
+      .optional()
+      .nullable(),
+    speaker_image: z.string().optional().nullable(),
+  })
+  .refine(
+    (data) => {
+      // Only validate end >= start if both are provided
+      if (data.start && data.end) {
+        return data.end >= data.start
+      }
+      return true
+    },
+    {
+      message: 'Session end date must be after the start date.',
+      path: ['end'],
+    }
+  )
 
 export type EventSessionType = z.infer<typeof eventSessionSchema>
 
 export const addAgendaSchema = z.object({
-    address: z.string().min(1, { message: 'Address is required.' }),
-    venue_type: z
-        .string()
-        .max(20, { message: 'Venue type must be 20 characters or less.' }),
-    sessions: z.array(eventSessionSchema).min(1, {
-        message: 'At least one session is required.',
-    }),
+  address: z.string().optional().or(z.literal('')),
+  venue_type: z
+    .string()
+    .max(100, { message: 'Venue type must be 100 characters or less.' })
+    .optional()
+    .or(z.literal('')),
+  sessions: z.array(eventSessionSchema).optional().default([]),
 })
 
 export type AddAgendaType = z.infer<typeof addAgendaSchema>

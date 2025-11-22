@@ -7,6 +7,7 @@ export * from './event-member';
 export * from './event-session';
 export * from './event-approval';
 export * from './event-category';
+export * from './event-invitation';
 export * from './speaker';
 export * from './ticket-type';
 export * from './ticket';
