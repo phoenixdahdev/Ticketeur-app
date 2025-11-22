@@ -48,3 +48,14 @@ export const EventInvitationPayloadSchema = z.object({
   acceptUrl: z.string(),
   declineUrl: z.string(),
 })
+
+export const EventApprovalRequestPayloadSchema = z.object({
+  adminEmail: z.email(),
+  eventId: z.string(),
+  eventName: z.string(),
+  eventDate: z.string().optional(),
+  organizerName: z.string(),
+  organizerEmail: z.email(),
+  eventDescription: z.string().optional(),
+  approvalUrl: z.string(),
+})

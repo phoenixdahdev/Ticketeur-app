@@ -22,6 +22,10 @@ import { uploadFile } from '@useticketeur/ui/lib/upload'
 import { tasks } from '@trigger.dev/sdk'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
+import { env } from '../../../../../env'
+
+// Admin email for event approval notifications
+const ADMIN_EMAIL = 'giftobafaiye@gmail.com'
 
 // Generate a random token for invitations
 function generateToken(length: number = 32): string {
@@ -261,7 +265,7 @@ export async function createEvent(
         ? `${inviterUser.first_name} ${inviterUser.last_name || ''}`.trim()
         : 'Event Organizer'
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const baseUrl = env.VERCEL_URL || 'http://localhost:3000'
       const eventDate = input.basicDetails.start_date
         ? new Date(input.basicDetails.start_date).toLocaleDateString('en-US', {
             weekday: 'long',
@@ -345,6 +349,38 @@ export async function createEvent(
         }
       }
     }
+
+    // 6. Submit event for approval and notify admin
+    await eventQueries.submitForApproval(event.id)
+
+    // Get organizer info for email
+    const organizer = await userQueries.findById(userId)
+    const organizerName = organizer
+      ? `${organizer.first_name} ${organizer.last_name || ''}`.trim()
+      : 'Event Organizer'
+    const organizerEmail = organizer?.email || 'unknown@example.com'
+
+    const adminBaseUrl = env.VERCEL_URL || 'http://localhost:3000'
+    const eventDateFormatted = input.basicDetails.start_date
+      ? new Date(input.basicDetails.start_date).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : undefined
+
+    // Send approval request email to admin
+    await tasks.trigger('send-event-approval-request-email', {
+      adminEmail: ADMIN_EMAIL,
+      eventId: event.id,
+      eventName: input.basicDetails.title,
+      eventDate: eventDateFormatted,
+      organizerName,
+      organizerEmail,
+      eventDescription: input.basicDetails.description || undefined,
+      approvalUrl: `${adminBaseUrl}/admin/events/${event.id}`,
+    })
 
     // Revalidate the events page
     revalidatePath('/events')
