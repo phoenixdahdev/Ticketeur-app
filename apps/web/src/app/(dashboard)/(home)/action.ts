@@ -10,13 +10,13 @@ export async function get_my_events() {
         const events = await eventQueries.findAllUserEvents(session?.user.id!)
 
         return {
-            success: false,
+            success: true,
             events
         }
     } catch (error) {
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to send onboarding response"
+            error: error instanceof Error ? error.message : "Failed to fetch events"
         };
     }
 }
