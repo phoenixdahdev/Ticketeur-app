@@ -36,12 +36,14 @@ function base64ToFile(base64: string, filename: string): File | null {
       return null
     }
 
-    const [header, data] = base64.split(',')
-    if (!data) return null
+    const parts = base64.split(',')
+    const header = parts[0]
+    const data = parts[1]
+    if (!header || !data) return null
 
     const mimeMatch = header.match(/data:([^;]+);/)
-    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg'
-    const extension = mimeType.split('/')[1] || 'jpg'
+    const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+    const extension = mimeType.split('/')[1] ?? 'jpg'
 
     const byteCharacters = atob(data)
     const byteNumbers = new Array(byteCharacters.length)
@@ -204,17 +206,17 @@ export async function createEvent(
       const speakersData: NewSpeaker[] = []
       for (let index = 0; index < validSessions.length; index++) {
         const session = validSessions[index]
-        if (session.speaker_name) {
+        if (session?.speaker_name) {
           // Upload speaker image if provided
           const speakerPhotoUrl = await uploadBase64Image(
-            session.speaker_image,
+            session.speaker_image ?? null,
             `speaker-${event.id}-${index}`,
             'events/speakers'
           )
 
           speakersData.push({
             event_id: event.id,
-            session_id: createdSessions[index]?.id || null,
+            session_id: createdSessions[index]?.id ?? null,
             name: session.speaker_name,
             photo: speakerPhotoUrl,
             order: index,
