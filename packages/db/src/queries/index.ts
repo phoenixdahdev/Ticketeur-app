@@ -13,3 +13,4 @@ export * from './ticket-type';
 export * from './ticket';
 export * from './payment';
 export * from './notification';
+export * from './event-invitation';

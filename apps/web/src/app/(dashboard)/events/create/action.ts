@@ -6,13 +6,26 @@ import {
   eventSessionQueries,
   ticketTypeQueries,
   speakerQueries,
+  eventMemberQueries,
+  eventInvitationQueries,
+  userQueries,
   type NewEvent,
   type NewEventSession,
   type NewTicketType,
   type NewSpeaker,
+  type NewEventMember,
+  type NewEventInvitation,
   type EventType,
+  type EventMemberRole,
 } from '@useticketeur/db'
+import { tasks } from '@trigger.dev/sdk'
 import { revalidatePath } from 'next/cache'
+import { randomBytes } from 'crypto'
+
+// Generate a random token for invitations
+function generateToken(length: number = 32): string {
+  return randomBytes(length).toString('hex').slice(0, length)
+}
 
 export interface CreateEventInput {
   // Basic Details
@@ -174,11 +187,99 @@ export async function createEvent(
       await ticketTypeQueries.createMany(ticketTypesData)
     }
 
-    // 4. TODO: Handle team members (would need to look up users by email and create event_members)
-    // This is complex because we need to:
-    // - Look up users by email
-    // - Create event_member records
-    // - Possibly send invitation emails for non-existing users
+    // 4. Handle team members
+    const validMembers = input.members.filter((m) => m.email && m.email.trim() !== '')
+
+    if (validMembers.length > 0) {
+      const inviterUser = await userQueries.findById(userId)
+      const inviterName = inviterUser
+        ? `${inviterUser.first_name} ${inviterUser.last_name || ''}`.trim()
+        : 'Event Organizer'
+
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const eventDate = input.basicDetails.start_date
+        ? new Date(input.basicDetails.start_date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })
+        : undefined
+
+      for (const member of validMembers) {
+        // Check if user exists by email
+        const existingUser = await userQueries.findByEmail(member.email)
+
+        if (existingUser) {
+          // User exists - add them directly as event member
+          const memberData: NewEventMember = {
+            event_id: event.id,
+            user_id: existingUser.id,
+            role: (member.role as EventMemberRole) || 'staff',
+          }
+
+          // Check if they're not already a member
+          const isAlreadyMember = await eventMemberQueries.isEventMember(
+            event.id,
+            existingUser.id
+          )
+
+          if (!isAlreadyMember) {
+            await eventMemberQueries.create(memberData)
+
+            // Still send a notification email to let them know they've been added
+            await tasks.trigger('send-event-invitation-email', {
+              email: member.email,
+              inviteeName: existingUser.first_name || member.name,
+              inviterName,
+              eventName: input.basicDetails.title,
+              eventDate,
+              role: member.role || 'staff',
+              acceptUrl: `${baseUrl}/events/${event.id}`,
+              declineUrl: `${baseUrl}/events/${event.id}/leave`,
+            })
+          }
+        } else {
+          // User doesn't exist - create invitation
+          const token = generateToken(32)
+          const expiresAt = new Date()
+          expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+
+          const invitationData: NewEventInvitation = {
+            event_id: event.id,
+            invited_by: userId,
+            email: member.email,
+            name: member.name || null,
+            role: (member.role as EventMemberRole) || 'staff',
+            status: 'pending',
+            token,
+            expires_at: expiresAt,
+          }
+
+          // Check if invitation already exists
+          const existingInvitation = await eventInvitationQueries.findByEventAndEmail(
+            event.id,
+            member.email
+          )
+
+          if (!existingInvitation) {
+            await eventInvitationQueries.create(invitationData)
+
+            // Send invitation email
+            await tasks.trigger('send-event-invitation-email', {
+              email: member.email,
+              inviteeName: member.name || undefined,
+              inviterName,
+              eventName: input.basicDetails.title,
+              eventDate,
+              role: member.role || 'staff',
+              acceptUrl: `${baseUrl}/invite/event/${token}`,
+              declineUrl: `${baseUrl}/invite/event/${token}?action=decline`,
+            })
+          }
+        }
+      }
+    }
 
     // Revalidate the events page
     revalidatePath('/events')

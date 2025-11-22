@@ -44,7 +44,7 @@ export const addAgendaSchema = z.object({
     .max(100, { message: 'Venue type must be 100 characters or less.' })
     .optional()
     .or(z.literal('')),
-  sessions: z.array(eventSessionSchema).optional().default([]),
+  sessions: z.array(eventSessionSchema),
 })
 
 export type AddAgendaType = z.infer<typeof addAgendaSchema>
