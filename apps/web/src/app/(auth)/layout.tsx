@@ -9,7 +9,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid h-screen w-full lg:grid-cols-2">
+    <div className="grid h-screen w-full font-sans lg:grid-cols-2">
       <BlurImage
         src="/auth-side-image.png"
         alt="Ellum AI Login Illustration"
