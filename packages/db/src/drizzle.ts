@@ -1,6 +1,25 @@
 import * as schema from "./schema"
-import { drizzle } from "drizzle-orm/neon-http"
+import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL ?? "")
-export const db = drizzle(sql, { schema })
+let _db: NeonHttpDatabase<typeof schema> | null = null
+
+function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!_db) {
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) {
+      throw new Error(
+        "DATABASE_URL environment variable is not set. Please check your .env file."
+      )
+    }
+    const sql = neon(databaseUrl)
+    _db = drizzle(sql, { schema })
+  }
+  return _db
+}
+
+export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
+  get(_, prop) {
+    return getDb()[prop as keyof NeonHttpDatabase<typeof schema>]
+  },
+})
