@@ -5,16 +5,14 @@ import { TypewriterEffectSmooth } from '@useticketeur/ui/typewriter-effect'
 import { Button } from '@useticketeur/ui/button'
 import { Input } from '@useticketeur/ui/input'
 import { Textarea } from '@useticketeur/ui/textarea'
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-} from '@useticketeur/ui/select'
+import { Select, SelectTrigger, SelectValue } from '@useticketeur/ui/select'
 import { useEventStore } from '@/hooks/use-event-store'
 import { useTransition } from 'react'
+import { useRouter } from '@bprogress/next/app'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Copy } from 'lucide-react'
+import { createEvent } from '../action'
+import { toast } from 'sonner'
 
 function PreviewSection({
   title,
@@ -64,8 +62,9 @@ function ImagePlaceholder() {
 }
 
 export default function PreviewPage() {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const { basicDetails, venue, sessions, ticketTypes, members } =
+  const { basicDetails, venue, sessions, ticketTypes, members, resetStore } =
     useEventStore()
 
   const words = [
@@ -77,17 +76,21 @@ export default function PreviewPage() {
 
   function handleSubmit() {
     startTransition(async () => {
-      // TODO: Submit to API
-      console.log('Submitting event:', {
+      const result = await createEvent({
         basicDetails,
         venue,
         sessions,
         ticketTypes,
         members,
       })
-      // Reset store after successful submission
-      // resetStore()
-      // router.push('/events')
+
+      if (result.success) {
+        toast.success('Event created successfully!')
+        resetStore()
+        router.push('/events')
+      } else {
+        toast.error(result.error || 'Failed to create event')
+      }
     })
   }
 
@@ -109,11 +112,10 @@ export default function PreviewPage() {
         <div className="grid gap-5 lg:grid-cols-2">
           <PreviewField label="Event Image">
             {basicDetails.banner_image ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={basicDetails.banner_image}
                 alt="Event banner"
-                width={300}
-                height={128}
                 className="h-32 w-full rounded-lg object-cover"
               />
             ) : (
@@ -193,7 +195,7 @@ export default function PreviewPage() {
                 readOnly
                 className="border-[#ccd0de] bg-white pr-10"
               />
-              <Copy className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 cursor-pointer text-gray-400" />
+              <Copy className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 cursor-pointer text-gray-400" />
             </div>
           </PreviewField>
         </div>
@@ -258,11 +260,10 @@ export default function PreviewPage() {
 
               <PreviewField label="Speaker Image">
                 {session.speaker_image ? (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src={session.speaker_image}
                     alt="Speaker"
-                    width={150}
-                    height={100}
                     className="h-24 w-36 rounded-lg object-cover"
                   />
                 ) : (

@@ -4,7 +4,7 @@ export const createEventSchema = z
     .object({
         title: z.string().min(1, { message: 'Title is required.' }),
         description: z.string().min(1, { message: 'Description is required.' }),
-        image: z.url({ message: 'Please provide a valid image URL.' }).optional(),
+        image: z.string({ message: 'Please provide a valid image URL.' }).optional(),
         event_type: z
             .string()
             .max(20, { message: 'Event type must be 20 characters or less.' }),

@@ -56,6 +56,7 @@ export function ImageUpload({
             onClick={() => onFileSelect(null)}
             className="bg-background hover:bg-accent absolute top-2 right-2 rounded-full p-1"
             aria-label="Remove file"
+            type="button"
           >
             <X className="h-4 w-4" />
           </button>
@@ -87,7 +88,10 @@ export function ImageUpload({
               jpeg, png, supported
             </p>
 
-            <Button className="font-transforma-sans mt-2 bg-black p-5 font-bold lg:mt-4">
+            <Button
+              className="font-transforma-sans mt-2 bg-black p-5 font-bold lg:mt-4"
+              type="button"
+            >
               {selectedFile
                 ? `${selectedFile.name} selected`
                 : 'Browse to upload'}

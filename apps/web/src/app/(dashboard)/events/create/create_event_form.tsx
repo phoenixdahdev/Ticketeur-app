@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Form,
   FormControl,
@@ -33,15 +33,10 @@ import {
 import { Calendar } from '@useticketeur/ui/calendar'
 import { ChevronDownIcon } from 'lucide-react'
 import { ImageUpload } from '@/components/miscellaneous/image-upload'
-import { useFilePreview } from '@useticketeur/ui/hooks/use-file-preview'
 import { useEventStore } from '@/hooks/use-event-store'
 import type { EventType } from '@useticketeur/db'
 
-export function CreateEventForm({
-  eventTypes,
-}: {
-  eventTypes: string[]
-}) {
+export function CreateEventForm({ eventTypes }: { eventTypes: string[] }) {
   const router = useRouter()
   const { basicDetails, setBasicDetails, setCurrentStep } = useEventStore()
 
@@ -52,19 +47,54 @@ export function CreateEventForm({
       description: basicDetails.description || '',
       image: basicDetails.banner_image || '',
       event_type: basicDetails.event_type || '',
-      event_start_date: basicDetails.start_date || (undefined as unknown as Date),
+      event_start_date:
+        basicDetails.start_date || (undefined as unknown as Date),
       event_end_date: basicDetails.end_date || (undefined as unknown as Date),
     },
   })
 
   const [isPending, startTransition] = useTransition()
-  const [openStartDate, setOpenStartDate] = React.useState(false)
-  const [openEndDate, setOpenEndDate] = React.useState(false)
-  const { filePreview, handleFileSelect } = useFilePreview()
+  const [openStartDate, setOpenStartDate] = useState(false)
+  const [openEndDate, setOpenEndDate] = useState(false)
+
+  // Local state for image preview
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    basicDetails.banner_image || null
+  )
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
+  // Handle file selection and convert to base64
+  const handleImageSelect = (file: File | null) => {
+    if (!file) {
+      setSelectedFile(null)
+      setImagePreview(null)
+      form.setValue('image', '')
+      return
+    }
+
+    setSelectedFile(file)
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string
+        setImagePreview(base64)
+        form.setValue('image', base64)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Sync image from store on mount
+  useEffect(() => {
+    if (basicDetails.banner_image) {
+      setImagePreview(basicDetails.banner_image)
+      form.setValue('image', basicDetails.banner_image)
+    }
+  }, [])
 
   function onSubmit(values: CreateEventType) {
     startTransition(async () => {
-      // Save to Zustand store
       setBasicDetails({
         title: values.title,
         description: values.description,
@@ -84,19 +114,16 @@ export function CreateEventForm({
         <FormField
           control={form.control}
           name="image"
-          render={({ field }) => (
+          render={() => (
             <FormItem className="mt-5">
               <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
                 Event Image / Banner
               </FormLabel>
               <FormControl>
                 <ImageUpload
-                  onFileSelect={(file) => {
-                    field.onChange(filePreview.preview)
-                    handleFileSelect(file)
-                  }}
-                  selectedFile={filePreview.file}
-                  preview={filePreview.preview}
+                  onFileSelect={handleImageSelect}
+                  selectedFile={selectedFile}
+                  preview={imagePreview}
                 />
               </FormControl>
               <FormMessage />
