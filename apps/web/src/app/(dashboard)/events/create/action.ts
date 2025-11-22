@@ -18,6 +18,7 @@ import {
   type EventType,
   type EventMemberRole,
 } from '@useticketeur/db'
+import { uploadFile } from '@useticketeur/ui/lib/upload'
 import { tasks } from '@trigger.dev/sdk'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
@@ -25,6 +26,55 @@ import { randomBytes } from 'crypto'
 // Generate a random token for invitations
 function generateToken(length: number = 32): string {
   return randomBytes(length).toString('hex').slice(0, length)
+}
+
+// Convert base64 data URL to File object
+function base64ToFile(base64: string, filename: string): File | null {
+  try {
+    // Check if it's a data URL
+    if (!base64.startsWith('data:')) {
+      return null
+    }
+
+    const parts = base64.split(',')
+    const header = parts[0]
+    const data = parts[1]
+    if (!header || !data) return null
+
+    const mimeMatch = header.match(/data:([^;]+);/)
+    const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+    const extension = mimeType.split('/')[1] ?? 'jpg'
+
+    const byteCharacters = atob(data)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: mimeType })
+
+    return new File([blob], `${filename}.${extension}`, { type: mimeType })
+  } catch {
+    return null
+  }
+}
+
+// Upload an image from base64 and return the URL
+async function uploadBase64Image(
+  base64: string | null,
+  filename: string,
+  folder: string
+): Promise<string | null> {
+  if (!base64 || !base64.startsWith('data:')) {
+    // If it's already a URL or null, return as-is
+    return base64
+  }
+
+  const file = base64ToFile(base64, filename)
+  if (!file) return null
+
+  const result = await uploadFile(file, filename, { folder })
+  return result.success ? result.url ?? null : null
 }
 
 export interface CreateEventInput {
@@ -104,12 +154,19 @@ export async function createEvent(
       return { success: false, error: 'Event start and end dates are required' }
     }
 
-    // 1. Create the event
+    // 1. Upload banner image if provided
+    const bannerImageUrl = await uploadBase64Image(
+      input.basicDetails.banner_image,
+      `event-banner-${userId}`,
+      'events/banners'
+    )
+
+    // 2. Create the event
     const eventData: NewEvent = {
       organizer_id: userId,
       title: input.basicDetails.title,
       description: input.basicDetails.description || null,
-      banner_image: input.basicDetails.banner_image,
+      banner_image: bannerImageUrl,
       event_type: input.basicDetails.event_type,
       status: 'draft',
       start_date: input.basicDetails.start_date,
@@ -125,7 +182,7 @@ export async function createEvent(
       return { success: false, error: 'Failed to create event' }
     }
 
-    // 2. Create sessions and speakers
+    // 3. Create sessions and speakers
     const validSessions = input.sessions.filter(
       (s) => s.title && s.start_time && s.end_time
     )
@@ -147,24 +204,32 @@ export async function createEvent(
 
       // Create speakers for sessions that have them
       const speakersData: NewSpeaker[] = []
-      validSessions.forEach((session, index) => {
-        if (session.speaker_name) {
+      for (let index = 0; index < validSessions.length; index++) {
+        const session = validSessions[index]
+        if (session?.speaker_name) {
+          // Upload speaker image if provided
+          const speakerPhotoUrl = await uploadBase64Image(
+            session.speaker_image ?? null,
+            `speaker-${event.id}-${index}`,
+            'events/speakers'
+          )
+
           speakersData.push({
             event_id: event.id,
-            session_id: createdSessions[index]?.id || null,
+            session_id: createdSessions[index]?.id ?? null,
             name: session.speaker_name,
-            photo: session.speaker_image,
+            photo: speakerPhotoUrl,
             order: index,
           })
         }
-      })
+      }
 
       if (speakersData.length > 0) {
         await speakerQueries.createMany(speakersData)
       }
     }
 
-    // 3. Create ticket types
+    // 4. Create ticket types
     const validTicketTypes = input.ticketTypes.filter((t) => t.name)
 
     if (validTicketTypes.length > 0) {
@@ -187,7 +252,7 @@ export async function createEvent(
       await ticketTypeQueries.createMany(ticketTypesData)
     }
 
-    // 4. Handle team members
+    // 5. Handle team members
     const validMembers = input.members.filter((m) => m.email && m.email.trim() !== '')
 
     if (validMembers.length > 0) {
