@@ -51,7 +51,7 @@ export default function Breadcrumb({ items }: FormBreadcrumbProps) {
       <span className="text-muted-foreground mx-0">
         <ChevronRight className="h-3 w-3 text-[#6b6f8c] opacity-80 lg:h-4 lg:w-4" />
       </span>
-      <span className="font-transforma-sans text-xs text-[#A7ACC1] lg:text-sm">
+      <span className="font-sans text-xs text-[#A7ACC1] lg:text-sm">
         Current Page
       </span>
     </nav>

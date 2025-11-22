@@ -8,7 +8,6 @@ import { type NewUser, userQueries, verificationOtpQueries } from '@useticketeur
 
 export async function login(props: LoginFormType) {
     const cookie = await cookies()
-
     try {
         const user = await userQueries.findByEmail(props.email);
         if (!user) {
