@@ -11,7 +11,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-white lg:hidden">
+      <header className="sticky top-0 z-40 w-full border-b bg-[#F9F2FE] lg:hidden">
         <div className="flex h-16 items-center justify-between px-4">
           <Image src="/logo.png" alt="Ticketeur Logo" width={100} height={38} />
 

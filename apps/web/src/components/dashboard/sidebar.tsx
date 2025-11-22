@@ -4,9 +4,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
+import { cn } from '@useticketeur/ui/lib/utils'
 import { signOut, useSession } from 'next-auth/react'
 import { LogOut, AlertCircle, Clock } from 'lucide-react'
-import { cn } from '@useticketeur/ui/lib/utils'
 
 const navLinks = [
   { name: 'Dashboard', href: '/' },
@@ -95,7 +95,8 @@ const SideBar = () => {
                       Under Review
                     </p>
                     <p className="text-xs text-blue-700">
-                      Your documents are being reviewed by our team
+                      Your documents are being reviewed by our team you would
+                      get an email as soon as it is been reviewed
                     </p>
                   </div>
                 </div>
