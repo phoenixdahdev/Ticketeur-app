@@ -151,6 +151,12 @@ importers:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.8
         version: 0.13.8(typescript@5.9.3)(zod@4.1.12)
+      '@tanstack/react-query':
+        specifier: ^5.90.7
+        version: 5.90.7(react@19.2.0)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.90.2
+        version: 5.90.2(@tanstack/react-query@5.90.7(react@19.2.0))(react@19.2.0)
       '@trigger.dev/sdk':
         specifier: ^4.1.1
         version: 4.1.1(typescript@5.9.3)(zod@4.1.12)
