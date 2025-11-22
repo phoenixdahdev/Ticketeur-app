@@ -10,37 +10,51 @@ import {
 } from '@useticketeur/ui/form'
 import { Input } from '@useticketeur/ui/input'
 import { Button } from '@useticketeur/ui/button'
-import { useState, useTransition } from 'react'
+import { useRouter } from '@bprogress/next/app'
+import { useTransition } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createRoleSchema, type CreateRoleType } from './schema'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { Plus, Trash2 } from 'lucide-react'
-import { Switch } from '@useticketeur/ui/switch'
 import {
   Select,
   SelectContent,
   SelectGroup,
+  SelectItem,
   SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@useticketeur/ui/select'
+import { useEventStore, type RoleMember } from '@/hooks/use-event-store'
+import { eventMemberRoles } from '@useticketeur/db'
 
-export function CreateRoleForm({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+const permissions = ['view_only', 'edit', 'full_access'] as const
+
+export function CreateRoleForm() {
+  const router = useRouter()
+  const { members, setMembers, setCurrentStep } = useEventStore()
+
   const form = useForm<CreateRoleType>({
     resolver: zodResolver(createRoleSchema),
     defaultValues: {
-      roles: [
-        {
-          name: '',
-          email: '',
-          role: '',
-          permission: '',
-          white_label: false,
-        },
-      ],
+      roles:
+        members.length > 0
+          ? members.map((m) => ({
+              name: m.name || '',
+              email: m.email || '',
+              role: m.role || '',
+              permission: m.permissions[0] || '',
+              white_label: false,
+            }))
+          : [
+              {
+                name: '',
+                email: '',
+                role: '',
+                permission: '',
+                white_label: false,
+              },
+            ],
     },
   })
 
@@ -53,7 +67,16 @@ export function CreateRoleForm({
 
   function onSubmit(values: CreateRoleType) {
     startTransition(async () => {
-      // call request here
+      // Save to Zustand store
+      const formattedMembers: RoleMember[] = values.roles.map((r) => ({
+        name: r.name,
+        email: r.email,
+        role: r.role as RoleMember['role'],
+        permissions: r.permission ? [r.permission] : [],
+      }))
+      setMembers(formattedMembers)
+      setCurrentStep(5)
+      router.push('/events/create/preview')
     })
   }
 
@@ -79,7 +102,7 @@ export function CreateRoleForm({
             className="font-transforma-sans text-xs font-bold text-black lg:text-sm"
           >
             <Plus className="mr-1 h-3 w-3" />
-            Add Team Member roles
+            Add Team Member
           </Button>
         </div>
 
@@ -88,7 +111,7 @@ export function CreateRoleForm({
             return (
               <div key={field.id} className="">
                 <div className="grid gap-5 p-4 pb-0 lg:grid-cols-2">
-                  {/* Ticket Name */}
+                  {/* Team Member Name */}
                   <FormField
                     control={form.control}
                     name={`roles.${index}.name`}
@@ -101,7 +124,7 @@ export function CreateRoleForm({
                           <Input
                             {...field}
                             disabled={isPending}
-                            placeholder="Organizer"
+                            placeholder="John Doe"
                           />
                         </FormControl>
                         <FormMessage />
@@ -147,15 +170,15 @@ export function CreateRoleForm({
                             <SelectContent>
                               <SelectGroup>
                                 <SelectLabel>Roles</SelectLabel>
-                                {/* {eventTypes?.map((item) => (
+                                {eventMemberRoles.map((role) => (
                                   <SelectItem
-                                    key={item}
-                                    value={item}
+                                    key={role}
+                                    value={role}
                                     className="capitalize"
                                   >
-                                    {item}
+                                    {role}
                                   </SelectItem>
-                                ))} */}
+                                ))}
                               </SelectGroup>
                             </SelectContent>
                           </Select>
@@ -172,7 +195,7 @@ export function CreateRoleForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
-                          Permission
+                          Permissions
                         </FormLabel>
                         <FormControl>
                           <Select
@@ -185,16 +208,16 @@ export function CreateRoleForm({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
-                                <SelectLabel>Permission</SelectLabel>
-                                {/* {eventTypes?.map((item) => (
+                                <SelectLabel>Permissions</SelectLabel>
+                                {permissions.map((permission) => (
                                   <SelectItem
-                                    key={item}
-                                    value={item}
+                                    key={permission}
+                                    value={permission}
                                     className="capitalize"
                                   >
-                                    {item}
+                                    {permission.replace('_', ' ')}
                                   </SelectItem>
-                                ))} */}
+                                ))}
                               </SelectGroup>
                             </SelectContent>
                           </Select>
@@ -203,50 +226,17 @@ export function CreateRoleForm({
                       </FormItem>
                     )}
                   />
-
-                  {/* Enable seat selection  */}
-                  <FormField
-                    control={form.control}
-                    name={`roles.${index}.white_label`}
-                    render={({ field }) => (
-                      <FormItem className="flex lg:gap-7">
-                        <FormLabel className="font-transforma-sans mb-0 text-xs font-bold lg:text-sm">
-                          Enable White Label Mode
-                        </FormLabel>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked)
-                            }
-                            disabled={isPending}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="p-4">
-                  <h3 className="font-transforma-sans rounded-xl bg-[#efefef] p-5 text-xs text-black">
-                    Join us at TechWave Summit 2024, the premier gathering for
-                    technology enthusiasts, innovators, industry leaders, and
-                    visionaries. Over three exciting days, discover the
-                    cutting-edge advancements shaping tomorrow's world in AI,
-                    cybersecurity, blockchain, cloud computing, and more.
-                  </h3>
                 </div>
 
                 {index > 0 && (
-                  <div className="flex items-end justify-end">
+                  <div className="flex items-end justify-end p-4">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => remove(index)}
                       className="text-destructive auto border-0 bg-transparent shadow-none hover:bg-transparent"
                     >
-                      <Trash2 className="h-3 w-3" /> Remove Role
+                      <Trash2 className="h-3 w-3" /> Remove Member
                     </Button>
                   </div>
                 )}
@@ -266,7 +256,7 @@ export function CreateRoleForm({
             {isPending ? 'Submitting...' : 'Next'}
           </Button>
         </div>
-      </form>{' '}
+      </form>
     </Form>
   )
 }

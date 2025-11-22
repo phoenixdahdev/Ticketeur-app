@@ -34,33 +34,48 @@ import { Calendar } from '@useticketeur/ui/calendar'
 import { ChevronDownIcon } from 'lucide-react'
 import { ImageUpload } from '@/components/miscellaneous/image-upload'
 import { useFilePreview } from '@useticketeur/ui/hooks/use-file-preview'
+import { useEventStore } from '@/hooks/use-event-store'
+import type { EventType } from '@useticketeur/db'
 
 export function CreateEventForm({
-  className,
   eventTypes,
-  ...props
-}: React.ComponentProps<'div'> & {
+}: {
   eventTypes: string[]
 }) {
   const router = useRouter()
+  const { basicDetails, setBasicDetails, setCurrentStep } = useEventStore()
+
   const form = useForm<CreateEventType>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      image: '',
-      event_type: '',
-      event_start_date: undefined as unknown as Date,
-      event_end_date: undefined as unknown as Date,
+      title: basicDetails.title || '',
+      description: basicDetails.description || '',
+      image: basicDetails.banner_image || '',
+      event_type: basicDetails.event_type || '',
+      event_start_date: basicDetails.start_date || (undefined as unknown as Date),
+      event_end_date: basicDetails.end_date || (undefined as unknown as Date),
     },
   })
+
   const [isPending, startTransition] = useTransition()
   const [openStartDate, setOpenStartDate] = React.useState(false)
   const [openEndDate, setOpenEndDate] = React.useState(false)
   const { filePreview, handleFileSelect } = useFilePreview()
 
   function onSubmit(values: CreateEventType) {
-    startTransition(async () => {})
+    startTransition(async () => {
+      // Save to Zustand store
+      setBasicDetails({
+        title: values.title,
+        description: values.description,
+        banner_image: values.image || null,
+        event_type: values.event_type as EventType,
+        start_date: values.event_start_date,
+        end_date: values.event_end_date,
+      })
+      setCurrentStep(2)
+      router.push('/events/create/agenda')
+    })
   }
 
   return (

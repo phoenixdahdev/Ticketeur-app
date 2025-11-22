@@ -1,6 +1,6 @@
 import Breadcrumb from '@/components/miscellaneous/bread-crumb'
 import { CreateTicketForm } from './create_ticket_form'
-import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
+import { TypewriterEffectSmooth } from '@useticketeur/ui/typewriter-effect'
 export default function Page() {
   const words = [
     {

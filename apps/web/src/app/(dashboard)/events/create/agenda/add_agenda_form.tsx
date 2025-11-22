@@ -23,32 +23,42 @@ import {
 } from '@useticketeur/ui/popover'
 import { Calendar } from '@useticketeur/ui/calendar'
 import { Calendar as CalendarIcon, Plus } from 'lucide-react'
-import { useFilePreview } from '@useticketeur/ui/hooks/use-file-preview'
 import { InlineImageInput } from '@/components/miscellaneous/inline-image-input'
-export function AddAgendaForm({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+import { useEventStore, type SessionDetails } from '@/hooks/use-event-store'
+
+export function AddAgendaForm() {
   const router = useRouter()
+  const { venue, sessions, setVenue, setSessions, setCurrentStep } =
+    useEventStore()
+
   const form = useForm<AddAgendaType>({
     resolver: zodResolver(addAgendaSchema),
     defaultValues: {
-      address: '',
-      venue_type: '',
-      sessions: [
-        {
-          title: '',
-          track: '',
-          speaker_image: undefined,
-          speaker_name: '',
-          start: undefined as unknown as Date,
-          end: undefined as unknown as Date,
-        },
-      ],
+      address: venue.venue_address || '',
+      venue_type: venue.venue_name || '',
+      sessions:
+        sessions.length > 0
+          ? sessions.map((s) => ({
+              title: s.title || '',
+              track: s.track || '',
+              speaker_image: s.speaker_image || undefined,
+              speaker_name: s.speaker_name || '',
+              start: s.start_time || (undefined as unknown as Date),
+              end: s.end_time || (undefined as unknown as Date),
+            }))
+          : [
+              {
+                title: '',
+                track: '',
+                speaker_image: undefined,
+                speaker_name: '',
+                start: undefined as unknown as Date,
+                end: undefined as unknown as Date,
+              },
+            ],
     },
   })
   const [isPending, startTransition] = useTransition()
-  const { filePreview, handleFileSelect } = useFilePreview()
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -60,7 +70,25 @@ export function AddAgendaForm({
 
   function onSubmit(values: AddAgendaType) {
     startTransition(async () => {
-      // call request here
+      // Save to Zustand store
+      setVenue({
+        venue_name: values.venue_type,
+        venue_address: values.address,
+      })
+
+      const formattedSessions: SessionDetails[] = values.sessions.map((s) => ({
+        title: s.title,
+        description: null,
+        location: null,
+        start_time: s.start,
+        end_time: s.end,
+        track: s.track,
+        speaker_name: s.speaker_name || null,
+        speaker_image: s.speaker_image || null,
+      }))
+      setSessions(formattedSessions)
+      setCurrentStep(3)
+      router.push('/events/create/tickets')
     })
   }
 
@@ -284,7 +312,7 @@ export function AddAgendaForm({
                           {...field}
                           disabled={isPending}
                           placeholder="Speaker Name"
-                          value={field.value ?? ''} // <-- coerce undefined/null to empty string
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -341,7 +369,7 @@ export function AddAgendaForm({
             {isPending ? 'Creating...' : 'Next'}
           </Button>
         </div>
-      </form>{' '}
+      </form>
     </Form>
   )
 }
