@@ -1,6 +1,20 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@useticketeur/ui/components/card'
+'use client'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@useticketeur/ui/card'
+import { useSession } from 'next-auth/react'
+import { update_session } from '../(auth)/action'
 
 export default function DashboardPage() {
+  const { update } = useSession()
+
+  const handleUpdate = async () => {
+    await update_session()
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -20,6 +34,8 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">0</div>
           </CardContent>
         </Card>
+
+        <button onClick={handleUpdate}>update session</button>
 
         <Card>
           <CardHeader>
@@ -66,4 +82,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

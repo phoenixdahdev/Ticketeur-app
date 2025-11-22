@@ -1,9 +1,9 @@
 "use server"
 import { cookies } from 'next/headers';
 import { tasks } from "@trigger.dev/sdk"
+import { auth, unstable_update } from '@/auth';
 import { SignupFormType, type LoginFormType, } from './schema';
 import { type NewUser, userQueries, verificationOtpQueries } from '@useticketeur/db';
-import { auth } from '@/auth';
 
 
 export async function login(props: LoginFormType) {
@@ -44,7 +44,8 @@ export async function login(props: LoginFormType) {
                 type: "email-verification"
             };
         }
-        const isPasswordValid = await userQueries.verifyPassword(user.id, props.password);
+        const isPasswordValid = await userQueries.verifyPassword(user.email, props.password);
+        await userQueries.updateLastLogin(user.id)
         if (!isPasswordValid) {
             return {
                 success: false,
@@ -142,7 +143,7 @@ export async function verifyotp(otp: string) {
             };
         }
         cookie.delete("verify-with");
-        const updatedUser = await userQueries.update(userId, { is_verified: true, is_active: true, email_verified_at: new Date() });
+        const updatedUser = await userQueries.verifyEmail(userId);
         return {
             success: true,
             user: updatedUser
@@ -214,6 +215,7 @@ export async function google_login(props: { email: string, name: string } & Part
             first_name: props.name,
             user_type: "normal",
         })
+        await userQueries.updateLastLogin(user.id)
         return {
             success: true,
             user
@@ -313,20 +315,13 @@ export async function send_onboarding_response({ documents }: { documents: strin
         };
     }
     try {
-        await userQueries.update(user_id, {
-            registration_documents: documents
-        })
-
+        await userQueries.submitVerificationDocuments(user_id, documents)
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const verificationUrl = `${baseUrl}/admin/verify/${user_id}`;
-
-        // Send confirmation email to user
         await tasks.trigger("send-onboarding-submitted-email", {
             email: user.email,
             firstName: user.first_name,
         })
-
-        // Send notification email to admin
         await tasks.trigger("send-onboarding-response-admin-email", {
             adminEmail: ADMIN_EMAIL,
             userName: `${user.first_name} ${user.last_name || ''}`.trim(),
@@ -335,7 +330,7 @@ export async function send_onboarding_response({ documents }: { documents: strin
             documents,
             verificationUrl,
         })
-
+        await update_session()
         return {
             success: true,
             message: "Onboarding documents submitted successfully"
@@ -346,4 +341,21 @@ export async function send_onboarding_response({ documents }: { documents: strin
             error: error instanceof Error ? error.message : "Failed to send onboarding response"
         };
     }
+}
+
+
+export async function get_use_by_id(id: string) {
+    const user = await userQueries.findById(id)
+    return user
+}
+
+export async function update_session() {
+    await unstable_update({})
+}
+
+export async function onboard_user() {
+    const session = await auth()
+    await userQueries.markAsOnboarded(session?.user.id!)
+    await update_session()
+    return
 }
