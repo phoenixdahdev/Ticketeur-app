@@ -1,25 +1,29 @@
-import { CreateEventForm } from './create_event_form'
+import { AddAgendaForm } from './add_agenda_form'
 import Breadcrumb from '@/components/miscellaneous/bread-crumb'
-import { eventTypes } from '@useticketeur/db'
 import { TypewriterEffectSmooth } from '@useticketeur/ui/typewriter-effect'
 
 const CreateEventPage = () => {
   const words = [
     {
-      text: 'Basic',
+      text: 'Venue &',
       className: 'font-sans text-sm',
     },
     {
-      text: 'Details',
+      text: 'Agenda Setup',
       className: 'font-sans text-sm',
     },
   ]
   return (
     <>
-      <Breadcrumb items={[{ label: 'One', isCurrent: true }]} />
-      <TypewriterEffectSmooth words={words} />
+      <Breadcrumb
+        items={[
+          { label: 'One', href: '/events/create' },
+          { label: 'Two', isCurrent: true },
+        ]}
+      />
+      <TypewriterEffectSmooth words={words} cursorClassName="hidden" />
 
-      <CreateEventForm eventTypes={[...eventTypes]} />
+      <AddAgendaForm />
     </>
   )
 }

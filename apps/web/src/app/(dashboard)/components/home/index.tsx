@@ -1,28 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@useticketeur/ui/button'
-import { Input } from '@useticketeur/ui/input'
-import { Search, Plus } from 'lucide-react'
-import TabNavigation from './tab-navigation'
-import EventsContent from './events-content'
-
-import FilterDropdowns from './filter-dropdowns'
-import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
-import { useSearch } from '@/hooks/use-search'
-import { useSession } from 'next-auth/react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@useticketeur/ui/tooltip'
+import Link from 'next/link'
+import { Input } from '@useticketeur/ui/input'
+import { Search, Plus } from 'lucide-react'
+import TabNavigation from './tab-navigation'
+import EventsContent from './events-content'
+import { Button } from '@useticketeur/ui/button'
+import FilterDropdowns from './filter-dropdowns'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useEffectEvent, useState } from 'react'
+import { useSearch } from '@/hooks/use-search'
+import { signOut, useSession } from 'next-auth/react'
+import { update_session } from '@/app/(auth)/action'
+import { useRouter } from '@bprogress/next/app'
 
-export default function Home() {
+export default function Home({
+  isVerified: vd,
+  userId,
+}: {
+  isVerified?: boolean
+  userId?: string
+}) {
   const [activeTab, setActiveTab] = useState('explore')
   const { search, setSearch } = useSearch()
   const { data } = useSession()
+  const router = useRouter()
 
   const isVerified = data?.user?.is_verified
 
@@ -31,6 +39,21 @@ export default function Home() {
     { id: 'ongoing', label: 'Ongoing Events' },
     { id: 'past', label: 'Past Events' },
   ]
+
+  const onVerified = useEffectEvent(async () => {
+    if (userId !== data?.user.id) {
+      signOut()
+    } else {
+      await update_session()
+      router.push('/')
+    }
+  })
+
+  useEffect(() => {
+    if (vd) {
+      onVerified()
+    }
+  }, [vd])
 
   return (
     <div className="no-scrollbar mx-auto px-4 py-6 md:px-6 md:py-8">

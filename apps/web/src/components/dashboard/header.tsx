@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { Menu } from 'lucide-react'
+import { Menu, User } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useSidebar } from './use-sidebar'
+import { TypewriterEffectSmooth } from '@useticketeur/ui/typewriter-effect'
 
 export default function Header() {
   const { data: session } = useSession()
@@ -26,10 +27,19 @@ export default function Header() {
       <header className="sticky top-0 z-40 hidden w-full bg-white lg:block">
         <div className="flex h-20 items-center justify-between px-8">
           <div>
-            <h1 className="text-2xl font-bold text-black">
-              Hello {session?.user?.first_name || 'User'}{' '}
-              {session?.user?.last_name || ''}
-            </h1>
+            <TypewriterEffectSmooth
+              words={[
+                {
+                  text: session?.user?.first_name || 'User',
+                  className: 'text-2xl font-bold text-black',
+                },
+                {
+                  text: session?.user?.last_name || '',
+                  className: 'text-2xl font-bold text-black',
+                },
+              ]}
+              cursorClassName="hidden"
+            />
           </div>
         </div>
       </header>
