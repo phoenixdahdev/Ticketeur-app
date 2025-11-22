@@ -106,6 +106,7 @@ export function EmailVerificationForm() {
                       maxLength={6}
                       {...field}
                       pattern={REGEXP_ONLY_DIGITS}
+                      disabled={isPending}
                       onComplete={form.handleSubmit(onSubmit)}
                     >
                       <InputOTPGroup className="space-x-3">

@@ -22,7 +22,7 @@ export async function proxy(req: NextRequest) {
 
     if (isAuthRoute) {
         if (isLoggedIn) {
-            if (session.user.is_verified) {
+            if (session.user.email_verified_at) {
                 return NextResponse.redirect(new URL('/', req.url))
             }
             await trigger_verification_for_user(session.user.id)

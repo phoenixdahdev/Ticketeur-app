@@ -1,8 +1,9 @@
-import { eq, and, desc, gte, lte, ilike, or, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, ilike, or, sql, inArray } from 'drizzle-orm';
 import { db } from '../drizzle';
 import { events, type NewEvent, type EventStatus } from '../schema/event';
 import { users } from '../schema/user';
 import { teams } from '../schema/team';
+import { team_members } from '../schema/team-member';
 import { ticket_types } from '../schema/ticket-type';
 
 export const eventQueries = {
@@ -174,5 +175,71 @@ export const eventQueries = {
             .from(events)
             .groupBy(events.status);
         return result;
+    },
+
+    findByTeamMembership: async (userId: string) => {
+        // Get all team IDs where the user is a member
+        const userTeams = await db
+            .select({ team_id: team_members.team_id })
+            .from(team_members)
+            .where(eq(team_members.user_id, userId));
+
+        const teamIds = userTeams.map((t) => t.team_id);
+
+        if (teamIds.length === 0) {
+            return [];
+        }
+
+        // Get all events belonging to those teams
+        return db
+            .select({
+                event: events,
+                team: teams,
+            })
+            .from(events)
+            .innerJoin(teams, eq(events.team_id, teams.id))
+            .where(inArray(events.team_id, teamIds))
+            .orderBy(desc(events.created_at));
+    },
+
+    findByTeamMembershipWithRole: async (userId: string) => {
+        // Get events with the user's team role included
+        return db
+            .select({
+                event: events,
+                team: teams,
+                role: team_members.role,
+            })
+            .from(events)
+            .innerJoin(teams, eq(events.team_id, teams.id))
+            .innerJoin(team_members, eq(teams.id, team_members.team_id))
+            .where(eq(team_members.user_id, userId))
+            .orderBy(desc(events.created_at));
+    },
+
+    findAllUserEvents: async (userId: string) => {
+        // Get events where user is either the organizer OR a team member
+        const userTeams = await db
+            .select({ team_id: team_members.team_id })
+            .from(team_members)
+            .where(eq(team_members.user_id, userId));
+
+        const teamIds = userTeams.map((t) => t.team_id);
+
+        if (teamIds.length === 0) {
+            // Only return events where user is the organizer
+            return db
+                .select()
+                .from(events)
+                .where(eq(events.organizer_id, userId))
+                .orderBy(desc(events.created_at));
+        }
+
+        // Return events where user is organizer OR part of the team
+        return db
+            .select()
+            .from(events)
+            .where(or(eq(events.organizer_id, userId), inArray(events.team_id, teamIds)))
+            .orderBy(desc(events.created_at));
     },
 };

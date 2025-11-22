@@ -13,8 +13,11 @@
   "aliases": {
     "components": "@useticketeur/ui/components",
     "utils": "@useticketeur/ui/lib/utils",
-    "hooks": "@useticketeur/ui/hooks",
+    "ui": "@useticketeur/ui/components",
     "lib": "@useticketeur/ui/lib",
-    "ui": "@useticketeur/ui/components"
+    "hooks": "@useticketeur/ui/hooks"
+  },
+  "registries": {
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
   }
 }

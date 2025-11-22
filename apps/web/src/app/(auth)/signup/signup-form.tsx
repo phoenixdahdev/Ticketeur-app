@@ -70,7 +70,7 @@ export function SignUpForm({
       {...props}
     >
       <div className="flex flex-col gap-2 text-left">
-        <h1 className="text-2xl font-bold">
+        <h1 className="font-mono text-2xl font-bold">
           Let&apos;s create your organizer account
         </h1>
         <p className="text-muted-foreground text-sm text-balance">
