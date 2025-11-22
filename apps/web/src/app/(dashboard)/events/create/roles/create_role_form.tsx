@@ -26,11 +26,11 @@ import {
   SelectValue,
 } from '@useticketeur/ui/select'
 import { useEventStore, type RoleMember } from '@/hooks/use-event-store'
-import { eventMemberRoles } from '@useticketeur/db'
+
 
 const permissions = ['view_only', 'edit', 'full_access'] as const
 
-export function CreateRoleForm() {
+export function CreateRoleForm({ eventMemberRoles }: { eventMemberRoles: string[] }) {
   const router = useRouter()
   const { members, setMembers, setCurrentStep } = useEventStore()
 

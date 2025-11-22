@@ -1,6 +1,7 @@
 import Breadcrumb from '@/components/miscellaneous/bread-crumb'
 import { CreateRoleForm } from './create_role_form'
 import { TypewriterEffectSmooth } from '@useticketeur/ui/typewriter-effect'
+import { eventMemberRoles } from '@useticketeur/db'
 export default function Page() {
   const words = [
     {
@@ -19,7 +20,7 @@ export default function Page() {
         ]}
       />
       <TypewriterEffectSmooth words={words} cursorClassName="hidden" />
-      <CreateRoleForm />
+      <CreateRoleForm eventMemberRoles={[...eventMemberRoles]} />
     </div>
   )
 }

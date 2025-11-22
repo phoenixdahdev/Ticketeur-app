@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { EventType, EventMemberRole } from '@useticketeur/db'
 
 // Basic Details - matches events table
@@ -137,94 +138,141 @@ const initialMember: RoleMember = {
   permissions: [],
 }
 
-export const useEventStore = create<EventStoreState>((set) => ({
-  currentStep: 1,
+// Helper to convert date strings back to Date objects
+const parseDate = (value: string | Date | null): Date | null => {
+  if (!value) return null
+  if (value instanceof Date) return value
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? null : date
+}
 
-  basicDetails: initialBasicDetails,
-  venue: initialVenue,
-  sessions: [{ ...initialSession }],
-  ticketTypes: [{ ...initialTicketType }],
-  members: [{ ...initialMember }],
-
-  setCurrentStep: (step) => set({ currentStep: step }),
-
-  setBasicDetails: (details) =>
-    set((state) => ({
-      basicDetails: { ...state.basicDetails, ...details },
+// Helper to parse stored state and restore Date objects
+const parseStoredState = (state: EventStoreState): EventStoreState => {
+  return {
+    ...state,
+    basicDetails: {
+      ...state.basicDetails,
+      start_date: parseDate(state.basicDetails.start_date),
+      end_date: parseDate(state.basicDetails.end_date),
+    },
+    sessions: state.sessions.map((session) => ({
+      ...session,
+      start_time: parseDate(session.start_time),
+      end_time: parseDate(session.end_time),
     })),
-
-  setVenue: (venue) =>
-    set((state) => ({
-      venue: { ...state.venue, ...venue },
+    ticketTypes: state.ticketTypes.map((ticket) => ({
+      ...ticket,
+      sales_start: parseDate(ticket.sales_start),
+      sales_end: parseDate(ticket.sales_end),
     })),
+  }
+}
 
-  addSession: (session) =>
-    set((state) => ({
-      sessions: [...state.sessions, session],
-    })),
-
-  updateSession: (index, session) =>
-    set((state) => ({
-      sessions: state.sessions.map((s, i) =>
-        i === index ? { ...s, ...session } : s
-      ),
-    })),
-
-  removeSession: (index) =>
-    set((state) => ({
-      sessions: state.sessions.filter((_, i) => i !== index),
-    })),
-
-  setSessions: (sessions) => set({ sessions }),
-
-  addTicketType: (ticket) =>
-    set((state) => ({
-      ticketTypes: [...state.ticketTypes, ticket],
-    })),
-
-  updateTicketType: (index, ticket) =>
-    set((state) => ({
-      ticketTypes: state.ticketTypes.map((t, i) =>
-        i === index ? { ...t, ...ticket } : t
-      ),
-    })),
-
-  removeTicketType: (index) =>
-    set((state) => ({
-      ticketTypes: state.ticketTypes.filter((_, i) => i !== index),
-    })),
-
-  setTicketTypes: (tickets) => set({ ticketTypes: tickets }),
-
-  addMember: (member) =>
-    set((state) => ({
-      members: [...state.members, member],
-    })),
-
-  updateMember: (index, member) =>
-    set((state) => ({
-      members: state.members.map((m, i) =>
-        i === index ? { ...m, ...member } : m
-      ),
-    })),
-
-  removeMember: (index) =>
-    set((state) => ({
-      members: state.members.filter((_, i) => i !== index),
-    })),
-
-  setMembers: (members) => set({ members }),
-
-  resetStore: () =>
-    set({
+export const useEventStore = create<EventStoreState>()(
+  persist(
+    (set) => ({
       currentStep: 1,
+
       basicDetails: initialBasicDetails,
       venue: initialVenue,
       sessions: [{ ...initialSession }],
       ticketTypes: [{ ...initialTicketType }],
       members: [{ ...initialMember }],
+
+      setCurrentStep: (step) => set({ currentStep: step }),
+
+      setBasicDetails: (details) =>
+        set((state) => ({
+          basicDetails: { ...state.basicDetails, ...details },
+        })),
+
+      setVenue: (venue) =>
+        set((state) => ({
+          venue: { ...state.venue, ...venue },
+        })),
+
+      addSession: (session) =>
+        set((state) => ({
+          sessions: [...state.sessions, session],
+        })),
+
+      updateSession: (index, session) =>
+        set((state) => ({
+          sessions: state.sessions.map((s, i) =>
+            i === index ? { ...s, ...session } : s
+          ),
+        })),
+
+      removeSession: (index) =>
+        set((state) => ({
+          sessions: state.sessions.filter((_, i) => i !== index),
+        })),
+
+      setSessions: (sessions) => set({ sessions }),
+
+      addTicketType: (ticket) =>
+        set((state) => ({
+          ticketTypes: [...state.ticketTypes, ticket],
+        })),
+
+      updateTicketType: (index, ticket) =>
+        set((state) => ({
+          ticketTypes: state.ticketTypes.map((t, i) =>
+            i === index ? { ...t, ...ticket } : t
+          ),
+        })),
+
+      removeTicketType: (index) =>
+        set((state) => ({
+          ticketTypes: state.ticketTypes.filter((_, i) => i !== index),
+        })),
+
+      setTicketTypes: (tickets) => set({ ticketTypes: tickets }),
+
+      addMember: (member) =>
+        set((state) => ({
+          members: [...state.members, member],
+        })),
+
+      updateMember: (index, member) =>
+        set((state) => ({
+          members: state.members.map((m, i) =>
+            i === index ? { ...m, ...member } : m
+          ),
+        })),
+
+      removeMember: (index) =>
+        set((state) => ({
+          members: state.members.filter((_, i) => i !== index),
+        })),
+
+      setMembers: (members) => set({ members }),
+
+      resetStore: () =>
+        set({
+          currentStep: 1,
+          basicDetails: initialBasicDetails,
+          venue: initialVenue,
+          sessions: [{ ...initialSession }],
+          ticketTypes: [{ ...initialTicketType }],
+          members: [{ ...initialMember }],
+        }),
     }),
-}))
+    {
+      name: 'ticketeur-event-store',
+      storage: createJSONStorage(() => localStorage),
+      // Restore Date objects when rehydrating from localStorage
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const parsed = parseStoredState(state)
+          state.basicDetails = parsed.basicDetails
+          state.sessions = parsed.sessions
+          state.ticketTypes = parsed.ticketTypes
+        }
+      },
+    }
+  )
+)
 
 // Helper to create a new session
 export const createEmptySession = (): SessionDetails => ({ ...initialSession })
