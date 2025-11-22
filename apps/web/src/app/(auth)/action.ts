@@ -316,7 +316,7 @@ export async function send_onboarding_response({ documents }: { documents: strin
     try {
         await userQueries.submitVerificationDocuments(user_id, documents)
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const verificationUrl = `${baseUrl}/admin/verify/${user_id}`;
+        const verificationUrl = `${baseUrl}/verify/${user_id}`;
         await tasks.trigger("send-onboarding-submitted-email", {
             email: user.email,
             firstName: user.first_name,

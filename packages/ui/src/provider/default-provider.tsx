@@ -6,6 +6,7 @@ import { ThemeProvider } from './theme-provider'
 import { ProgressProvider } from '@bprogress/next/app'
 import { Toaster } from '../components/sonner'
 import { FloatingThemeToggle } from '../components/floating-theme-toogle'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 export function DefaultProvider({ children, ...rest }: ThemeProviderProps) {
   return (
@@ -19,6 +20,7 @@ export function DefaultProvider({ children, ...rest }: ThemeProviderProps) {
           {children}
         </ProgressProvider>
         <Toaster richColors />
+        <ReactQueryDevtools />
         <FloatingThemeToggle />
       </ThemeProvider>
     </QueryProvider>

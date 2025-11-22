@@ -1,4 +1,4 @@
-import Home from './components/home'
+import Home from '../components/home'
 
 const HomePage = async (props: PageProps<'/'>) => {
   const searchParams = await props.searchParams
