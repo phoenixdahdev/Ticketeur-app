@@ -71,19 +71,18 @@ const authConfig: NextAuthConfig = {
                 const res = await google_login({
                     email: profile.email,
                     name: profile?.name as string,
-                    avatar: profile.picture
-
+                    avatar: profile.picture,
+                    last_name: profile?.family_name
                 })
+                console.log('google login response:', res)
                 if (!res.success) {
                     return null
                 }
-                const user = {
-                    ...res.user,
-                    email: profile.email,
-                    name: profile?.name,
-                    profile_image: profile.picture
+                const newuser = {
+                    ...res.user
                 }
-                return { ...token, user, ...res }
+                console.log('google login user:', newuser)
+                return { ...token, ...newuser }
             }
             return { ...token, user }
         },
