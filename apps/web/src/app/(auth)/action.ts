@@ -212,6 +212,7 @@ export async function google_login(props: { email: string, name: string } & Part
         const user = await userQueries.findByEmailOrCreate({
             email: props.email,
             first_name: props.name,
+            last_name: props.last_name,
             user_type: "normal",
         })
         await userQueries.updateLastLogin(user.id)

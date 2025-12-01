@@ -132,9 +132,9 @@ export default function RootLayout({
         )}
       >
         <Suspense>
-          <AuthProvider>
-            <DefaultProvider defaultTheme="light">{children}</DefaultProvider>
-          </AuthProvider>
+          <DefaultProvider defaultTheme="light">
+            <AuthProvider>{children}</AuthProvider>
+          </DefaultProvider>
         </Suspense>
       </body>
     </html>
