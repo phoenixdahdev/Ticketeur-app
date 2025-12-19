@@ -268,11 +268,11 @@ export async function createEvent(
       const baseUrl = env.VERCEL_URL || 'http://localhost:3000'
       const eventDate = input.basicDetails.start_date
         ? new Date(input.basicDetails.start_date).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
         : undefined
 
       for (const member of validMembers) {
@@ -350,10 +350,7 @@ export async function createEvent(
       }
     }
 
-    // 6. Submit event for approval and notify admin
     await eventQueries.submitForApproval(event.id)
-
-    // Get organizer info for email
     const organizer = await userQueries.findById(userId)
     const organizerName = organizer
       ? `${organizer.first_name} ${organizer.last_name || ''}`.trim()
@@ -363,11 +360,11 @@ export async function createEvent(
     const adminBaseUrl = env.VERCEL_URL || 'http://localhost:3000'
     const eventDateFormatted = input.basicDetails.start_date
       ? new Date(input.basicDetails.start_date).toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
       : undefined
 
     // Send approval request email to admin
@@ -382,7 +379,6 @@ export async function createEvent(
       approvalUrl: `${adminBaseUrl}/admin/events/${event.id}`,
     })
 
-    // Revalidate the events page
     revalidatePath('/events')
     revalidatePath('/')
 
