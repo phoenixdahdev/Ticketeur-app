@@ -59,3 +59,18 @@ export const EventApprovalRequestPayloadSchema = z.object({
   eventDescription: z.string().optional(),
   approvalUrl: z.string(),
 })
+
+export const EventApprovedPayloadSchema = z.object({
+  email: z.email(),
+  firstName: z.string(),
+  eventTitle: z.string(),
+  eventId: z.string(),
+})
+
+export const EventDeclinedPayloadSchema = z.object({
+  email: z.email(),
+  firstName: z.string(),
+  eventTitle: z.string(),
+  eventId: z.string(),
+  reason: z.string(),
+})

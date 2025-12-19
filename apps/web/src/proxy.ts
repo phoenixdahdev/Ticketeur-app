@@ -11,16 +11,6 @@ export async function proxy(req: NextRequest) {
     const isAuthRoute = authRoutes.includes(nextUrl.pathname)
     const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix)
     const isPublicRoute = publicRoutes.some(route => nextUrl.pathname.startsWith(route))
-
-    console.log('Proxy check:', {
-        pathname: nextUrl.pathname,
-        isLoggedIn,
-        isAuthRoute,
-        isApiAuthRoute,
-        isPublicRoute,
-        session
-    })
-
     if (isApiAuthRoute) {
         return NextResponse.next()
     }
