@@ -16,7 +16,7 @@ const Footer = () => {
           </div>
 
           <p className="mb-6 font-sans text-xs text-black">
-            © 2025 Ticketeur. All rights reserved.
+            © {new Date().getFullYear()} Ticketeur. All rights reserved.
           </p>
         </div>
       </div>

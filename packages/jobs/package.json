@@ -9,14 +9,14 @@
     "deploy": "trigger deploy"
   },
   "dependencies": {
-    "@react-email/render": "^2.0.0",
+    "@react-email/render": "^2.0.1",
     "@trigger.dev/sdk": "4.3.1",
     "@useticketeur/email": "workspace:*",
     "nanoid": "^5.1.6",
     "react": "^19.2.3",
     "resend": "^6.6.0",
     "trigger.dev": "^4.3.1",
-    "zod": "^4.2.1"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "dotenv": "^17.2.3"
