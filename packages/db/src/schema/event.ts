@@ -37,6 +37,13 @@ export const eventTypes = [
 ] as const;
 export type EventType = typeof eventTypes[number];
 
+export const locationTypes = [
+    'physical',
+    'hybrid',
+    'online',
+] as const;
+export type LocationType = typeof locationTypes[number];
+
 export const events = pgTable('events', {
     id: uuid('id').defaultRandom().primaryKey(),
     organizer_id: uuid('organizer_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -46,6 +53,11 @@ export const events = pgTable('events', {
     banner_image: text('banner_image'),
     venue_name: varchar('venue_name', { length: 255 }),
     venue_address: text('venue_address'),
+    city: varchar('city', { length: 100 }),
+    state: varchar('state', { length: 100 }),
+    country: varchar('country', { length: 100 }),
+    location_type: varchar('location_type', { length: 20 }).$type<LocationType>().notNull().default('physical'),
+    meeting_url: text('meeting_url'),
     latitude: decimal('latitude', { precision: 10, scale: 8 }),
     longitude: decimal('longitude', { precision: 11, scale: 8 }),
     event_type: varchar('event_type', { length: 50 }).$type<EventType>().notNull().default('other'),

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { EventType, EventMemberRole } from '@useticketeur/db'
+import type { EventType, EventMemberRole, LocationType } from '@useticketeur/db'
 
 // Basic Details - matches events table
 export interface BasicDetails {
@@ -16,8 +16,13 @@ export interface BasicDetails {
 
 // Venue & Agenda - matches events + event_sessions tables
 export interface VenueDetails {
+  location_type: LocationType
   venue_name: string
   venue_address: string
+  country: string
+  state: string
+  city: string
+  meeting_url: string | null
 }
 
 export interface SessionDetails {
@@ -104,8 +109,13 @@ const initialBasicDetails: BasicDetails = {
 }
 
 const initialVenue: VenueDetails = {
+  location_type: 'physical',
   venue_name: '',
   venue_address: '',
+  country: '',
+  state: '',
+  city: '',
+  meeting_url: null,
 }
 
 const initialSession: SessionDetails = {
@@ -261,7 +271,6 @@ export const useEventStore = create<EventStoreState>()(
     {
       name: 'ticketeur-event-store',
       storage: createJSONStorage(() => localStorage),
-      // Restore Date objects when rehydrating from localStorage
       onRehydrateStorage: () => (state) => {
         if (state) {
           const parsed = parseStoredState(state)

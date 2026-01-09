@@ -96,8 +96,13 @@ export interface CreateEventInput {
 
   // Venue
   venue: {
+    location_type: 'physical' | 'online' | 'hybrid'
     venue_name: string
     venue_address: string
+    country: string
+    state: string
+    city: string
+    meeting_url: string | null
   }
 
   // Sessions (Agenda)
@@ -177,8 +182,13 @@ export async function createEvent(
       end_date: input.basicDetails.end_date,
       max_attendees: input.basicDetails.max_attendees,
       is_free: input.basicDetails.is_free,
+      location_type: input.venue.location_type,
       venue_name: input.venue.venue_name || null,
       venue_address: input.venue.venue_address || null,
+      country: input.venue.country || null,
+      state: input.venue.state || null,
+      city: input.venue.city || null,
+      meeting_url: input.venue.meeting_url || null,
     }
 
     const event = await eventQueries.create(eventData)

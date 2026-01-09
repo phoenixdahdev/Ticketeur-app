@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@useticketeur/ui/select'
-import { Textarea } from '@useticketeur/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import {
   Popover,
   PopoverContent,
@@ -203,11 +203,10 @@ export function CreateEventForm({ eventTypes }: { eventTypes: string[] }) {
                 Event Description
               </FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="We want to network with others"
-                  {...field}
+                <RichTextEditor
+                  value={field.value}
+                  onChange={field.onChange}
                   disabled={isPending}
-                  className="min-h-50 resize-none border-[#ccd0de]"
                 />
               </FormControl>
               <FormMessage />
