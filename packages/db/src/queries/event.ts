@@ -242,4 +242,39 @@ export const eventQueries = {
             .where(or(eq(events.organizer_id, userId), inArray(events.team_id, teamIds)))
             .orderBy(desc(events.created_at));
     },
+
+    getEvents: async (params?: {
+        search?: string;
+        status?: EventStatus;
+        limit?: number;
+        offset?: number;
+    }) => {
+        const { search, status, limit = 20, offset = 0 } = params || {};
+        const conditions = [];
+        if (status) {
+            conditions.push(eq(events.status, status));
+        }
+        if (search) {
+            conditions.push(
+                or(
+                    ilike(events.title, `%${search}%`),
+                    ilike(events.description, `%${search}%`),
+                    ilike(events.event_type, `%${search}%`),
+                    ilike(events.venue_name, `%${search}%`),
+                    ilike(events.venue_address, `%${search}%`),
+                    ilike(events.city, `%${search}%`),
+                    ilike(events.state, `%${search}%`),
+                    ilike(events.country, `%${search}%`)
+                )
+            );
+        }
+
+        return db
+            .select()
+            .from(events)
+            .where(conditions.length > 0 ? and(...conditions) : undefined)
+            .orderBy(desc(events.created_at))
+            .limit(limit)
+            .offset(offset);
+    },
 };

@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "location_type" varchar(20) DEFAULT 'physical' NOT NULL;

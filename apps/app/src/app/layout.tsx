@@ -2,6 +2,7 @@ import '@useticketeur/ui/globals.css'
 import localFont from 'next/font/local'
 import { ReactLenis } from 'lenis/react'
 import { cn } from '@useticketeur/ui/lib/utils'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { DefaultProvider } from '@useticketeur/ui/default-provider'
 
 const transformaSans = localFont({
@@ -108,7 +109,9 @@ export default function RootLayout({
         )}
       >
         <ReactLenis root>
-          <DefaultProvider>{children}</DefaultProvider>
+          <NuqsAdapter>
+            <DefaultProvider>{children}</DefaultProvider>
+          </NuqsAdapter>
         </ReactLenis>
       </body>
     </html>

@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Form,
   FormControl,
@@ -25,6 +26,22 @@ import { Calendar } from '@useticketeur/ui/calendar'
 import { Calendar as CalendarIcon, Plus } from 'lucide-react'
 import { InlineImageInput } from '@/components/miscellaneous/inline-image-input'
 import { useEventStore, type SessionDetails } from '@/hooks/use-event-store'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@useticketeur/ui/select'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@useticketeur/ui/combobox'
+import { locationTypes } from '@useticketeur/db'
 
 export function AddAgendaForm() {
   const router = useRouter()
@@ -34,7 +51,12 @@ export function AddAgendaForm() {
   const form = useForm<AddAgendaType>({
     resolver: zodResolver(addAgendaSchema),
     defaultValues: {
+      location_type: venue.location_type || 'physical',
       address: venue.venue_address || '',
+      country: venue.country || '',
+      state: venue.state || '',
+      city: venue.city || '',
+      meeting_url: venue.meeting_url || '',
       venue_type: venue.venue_name || '',
       sessions:
         sessions.length > 0
@@ -52,13 +74,29 @@ export function AddAgendaForm() {
                 track: '',
                 speaker_image: undefined,
                 speaker_name: '',
-                start: undefined as unknown as Date,
-                end: undefined as unknown as Date,
               },
             ],
     },
   })
   const [isPending, startTransition] = useTransition()
+  const { data: countries = [] } = useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const res = await fetch(
+        'https://restcountries.com/v3.1/all?fields=name,flags,region,cca2'
+      )
+      const data = await res.json()
+      return data
+        .map((c: any) => ({
+          name: c.name.common,
+          code: c.cca2,
+        }))
+        .sort((a: any, b: any) => a.name.localeCompare(b.name)) as {
+        name: string
+        code: string
+      }[]
+    },
+  })
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -68,12 +106,19 @@ export function AddAgendaForm() {
   const [openStart, setOpenStart] = useState<Record<number, boolean>>({})
   const [openEnd, setOpenEnd] = useState<Record<number, boolean>>({})
 
+  const locationType = form.watch('location_type')
+
   function onSubmit(values: AddAgendaType) {
     startTransition(async () => {
       // Save to Zustand store
       setVenue({
+        location_type: values.location_type,
         venue_name: values.venue_type,
         venue_address: values.address,
+        country: values.country,
+        state: values.state,
+        city: values.city,
+        meeting_url: values.meeting_url,
       })
 
       const formattedSessions: SessionDetails[] = values.sessions.map((s) => ({
@@ -98,45 +143,195 @@ export function AddAgendaForm() {
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <FormField
             control={form.control}
-            name="venue_type"
+            name="location_type"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
-                  Venue Name
+                  Location Type
                 </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Lagos, Nigeria"
-                    {...field}
-                    disabled={isPending}
-                    className="border-[#ccd0de]"
-                  />
-                </FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={isPending}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full border-[#ccd0de] py-6 capitalize">
+                      <SelectValue placeholder="Select location type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {locationTypes.map((type) => (
+                      <SelectItem
+                        key={type}
+                        value={type}
+                        className="capitalize"
+                      >
+                        {type === 'online' ? 'Remote (Online)' : type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {/* address */}
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
-                  Address
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Lagos, Nigeria"
-                    {...field}
-                    disabled={isPending}
-                    className="border-[#ccd0de]"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
+          {(locationType === 'physical' || locationType === 'hybrid') && (
+            <>
+              <FormField
+                control={form.control}
+                name="venue_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                      Venue Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Eko Hotel & Suites"
+                        {...field}
+                        disabled={isPending}
+                        className="border-[#ccd0de]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Country */}
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                      Country
+                    </FormLabel>
+                    <Combobox
+                      items={countries}
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val)
+                      }}
+                    >
+                      <ComboboxInput
+                        placeholder="Select country"
+                        className="w-full border-[#ccd0de] py-6"
+                        required
+                        value={
+                          countries.find((c) => c.name === field.value)?.name ??
+                          ''
+                        }
+                      />
+                      <ComboboxContent>
+                        <ComboboxEmpty>No countries found.</ComboboxEmpty>
+                        <ComboboxList>
+                          {(item) => (
+                            <ComboboxItem key={item.code} value={item.name}>
+                              {item.name}
+                            </ComboboxItem>
+                          )}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-5 lg:col-span-2 lg:grid-cols-2">
+                {/* State */}
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                        State
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Lagos"
+                          {...field}
+                          disabled={isPending}
+                          className="border-[#ccd0de]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* City */}
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                        City
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ikeja"
+                          {...field}
+                          disabled={isPending}
+                          className="border-[#ccd0de]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* address */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="lg:col-span-2">
+                    <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                      Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Adetokunbo Ademola Street, Victoria Island"
+                        {...field}
+                        disabled={isPending}
+                        className="border-[#ccd0de]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {(locationType === 'online' || locationType === 'hybrid') && (
+            <FormField
+              control={form.control}
+              name="meeting_url"
+              render={({ field }) => (
+                <FormItem className="lg:col-span-2">
+                  <FormLabel className="font-transforma-sans text-xs font-bold lg:text-sm">
+                    Meeting URL {locationType === 'online' ? '(Optional)' : ''}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://meet.google.com/..."
+                      {...field}
+                      disabled={isPending}
+                      className="border-[#ccd0de]"
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
 
         <div className="mt-7 flex flex-wrap items-center justify-between">

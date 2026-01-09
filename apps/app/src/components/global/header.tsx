@@ -53,11 +53,10 @@ const Header = () => {
           className={cn(
             'relative flex items-center justify-between rounded-full border px-4 py-3 shadow-xl transition-all duration-300 md:px-6 md:py-4',
             isScrolled || isMobileMenuOpen
-              ? 'border-purple-200/40 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60'
+              ? 'border-purple-200/40 bg-white/80 backdrop-blur-xl supports-backdrop-filter:bg-white/60'
               : 'border-transparent bg-white/50 backdrop-blur-md'
           )}
         >
-          {/* Logo */}
           <Link href="/" className="relative z-10 flex items-center gap-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -65,18 +64,17 @@ const Header = () => {
               transition={{ duration: 0.2 }}
               className="flex items-center"
             >
-              <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 p-1.5 md:h-10 md:w-10">
-                {/* Fallback Icon if logo fails, but using Image optimally */}
+              <div className="relative h-8 w-8 overflow-hidden rounded-full p-1.5 md:h-10 md:w-10">
                 <Image
-                  src="/logo.svg"
+                  src="/logo-icon.svg"
                   alt="Ticketeur Logo"
                   width={40}
                   height={40}
-                  className="h-full w-full object-contain brightness-0 invert filter"
+                  className="h-full w-full object-contain"
                   priority
                 />
               </div>
-              <span className="ml-2 hidden font-sans text-xl font-bold tracking-tight text-gray-900 md:block">
+              <span className="hidden font-sans text-xl font-bold tracking-tight text-gray-900 md:block">
                 Ticketeur
               </span>
             </motion.div>
@@ -98,7 +96,7 @@ const Header = () => {
                   <span>{link.label}</span>
                   <span
                     className={cn(
-                      'absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300 ease-out group-hover:w-full',
+                      'absolute -bottom-1 left-0 h-0.5 bg-linear-to-r from-purple-600 to-pink-600 transition-all duration-300 ease-out group-hover:w-full',
                       isActive ? 'w-full' : 'w-0'
                     )}
                   />
