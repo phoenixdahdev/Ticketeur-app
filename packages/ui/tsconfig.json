@@ -1,9 +1,9 @@
 {
-  "extends": "@workspace/typescript-config/react-library.json",
+  "extends": "@ticketur/typescript-config/react-library.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
-      "@workspace/ui/*": ["./src/*"]
+      "@ticketur/ui/*": ["./src/*"]
     }
   },
   "include": ["."],

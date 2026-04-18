@@ -1,0 +1,15 @@
+{
+  "name": "@ticketur/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "trigger dev",
+    "deploy": "trigger deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@ticketur/typescript-config": "workspace:*",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@ticketur/email",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./emails/*": "./emails/*.tsx"
+  },
+  "scripts": {
+    "dev": "email dev",
+    "export": "email export"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@ticketur/typescript-config": "workspace:*",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
+  }
+}
