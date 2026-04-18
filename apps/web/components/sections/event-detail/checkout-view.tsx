@@ -60,16 +60,16 @@ export function CheckoutView({
         <button
           type="button"
           onClick={onBack}
-          className="font-medium text-primary transition-colors hover:text-primary-hover"
+          className="text-primary hover:text-primary-hover font-medium transition-colors"
         >
           Tickets
         </button>
         <HugeiconsIcon
           icon={ArrowRight01Icon}
-          className="size-4 text-muted-foreground"
+          className="text-muted-foreground size-4"
           strokeWidth={2}
         />
-        <span className="font-semibold text-foreground">Checkout</span>
+        <span className="text-foreground font-semibold">Checkout</span>
       </nav>
 
       <form
@@ -81,15 +81,15 @@ export function CheckoutView({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 md:p-6"
+            className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-5 md:p-6"
           >
             <div className="flex items-center gap-2">
               <HugeiconsIcon
                 icon={UserIcon}
-                className="size-5 text-primary"
+                className="text-primary size-5"
                 strokeWidth={1.8}
               />
-              <h2 className="font-heading text-lg font-semibold text-foreground">
+              <h2 className="font-heading text-foreground text-lg font-semibold">
                 Purchaser Information
               </h2>
             </div>
@@ -139,15 +139,15 @@ export function CheckoutView({
               duration: 0.35,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 md:p-6"
+            className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-5 md:p-6"
           >
             <div className="flex items-center gap-2">
               <HugeiconsIcon
                 icon={CreditCardIcon}
-                className="size-5 text-primary"
+                className="text-primary size-5"
                 strokeWidth={1.8}
               />
-              <h2 className="font-heading text-lg font-semibold text-foreground">
+              <h2 className="font-heading text-foreground text-lg font-semibold">
                 Payment Method
               </h2>
             </div>
@@ -183,7 +183,7 @@ export function CheckoutView({
                 />
                 <HugeiconsIcon
                   icon={CreditCardIcon}
-                  className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-muted-foreground"
+                  className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2"
                   strokeWidth={1.6}
                 />
               </div>
@@ -194,9 +194,7 @@ export function CheckoutView({
                 <Input
                   id="ck-exp"
                   value={form.expiry}
-                  onChange={(e) =>
-                    setForm({ ...form, expiry: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, expiry: e.target.value })}
                   placeholder="MM/YY"
                   autoComplete="cc-exp"
                 />
@@ -237,18 +235,18 @@ export function CheckoutView({
             duration: 0.35,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-5 md:p-6 lg:sticky lg:top-24 lg:self-start"
+          className="border-border bg-card flex flex-col gap-6 rounded-2xl border p-5 md:p-6 lg:sticky lg:top-24 lg:self-start"
         >
-          <h2 className="font-heading text-lg font-semibold text-foreground">
+          <h2 className="font-heading text-foreground text-lg font-semibold">
             Order Summary
           </h2>
 
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Ticket Tier
             </span>
             {selected.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No tickets selected.
               </p>
             ) : (
@@ -258,12 +256,12 @@ export function CheckoutView({
                     key={t.id}
                     className="flex items-baseline justify-between gap-2"
                   >
-                    <span className="font-heading text-base font-semibold text-foreground">
+                    <span className="font-heading text-foreground text-base font-semibold">
                       {t.name}
                     </span>
-                    <span className="flex items-baseline gap-1 font-heading text-sm font-bold text-primary">
+                    <span className="font-heading text-primary flex items-baseline gap-1 text-sm font-bold">
                       {t.priceDisplay}
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <span className="text-muted-foreground text-xs font-medium">
                         ({quantities[t.id]})
                       </span>
                     </span>
@@ -273,7 +271,7 @@ export function CheckoutView({
             )}
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <div className="border-border flex flex-col gap-2 border-t pt-4">
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
             <Row
               label="Service Fee"
@@ -281,16 +279,16 @@ export function CheckoutView({
             />
           </div>
 
-          <div className="flex items-baseline justify-between gap-4 border-t border-border pt-4">
-            <span className="font-heading text-base font-semibold text-foreground md:text-lg">
+          <div className="border-border flex items-baseline justify-between gap-4 border-t pt-4">
+            <span className="font-heading text-foreground text-base font-semibold md:text-lg">
               Total Amount
             </span>
-            <span className="font-heading text-2xl font-bold text-primary md:text-3xl">
+            <span className="font-heading text-primary text-2xl font-bold md:text-3xl">
               ₦{total.toLocaleString()}
             </span>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-xl bg-muted/40 p-4 dark:bg-muted/20">
+          <div className="bg-muted/40 dark:bg-muted/20 flex flex-col gap-2 rounded-xl p-4">
             <Button
               type="submit"
               size="xl"
@@ -299,9 +297,9 @@ export function CheckoutView({
             >
               Pay Now
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-center text-xs">
               By completing your purchase, you agree to our{' '}
-              <span className="font-medium text-primary">Terms of Service</span>
+              <span className="text-primary font-medium">Terms of Service</span>
             </p>
           </div>
 
@@ -327,13 +325,13 @@ function Field({
     <div className="flex flex-col gap-2">
       <label
         htmlFor={htmlFor}
-        className="text-sm font-semibold text-foreground"
+        className="text-foreground text-sm font-semibold"
       >
         {label}
       </label>
       {children}
       {helper ? (
-        <p className="text-xs text-muted-foreground">{helper}</p>
+        <p className="text-muted-foreground text-xs">{helper}</p>
       ) : null}
     </div>
   )
@@ -343,7 +341,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className={cn('flex items-baseline justify-between gap-4 text-sm')}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
+      <span className="text-foreground font-semibold">{value}</span>
     </div>
   )
 }

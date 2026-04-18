@@ -1,11 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import {
-  parseAsInteger,
-  parseAsStringLiteral,
-  useQueryStates,
-} from 'nuqs'
+import { parseAsInteger, parseAsStringLiteral, useQueryStates } from 'nuqs'
 
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 import { TicketSelector } from '@/components/sections/event-detail/ticket-selector'
