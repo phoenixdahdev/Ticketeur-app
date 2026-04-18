@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { useTheme } from "next-themes"
-import { LightbulbIcon, MoonIcon } from "lucide-react"
-import { useEffect, useState, useRef, useEffectEvent } from "react"
-import { Button } from "../components/button"
-import { cn } from "../lib/utils"
-import { inDevEnvironment } from "../providers/default-provider"
+import { useTheme } from 'next-themes'
+import { LightbulbIcon, MoonIcon } from 'lucide-react'
+import { useEffect, useState, useRef, useEffectEvent } from 'react'
+import { Button } from '../components/button'
+import { cn } from '../lib/utils'
+import { inDevEnvironment } from '../providers/default-provider'
 
 const ThemeSwitcher = () => {
   const { setTheme, resolvedTheme } = useTheme()
@@ -32,16 +32,16 @@ const ThemeSwitcher = () => {
     }
 
     handleResize()
-    window.addEventListener("resize", handleResize)
+    window.addEventListener('resize', handleResize)
 
     return () => {
-      window.removeEventListener("resize", handleResize)
+      window.removeEventListener('resize', handleResize)
     }
   }, [])
 
   const [position, setPosition] = useState(() => {
-    if (typeof window !== "undefined") {
-      const btnPos = localStorage.getItem("themePosition")
+    if (typeof window !== 'undefined') {
+      const btnPos = localStorage.getItem('themePosition')
       if (btnPos) {
         return JSON.parse(btnPos)
       }
@@ -76,7 +76,7 @@ const ThemeSwitcher = () => {
     const isClick = !hasMoved.current && dragDuration < 200
 
     if (isClick) {
-      const newTheme = resolvedTheme === "light" ? "dark" : "light"
+      const newTheme = resolvedTheme === 'light' ? 'dark' : 'light'
       setTheme(newTheme)
     }
   })
@@ -103,25 +103,25 @@ const ThemeSwitcher = () => {
 
   useEffect(() => {
     if (!isDragging) return
-    localStorage.setItem("themePosition", JSON.stringify(position))
+    localStorage.setItem('themePosition', JSON.stringify(position))
   }, [position, isDragging])
 
   useEffect(() => {
     if (isDragging) {
-      window.addEventListener("mousemove", onMouseMove)
-      window.addEventListener("mouseup", onDragEnd)
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onDragEnd)
     } else {
-      window.removeEventListener("mousemove", onMouseMove)
-      window.removeEventListener("mouseup", onDragEnd)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onDragEnd)
     }
 
     return () => {
-      window.removeEventListener("mousemove", onMouseMove)
-      window.removeEventListener("mouseup", onDragEnd)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onDragEnd)
     }
   }, [isDragging])
 
-  const isDark = resolvedTheme === "dark"
+  const isDark = resolvedTheme === 'dark'
 
   if (!mounted || !inDevEnvironment) return null
 
@@ -130,24 +130,24 @@ const ThemeSwitcher = () => {
       onMouseDown={onDragStart}
       style={{
         transform: `translateX(${position.x}px) translateY(${position.y}px)`,
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: isDragging ? 'grabbing' : 'grab',
         left: 0,
         top: 0,
       }}
       className={cn(
-        "fixed z-999 flex translate-x-0 flex-col items-start rounded-full",
-        !isDark ? "text-gray-200" : "text-black"
+        'fixed z-999 flex translate-x-0 flex-col items-start rounded-full',
+        !isDark ? 'text-gray-200' : 'text-black'
       )}
     >
       <Button
-        variant={"ghost"}
-        size={"icon-lg"}
+        variant={'ghost'}
+        size={'icon-lg'}
         className={cn(
-          "rounded-full p-2 transition-all",
+          'rounded-full p-2 transition-all',
           isDragging
-            ? "pointer-events-none opacity-50 shadow-[0_0_30px_10px_rgba(0,0,0,0.3)] duration-300 dark:opacity-60 dark:shadow-[0_0_30px_10px_rgba(255,255,255,0.5)]"
-            : "pointer-events-auto opacity-100 duration-1000",
-          isDark ? "bg-gray-200" : "bg-black"
+            ? 'pointer-events-none opacity-50 shadow-[0_0_30px_10px_rgba(0,0,0,0.3)] duration-300 dark:opacity-60 dark:shadow-[0_0_30px_10px_rgba(255,255,255,0.5)]'
+            : 'pointer-events-auto opacity-100 duration-1000',
+          isDark ? 'bg-gray-200' : 'bg-black'
         )}
       >
         {isDark ? (

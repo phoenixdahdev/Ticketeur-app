@@ -1,7 +1,2 @@
-@import "tailwindcss";
-@import "@ticketur/ui/globals.css";
-
-@theme inline {
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-}
+@import 'tailwindcss';
+@import '@ticketur/ui/globals.css';
