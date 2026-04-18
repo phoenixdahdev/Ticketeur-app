@@ -1,25 +1,28 @@
-"use client"
+"use client";
 
-import { ThemeProvider } from "next-themes"
-import { TRPCReactProvider } from "./trpc-provider"
-import type { ThemeProviderProps } from "next-themes"
-import { TooltipProvider } from "../components/tooltip"
-import ThemeSwitcher from "../miscellaneous/theme-switcher"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
+import { ReactLenis } from "lenis/react";
+import { ThemeProvider } from "next-themes";
+import { TRPCReactProvider } from "./trpc-provider";
+import type { ThemeProviderProps } from "next-themes";
+import { TooltipProvider } from "../components/tooltip";
+import ThemeSwitcher from "../miscellaneous/theme-switcher";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-export const inDevEnvironment = process.env.NODE_ENV === "development"
+export const inDevEnvironment = process.env.NODE_ENV === "development";
 
 export function DefaultProvider({
   children,
   trpcUrl,
   showQueryDevtools = inDevEnvironment,
   defaultTheme = "system",
+  useLens = false,
   ...rest
 }: ThemeProviderProps & {
-  trpcUrl: string
-  showQueryDevtools?: boolean
+  trpcUrl: string;
+  showQueryDevtools?: boolean;
+  useLens?: boolean;
 }) {
-  return (
+  const content = (
     <TRPCReactProvider url={trpcUrl}>
       <ThemeProvider
         attribute="class"
@@ -33,5 +36,11 @@ export function DefaultProvider({
         <ThemeSwitcher />
       </ThemeProvider>
     </TRPCReactProvider>
-  )
+  );
+
+  if (useLens) {
+    return <ReactLenis root>{content}</ReactLenis>;
+  }
+
+  return content;
 }

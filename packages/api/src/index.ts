@@ -1,3 +1,3 @@
 export { appRouter } from "./routers/_app"
-export type { AppRouter } from "./routers/_app"
-export { t, router, publicProcedure } from "./trpc"
+export type { AppRouter, RouterInputs, RouterOutputs } from "./routers/_app"
+export { createTRPCRouter, publicProcedure, createCallerFactory } from "./trpc"
