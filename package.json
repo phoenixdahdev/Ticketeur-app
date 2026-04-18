@@ -14,7 +14,7 @@
     "@ticketur/typescript-config": "workspace:*",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "shadcn": "^4.2.0",
+    "shadcn": "^4.3.0",
     "turbo": "^2.9.6",
     "typescript": "6.0.3"
   },

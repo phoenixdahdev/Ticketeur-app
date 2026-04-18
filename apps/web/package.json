@@ -12,18 +12,25 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ticketur/api": "workspace:*",
     "@ticketur/ui": "workspace:*",
+    "@trpc/server": "^11.16.0",
+    "motion": "^12.38.0",
     "next": "16.2.4",
+    "nuqs": "^2.8.9",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@ticketur/eslint-config": "workspace:^",
+    "@ticketur/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@ticketur/eslint-config": "workspace:^",
-    "@ticketur/typescript-config": "workspace:*",
     "eslint": "^10.2.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^6.0.3"
   }
 }
