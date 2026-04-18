@@ -13,6 +13,7 @@ export type VendorCardProps = {
   description: string
   imageUrl: string
   href?: string
+  onClick?: () => void
   className?: string
 }
 
@@ -21,6 +22,7 @@ export function VendorCard({
   description,
   imageUrl,
   href = '#',
+  onClick,
   className,
 }: VendorCardProps) {
   return (
@@ -51,14 +53,26 @@ export function VendorCard({
         </p>
       </div>
 
-      <Button
-        variant="outline-primary"
-        size="xl"
-        asChild
-        className="mt-auto w-full"
-      >
-        <Link href={href}>View Profile</Link>
-      </Button>
+      {onClick ? (
+        <Button
+          type="button"
+          variant="outline-primary"
+          size="xl"
+          onClick={onClick}
+          className="mt-auto w-full"
+        >
+          View Profile
+        </Button>
+      ) : (
+        <Button
+          variant="outline-primary"
+          size="xl"
+          asChild
+          className="mt-auto w-full"
+        >
+          <Link href={href}>View Profile</Link>
+        </Button>
+      )}
     </motion.article>
   )
 }

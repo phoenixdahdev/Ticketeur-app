@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { SiteHeader } from '@/components/layout/site-header'
 import { SiteFooter } from '@/components/layout/site-footer'
+import { GoToTop } from '@/components/misc/go-to-top'
 
 export default function AppLayout({
   children,
@@ -9,8 +11,11 @@ export default function AppLayout({
   return (
     <>
       <SiteHeader />
-      <main className="min-h-[calc(100vh-84px)]">{children}</main>
+      <Suspense>
+        <main className="min-h-[calc(100vh-84px)]">{children}</main>
+      </Suspense>
       <SiteFooter />
+      <GoToTop />
     </>
   )
 }
