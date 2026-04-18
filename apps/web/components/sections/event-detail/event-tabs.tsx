@@ -28,10 +28,7 @@ export function EventTabs({ event }: { event: EventDetailData }) {
   )
 
   return (
-    <section
-      aria-label="Event details"
-      className="w-full px-5 md:px-10"
-    >
+    <section aria-label="Event details" className="w-full px-5 md:px-10">
       <div className="mx-auto max-w-[1440px] pt-10 pb-6 md:pt-16 md:pb-10">
         <div role="tablist" className="border-b border-[#c6c6c6]">
           <div className="flex items-center gap-6 md:gap-8">
@@ -44,7 +41,7 @@ export function EventTabs({ event }: { event: EventDetailData }) {
                   aria-selected={active}
                   onClick={() => setTab(t)}
                   className={cn(
-                    'relative -mb-px px-2 pb-4 text-base font-semibold outline-none transition-colors',
+                    'relative -mb-px px-2 pb-4 text-base font-semibold transition-colors outline-none',
                     active
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
@@ -54,8 +51,12 @@ export function EventTabs({ event }: { event: EventDetailData }) {
                   {active && (
                     <motion.span
                       layoutId="event-tab-underline"
-                      className="absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-primary"
-                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                      className="bg-primary absolute inset-x-0 -bottom-px h-[3px] rounded-full"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 420,
+                        damping: 32,
+                      }}
                     />
                   )}
                 </button>
@@ -77,7 +78,7 @@ export function EventTabs({ event }: { event: EventDetailData }) {
           <Button
             size="default"
             asChild
-            className="shadow-lg shadow-primary/30"
+            className="shadow-primary/30 shadow-lg"
           >
             <Link href={event.buyHref ?? '#'}>Buy Ticket</Link>
           </Button>

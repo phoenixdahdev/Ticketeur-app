@@ -38,7 +38,7 @@ export function EventHero({
         <Link
           href={backHref}
           aria-label="Back to events"
-          className="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+          className="text-foreground hover:bg-muted inline-flex size-11 items-center justify-center rounded-full transition-colors"
         >
           <HugeiconsIcon
             icon={ArrowLeft02Icon}
@@ -53,7 +53,7 @@ export function EventHero({
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="relative w-full overflow-hidden rounded-[20px]"
         >
-          <div className="relative aspect-[1360/500] w-full bg-muted md:max-h-[500px]">
+          <div className="bg-muted relative aspect-[1360/500] w-full md:max-h-[500px]">
             <Image
               src={event.imageUrl}
               alt={event.title}
@@ -70,7 +70,7 @@ export function EventHero({
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 px-4 pb-5 md:flex-row md:items-end md:justify-between md:gap-6 md:px-10 md:pb-8">
             <div className="flex flex-col gap-2 md:gap-3">
-              <span className="inline-flex w-fit items-center rounded-lg bg-primary px-3 py-1 text-xs font-semibold tracking-wider text-primary-foreground uppercase md:text-sm">
+              <span className="bg-primary text-primary-foreground inline-flex w-fit items-center rounded-lg px-3 py-1 text-xs font-semibold tracking-wider uppercase md:text-sm">
                 {event.status}
               </span>
               <h1 className="font-heading text-3xl font-bold tracking-tight text-white md:text-5xl md:leading-[1.1]">
@@ -86,7 +86,10 @@ export function EventHero({
                   {event.date}
                   {event.time ? ` • ${event.time}` : ''}
                 </span>
-                <span aria-hidden className="hidden h-4 w-px bg-white/40 md:block" />
+                <span
+                  aria-hidden
+                  className="hidden h-4 w-px bg-white/40 md:block"
+                />
                 <span className="flex items-center gap-1.5">
                   <HugeiconsIcon
                     icon={Location01Icon}

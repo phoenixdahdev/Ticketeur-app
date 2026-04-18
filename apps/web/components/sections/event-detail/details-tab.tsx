@@ -11,11 +11,11 @@ export function DetailsTab({ event }: { event: EventDetailData }) {
       <section aria-labelledby="about-heading" className="flex flex-col gap-4">
         <h2
           id="about-heading"
-          className="font-heading text-2xl font-semibold text-foreground"
+          className="font-heading text-foreground text-2xl font-semibold"
         >
           About the Event
         </h2>
-        <div className="flex flex-col gap-4 text-sm leading-relaxed text-[#484848] md:text-base dark:text-muted-foreground">
+        <div className="dark:text-muted-foreground flex flex-col gap-4 text-sm leading-relaxed text-[#484848] md:text-base">
           {event.description.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
@@ -28,7 +28,7 @@ export function DetailsTab({ event }: { event: EventDetailData }) {
       >
         <h2
           id="features-heading"
-          className="font-heading text-2xl font-semibold text-foreground"
+          className="font-heading text-foreground text-2xl font-semibold"
         >
           Features
         </h2>
@@ -45,14 +45,14 @@ export function DetailsTab({ event }: { event: EventDetailData }) {
                 ease: [0.22, 1, 0.36, 1],
               }}
               whileHover={{ y: -3, scale: 1.02 }}
-              className="flex flex-col items-center justify-center gap-4 rounded-xl border border-[#d4c0ff] bg-[#f1ebff] px-6 py-6 md:min-w-[155px] dark:border-primary/30 dark:bg-primary/10"
+              className="dark:border-primary/30 dark:bg-primary/10 flex flex-col items-center justify-center gap-4 rounded-xl border border-[#d4c0ff] bg-[#f1ebff] px-6 py-6 md:min-w-[155px]"
             >
               <HugeiconsIcon
                 icon={feature.icon}
-                className="size-[30px] text-primary"
+                className="text-primary size-[30px]"
                 strokeWidth={1.8}
               />
-              <span className="text-center text-sm font-semibold text-[#282828] md:text-base dark:text-foreground">
+              <span className="dark:text-foreground text-center text-sm font-semibold text-[#282828] md:text-base">
                 {feature.label}
               </span>
             </motion.div>

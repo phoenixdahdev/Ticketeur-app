@@ -48,21 +48,18 @@ const SIMILAR: (SmallEventCardProps & { id: string })[] = [
 
 export function SimilarEvents() {
   return (
-    <section
-      aria-label="Similar events"
-      className="w-full px-5 md:px-10"
-    >
+    <section aria-label="Similar events" className="w-full px-5 md:px-10">
       <div className="mx-auto max-w-[1440px] py-10 md:py-16">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 font-heading text-2xl font-semibold tracking-tight text-foreground"
+          className="font-heading text-foreground mb-6 text-2xl font-semibold tracking-tight"
         >
           Similar Events
         </motion.h2>
-        <div className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-5 px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-8">
+        <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-8 [&::-webkit-scrollbar]:hidden">
           {SIMILAR.map((event, i) => (
             <motion.div
               key={event.id}

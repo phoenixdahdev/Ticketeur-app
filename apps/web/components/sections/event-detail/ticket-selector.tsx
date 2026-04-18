@@ -44,7 +44,8 @@ const TIER_ICON: Record<TicketTierId, IconSvgElement> = {
 }
 
 const TIER_ICON_BG: Record<TicketTierId, string> = {
-  early: 'bg-[#f1f1f1] text-[#9a9a9a] dark:bg-white/10 dark:text-muted-foreground',
+  early:
+    'bg-[#f1f1f1] text-[#9a9a9a] dark:bg-white/10 dark:text-muted-foreground',
   general: 'bg-[#f1ebff] text-primary dark:bg-primary/15',
   vip: 'bg-[#fef3c7] text-[#b45309] dark:bg-[#b45309]/20',
 }
@@ -62,10 +63,7 @@ export function TicketSelector({
   onQuantityChange: (id: TicketTierId, qty: number) => void
   onCheckout: () => void
 }) {
-  const totalQty = tiers.reduce(
-    (sum, t) => sum + (quantities[t.id] ?? 0),
-    0
-  )
+  const totalQty = tiers.reduce((sum, t) => sum + (quantities[t.id] ?? 0), 0)
   const subtotal = tiers.reduce(
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
@@ -79,10 +77,10 @@ export function TicketSelector({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-2">
-        <h2 className="font-heading text-2xl font-bold text-foreground">
+        <h2 className="font-heading text-foreground text-2xl font-bold">
           Get Ticket
         </h2>
-        <p className="text-sm text-muted-foreground md:text-base">
+        <p className="text-muted-foreground text-sm md:text-base">
           Select the best experience for you from this event
         </p>
       </div>
@@ -98,7 +96,7 @@ export function TicketSelector({
               whileHover={{ y: -2 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
               className={cn(
-                'flex flex-col gap-4 rounded-2xl border bg-card p-4 transition-colors md:flex-row md:items-center md:gap-6 md:p-5',
+                'bg-card flex flex-col gap-4 rounded-2xl border p-4 transition-colors md:flex-row md:items-center md:gap-6 md:p-5',
                 isSelected ? 'border-primary shadow-sm' : 'border-border',
                 isSoldOut && 'opacity-75'
               )}
@@ -118,20 +116,20 @@ export function TicketSelector({
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-heading text-base font-semibold text-foreground md:text-lg">
+                  <h3 className="font-heading text-foreground text-base font-semibold md:text-lg">
                     {tier.name}
                   </h3>
                   <StatusPill status={tier.status} />
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {tier.description}
                 </p>
                 <div className="mt-1 flex items-baseline gap-2">
-                  <span className="font-heading text-lg font-bold text-primary md:text-xl">
+                  <span className="font-heading text-primary text-lg font-bold md:text-xl">
                     {tier.priceDisplay}
                   </span>
                   {tier.remaining ? (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       Only {tier.remaining} left
                     </span>
                   ) : null}
@@ -148,38 +146,38 @@ export function TicketSelector({
         })}
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="border-border bg-card relative overflow-hidden rounded-2xl border">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-primary/5"
+          className="bg-primary/5 pointer-events-none absolute -top-10 -right-10 size-40 rounded-full"
         />
         <div className="flex flex-col gap-5 p-5 md:gap-6 md:p-7">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
             <div className="flex flex-col gap-1">
-              <h3 className="font-heading text-lg font-bold text-foreground md:text-xl">
+              <h3 className="font-heading text-foreground text-lg font-bold md:text-xl">
                 Order Summary
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {totalQty > 0
                   ? summary
                   : 'Select one or more tickets above to see your total.'}
               </p>
             </div>
             <div className="flex flex-col gap-0.5 md:text-right">
-              <span className="font-heading text-2xl font-bold text-foreground md:text-3xl">
+              <span className="font-heading text-foreground text-2xl font-bold md:text-3xl">
                 ₦{subtotal.toLocaleString()}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 Excl. taxes &amp; fees
               </span>
             </div>
           </div>
 
-          <ul className="flex flex-col gap-2 border-t border-border pt-4 text-sm text-muted-foreground">
+          <ul className="border-border text-muted-foreground flex flex-col gap-2 border-t pt-4 text-sm">
             <li className="flex items-center gap-2">
               <HugeiconsIcon
                 icon={SecurityCheckIcon}
-                className="size-4 text-primary"
+                className="text-primary size-4"
                 strokeWidth={1.8}
               />
               <span>Secure checkout processed by Ticketur</span>
@@ -187,7 +185,7 @@ export function TicketSelector({
             <li className="flex items-center gap-2">
               <HugeiconsIcon
                 icon={Mail01Icon}
-                className="size-4 text-primary"
+                className="text-primary size-4"
                 strokeWidth={1.8}
               />
               <span>Tickets sent instantly to your email</span>
@@ -244,11 +242,7 @@ function QuantityStepper({
         disabled={disabled || value <= 0}
         onClick={() => onChange(value - 1)}
       >
-        <HugeiconsIcon
-          icon={Remove01Icon}
-          className="size-4"
-          strokeWidth={2}
-        />
+        <HugeiconsIcon icon={Remove01Icon} className="size-4" strokeWidth={2} />
       </StepButton>
       <span
         className={cn(
@@ -263,11 +257,7 @@ function QuantityStepper({
         disabled={disabled}
         onClick={() => onChange(value + 1)}
       >
-        <HugeiconsIcon
-          icon={Add01Icon}
-          className="size-4"
-          strokeWidth={2}
-        />
+        <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
       </StepButton>
     </div>
   )
@@ -292,7 +282,7 @@ function StepButton({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        'flex size-9 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors',
+        'border-border bg-background text-foreground flex size-9 items-center justify-center rounded-full border transition-colors',
         disabled
           ? 'pointer-events-none opacity-40'
           : 'hover:border-primary hover:text-primary'

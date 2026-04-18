@@ -55,16 +55,16 @@ function VendorList({ onSelect }: { onSelect: (id: string) => void }) {
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col gap-2">
-        <h2 className="font-heading text-2xl font-bold text-foreground">
+        <h2 className="font-heading text-foreground text-2xl font-bold">
           Participating Vendors
         </h2>
-        <p className="text-sm text-muted-foreground md:text-base">
+        <p className="text-muted-foreground text-sm md:text-base">
           Explore our curated selection of local vendors, from food to drinks.
           All vendors accept cashless payments.
         </p>
       </div>
 
-      <div className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-5 px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-6">
+      <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-6 [&::-webkit-scrollbar]:hidden">
         {PARTICIPATING_VENDORS.map((vendor, i) => (
           <motion.div
             key={vendor.id}

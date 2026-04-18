@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   AnimatePresence,
   motion,
@@ -19,7 +20,13 @@ const NAV_LINKS = [
   { href: '/vendors', label: 'For Vendors' },
 ] as const
 
+function isActivePath(pathname: string, href: string) {
+  if (href === '/') return pathname === '/'
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
 export function SiteHeader() {
+  const pathname = usePathname() ?? '/'
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { scrollY } = useScroll()
@@ -84,17 +91,34 @@ export function SiteHeader() {
             className="hidden items-center gap-8 md:flex lg:gap-12"
           >
             <ul className="flex items-center gap-6 lg:gap-12">
-              {NAV_LINKS.map((link) => (
+              {NAV_LINKS.map((link) => {
+                const active = isActivePath(pathname, link.href)
+                return (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="group text-foreground hover:text-primary relative inline-flex text-base font-medium transition-colors"
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'group relative inline-flex text-base font-medium transition-colors',
+                      active
+                        ? 'text-primary'
+                        : 'text-foreground hover:text-primary'
+                    )}
                   >
                     {link.label}
-                    <span className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-0 rounded-full transition-[width] duration-300 ease-out group-hover:w-full" />
+                    {active ? (
+                      <motion.span
+                        layoutId="site-nav-underline"
+                        className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-full rounded-full"
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                      />
+                    ) : (
+                      <span className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-0 rounded-full transition-[width] duration-300 ease-out group-hover:w-full" />
+                    )}
                   </Link>
                 </li>
-              ))}
+                )
+              })}
             </ul>
             <Button size="xl" asChild>
               <Link href="/signup">Get Started</Link>
@@ -108,7 +132,11 @@ export function SiteHeader() {
         </div>
       </motion.header>
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        pathname={pathname}
+      />
     </>
   )
 }
@@ -135,7 +163,15 @@ function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
   )
 }
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({
+  open,
+  onClose,
+  pathname,
+}: {
+  open: boolean
+  onClose: () => void
+  pathname: string
+}) {
   return (
     <AnimatePresence>
       {open && (
@@ -198,42 +234,53 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           <div className="relative flex h-full flex-col px-6 pt-28 pb-10">
             <nav aria-label="Mobile primary" className="flex-1">
               <ul className="flex flex-col gap-2">
-                {NAV_LINKS.map((link, i) => (
-                  <motion.li
-                    key={link.href}
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 12 }}
-                    transition={{
-                      delay: 0.18 + i * 0.07,
-                      duration: 0.42,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="border-border/70 overflow-hidden border-b"
-                  >
-                    <Link
-                      href={link.href}
-                      onClick={onClose}
-                      className="group flex items-center justify-between py-5"
+                {NAV_LINKS.map((link, i) => {
+                  const active = isActivePath(pathname, link.href)
+                  return (
+                    <motion.li
+                      key={link.href}
+                      initial={{ opacity: 0, y: 28 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 12 }}
+                      transition={{
+                        delay: 0.18 + i * 0.07,
+                        duration: 0.42,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="border-border/70 overflow-hidden border-b"
                     >
-                      <span className="font-heading text-foreground group-hover:text-primary text-3xl font-medium tracking-tight transition-colors">
-                        {link.label}
-                      </span>
-                      <motion.span
-                        aria-hidden
-                        className="text-primary text-2xl"
-                        initial={{ x: -8, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{
-                          delay: 0.3 + i * 0.07,
-                          duration: 0.3,
-                        }}
+                      <Link
+                        href={link.href}
+                        onClick={onClose}
+                        aria-current={active ? 'page' : undefined}
+                        className="group flex items-center justify-between py-5"
                       >
-                        →
-                      </motion.span>
-                    </Link>
-                  </motion.li>
-                ))}
+                        <span
+                          className={cn(
+                            'font-heading text-3xl font-medium tracking-tight transition-colors',
+                            active
+                              ? 'text-primary'
+                              : 'text-foreground group-hover:text-primary'
+                          )}
+                        >
+                          {link.label}
+                        </span>
+                        <motion.span
+                          aria-hidden
+                          className="text-primary text-2xl"
+                          initial={{ x: -8, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{
+                            delay: 0.3 + i * 0.07,
+                            duration: 0.3,
+                          }}
+                        >
+                          →
+                        </motion.span>
+                      </Link>
+                    </motion.li>
+                  )
+                })}
               </ul>
             </nav>
 
