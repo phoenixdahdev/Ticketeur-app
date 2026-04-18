@@ -1,24 +1,26 @@
-import { cn } from "@ticketur/ui/lib/utils";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { cn } from '@ticketur/ui/lib/utils'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Loading03Icon } from '@hugeicons/core-free-icons'
 
 function Spinner({
   className,
   strokeWidth,
   ...props
-}: React.ComponentProps<"svg">) {
+}: React.ComponentProps<'svg'>) {
   return (
     <HugeiconsIcon
       icon={Loading03Icon}
       strokeWidth={
-        typeof strokeWidth === "string" ? Number(strokeWidth) : (strokeWidth ?? 2)
+        typeof strokeWidth === 'string'
+          ? Number(strokeWidth)
+          : (strokeWidth ?? 2)
       }
       role="status"
       aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
+      className={cn('size-4 animate-spin', className)}
       {...props}
     />
-  );
+  )
 }
 
-export { Spinner };
+export { Spinner }

@@ -1,5 +1,5 @@
-import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server"
-import { createTRPCRouter } from "../trpc"
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
+import { createTRPCRouter } from '../trpc'
 
 export const appRouter = createTRPCRouter({})
 

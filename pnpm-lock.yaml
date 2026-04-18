@@ -32,6 +32,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@hugeicons/core-free-icons':
+        specifier: ^4.1.1
+        version: 4.1.1
+      '@hugeicons/react':
+        specifier: ^1.1.6
+        version: 1.1.6(react@19.2.5)
       '@ticketur/api':
         specifier: workspace:*
         version: link:../../packages/api

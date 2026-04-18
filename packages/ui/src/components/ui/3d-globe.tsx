@@ -1,78 +1,78 @@
-"use client";
-import React, { useRef, useMemo, useState, useCallback, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, useTexture } from "@react-three/drei";
-import * as THREE from "three";
-import { cn } from "@ticketur/ui/lib/utils";
+'use client'
+import React, { useRef, useMemo, useState, useCallback, Suspense } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls, Html, useTexture } from '@react-three/drei'
+import * as THREE from 'three'
+import { cn } from '@ticketur/ui/lib/utils'
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface GlobeMarker {
-  lat: number;
-  lng: number;
-  src: string;
-  label?: string;
-  size?: number;
+  lat: number
+  lng: number
+  src: string
+  label?: string
+  size?: number
 }
 
 export interface Globe3DConfig {
   /** Globe radius */
-  radius?: number;
+  radius?: number
   /** Globe base color (used as fallback or tint) */
-  globeColor?: string;
+  globeColor?: string
   /** URL to the Earth texture map */
-  textureUrl?: string;
+  textureUrl?: string
   /** URL to the bump/elevation map for terrain */
-  bumpMapUrl?: string;
+  bumpMapUrl?: string
   /** Whether to show atmosphere glow */
-  showAtmosphere?: boolean;
+  showAtmosphere?: boolean
   /** Atmosphere color */
-  atmosphereColor?: string;
+  atmosphereColor?: string
   /** Atmosphere intensity */
-  atmosphereIntensity?: number;
+  atmosphereIntensity?: number
   /** Atmosphere blur/softness (higher = more diffuse, default 3) */
-  atmosphereBlur?: number;
+  atmosphereBlur?: number
   /** Terrain bump scale (0 = flat, higher = more pronounced) */
-  bumpScale?: number;
+  bumpScale?: number
   /** Auto rotate speed (0 = disabled) */
-  autoRotateSpeed?: number;
+  autoRotateSpeed?: number
   /** Enable zoom */
-  enableZoom?: boolean;
+  enableZoom?: boolean
   /** Enable pan */
-  enablePan?: boolean;
+  enablePan?: boolean
   /** Min zoom distance */
-  minDistance?: number;
+  minDistance?: number
   /** Max zoom distance */
-  maxDistance?: number;
+  maxDistance?: number
   /** Initial rotation */
-  initialRotation?: { x: number; y: number };
+  initialRotation?: { x: number; y: number }
   /** Marker default size */
-  markerSize?: number;
+  markerSize?: number
   /** Show wireframe overlay */
-  showWireframe?: boolean;
+  showWireframe?: boolean
   /** Wireframe color */
-  wireframeColor?: string;
+  wireframeColor?: string
   /** Ambient light intensity */
-  ambientIntensity?: number;
+  ambientIntensity?: number
   /** Point light intensity */
-  pointLightIntensity?: number;
+  pointLightIntensity?: number
   /** Background color (null for transparent) */
-  backgroundColor?: string | null;
+  backgroundColor?: string | null
 }
 
 interface Globe3DProps {
   /** Array of markers to display on the globe */
-  markers?: GlobeMarker[];
+  markers?: GlobeMarker[]
   /** Globe configuration */
-  config?: Globe3DConfig;
+  config?: Globe3DConfig
   /** Additional CSS classes */
-  className?: string;
+  className?: string
   /** Callback when a marker is clicked */
-  onMarkerClick?: (marker: GlobeMarker) => void;
+  onMarkerClick?: (marker: GlobeMarker) => void
   /** Callback when a marker is hovered */
-  onMarkerHover?: (marker: GlobeMarker | null) => void;
+  onMarkerHover?: (marker: GlobeMarker | null) => void
 }
 
 // ============================================================================
@@ -80,9 +80,9 @@ interface Globe3DProps {
 // ============================================================================
 
 const DEFAULT_EARTH_TEXTURE =
-  "https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg";
+  'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg'
 const DEFAULT_BUMP_TEXTURE =
-  "https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png";
+  'https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png'
 
 // ============================================================================
 // Utility Functions
@@ -94,16 +94,16 @@ const DEFAULT_BUMP_TEXTURE =
 function latLngToVector3(
   lat: number,
   lng: number,
-  radius: number,
+  radius: number
 ): THREE.Vector3 {
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lng + 180) * (Math.PI / 180);
+  const phi = (90 - lat) * (Math.PI / 180)
+  const theta = (lng + 180) * (Math.PI / 180)
 
-  const x = -(radius * Math.sin(phi) * Math.cos(theta));
-  const z = radius * Math.sin(phi) * Math.sin(theta);
-  const y = radius * Math.cos(phi);
+  const x = -(radius * Math.sin(phi) * Math.cos(theta))
+  const z = radius * Math.sin(phi) * Math.sin(theta)
+  const y = radius * Math.cos(phi)
 
-  return new THREE.Vector3(x, y, z);
+  return new THREE.Vector3(x, y, z)
 }
 
 // ============================================================================
@@ -111,11 +111,11 @@ function latLngToVector3(
 // ============================================================================
 
 interface MarkerProps {
-  marker: GlobeMarker;
-  radius: number;
-  defaultSize: number;
-  onClick?: (marker: GlobeMarker) => void;
-  onHover?: (marker: GlobeMarker | null) => void;
+  marker: GlobeMarker
+  radius: number
+  defaultSize: number
+  onClick?: (marker: GlobeMarker) => void
+  onHover?: (marker: GlobeMarker | null) => void
 }
 
 function Marker({
@@ -125,70 +125,70 @@ function Marker({
   onClick,
   onHover,
 }: MarkerProps) {
-  const [hovered, setHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const groupRef = useRef<THREE.Group>(null);
-  const imageGroupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
+  const [hovered, setHovered] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const groupRef = useRef<THREE.Group>(null)
+  const imageGroupRef = useRef<THREE.Group>(null)
+  const { camera } = useThree()
 
   // Surface position (where the line starts)
   const surfacePosition = useMemo(() => {
-    return latLngToVector3(marker.lat, marker.lng, radius * 1.001);
-  }, [marker.lat, marker.lng, radius]);
+    return latLngToVector3(marker.lat, marker.lng, radius * 1.001)
+  }, [marker.lat, marker.lng, radius])
 
   // Top of the line (where the image is) - positioned further out to prevent going inside globe
   const topPosition = useMemo(() => {
-    return latLngToVector3(marker.lat, marker.lng, radius * 1.18);
-  }, [marker.lat, marker.lng, radius]);
+    return latLngToVector3(marker.lat, marker.lng, radius * 1.18)
+  }, [marker.lat, marker.lng, radius])
 
-  const lineHeight = topPosition.distanceTo(surfacePosition);
+  const lineHeight = topPosition.distanceTo(surfacePosition)
 
   // Check if marker is facing the camera
   useFrame(() => {
-    if (!imageGroupRef.current) return;
+    if (!imageGroupRef.current) return
 
     // Get the world position of the image (the positioned element)
-    const worldPos = new THREE.Vector3();
-    imageGroupRef.current.getWorldPosition(worldPos);
+    const worldPos = new THREE.Vector3()
+    imageGroupRef.current.getWorldPosition(worldPos)
 
     // Direction from globe center (0,0,0) to marker
-    const markerDirection = worldPos.clone().normalize();
+    const markerDirection = worldPos.clone().normalize()
 
     // Direction from globe center to camera
-    const cameraDirection = camera.position.clone().normalize();
+    const cameraDirection = camera.position.clone().normalize()
 
     // Dot product: positive means facing camera, negative means behind
-    const dot = markerDirection.dot(cameraDirection);
+    const dot = markerDirection.dot(cameraDirection)
 
     // Show marker only if it's facing the camera (stricter threshold)
-    setIsVisible(dot > 0.1);
-  });
+    setIsVisible(dot > 0.1)
+  })
 
   const handlePointerEnter = useCallback(() => {
-    setHovered(true);
-    onHover?.(marker);
-  }, [marker, onHover]);
+    setHovered(true)
+    onHover?.(marker)
+  }, [marker, onHover])
 
   const handlePointerLeave = useCallback(() => {
-    setHovered(false);
-    onHover?.(null);
-  }, [onHover]);
+    setHovered(false)
+    onHover?.(null)
+  }, [onHover])
 
   const handleClick = useCallback(() => {
-    onClick?.(marker);
-  }, [marker, onClick]);
+    onClick?.(marker)
+  }, [marker, onClick])
 
   // Calculate line center and orientation
   const { lineCenter, lineQuaternion } = useMemo(() => {
-    const center = surfacePosition.clone().lerp(topPosition, 0.5);
+    const center = surfacePosition.clone().lerp(topPosition, 0.5)
 
     // Calculate rotation to align cylinder with the direction from surface to top
-    const direction = topPosition.clone().sub(surfacePosition).normalize();
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    const direction = topPosition.clone().sub(surfacePosition).normalize()
+    const quaternion = new THREE.Quaternion()
+    quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction)
 
-    return { lineCenter: center, lineQuaternion: quaternion };
-  }, [surfacePosition, topPosition]);
+    return { lineCenter: center, lineQuaternion: quaternion }
+  }, [surfacePosition, topPosition])
 
   return (
     <group ref={groupRef} visible={isVisible}>
@@ -196,7 +196,7 @@ function Marker({
       <mesh position={lineCenter} quaternion={lineQuaternion}>
         <cylinderGeometry args={[0.003, 0.003, lineHeight, 8]} />
         <meshBasicMaterial
-          color={hovered ? "#ffffff" : "#94a3b8"}
+          color={hovered ? '#ffffff' : '#94a3b8'}
           transparent
           opacity={hovered ? 0.9 : 0.6}
         />
@@ -205,7 +205,7 @@ function Marker({
       {/* Pin point at the surface */}
       <mesh position={surfacePosition} quaternion={lineQuaternion}>
         <coneGeometry args={[0.015, 0.04, 8]} />
-        <meshBasicMaterial color={hovered ? "#f97316" : "#ef4444"} />
+        <meshBasicMaterial color={hovered ? '#f97316' : '#ef4444'} />
       </mesh>
 
       {/* Circular image at the top */}
@@ -216,19 +216,19 @@ function Marker({
           sprite
           distanceFactor={10}
           style={{
-            pointerEvents: isVisible ? "auto" : "none",
+            pointerEvents: isVisible ? 'auto' : 'none',
             opacity: isVisible ? 1 : 0,
-            transition: "opacity 0.15s ease-out",
+            transition: 'opacity 0.15s ease-out',
           }}
         >
           <div
             className={cn(
-              "cursor-pointer overflow-hidden rounded-full bg-neutral-900 shadow-lg transition-transform duration-200",
-              hovered && "scale-125 shadow-xl ring-1 ring-white/50",
+              'cursor-pointer overflow-hidden rounded-full bg-neutral-900 shadow-lg transition-transform duration-200',
+              hovered && 'scale-125 shadow-xl ring-1 ring-white/50'
             )}
             style={{
-              width: "8px",
-              height: "8px",
+              width: '8px',
+              height: '8px',
             }}
             onMouseEnter={handlePointerEnter}
             onMouseLeave={handlePointerLeave}
@@ -236,7 +236,7 @@ function Marker({
           >
             <img
               src={marker.src}
-              alt={marker.label || "Marker"}
+              alt={marker.label || 'Marker'}
               className="h-full w-full object-cover"
               draggable={false}
             />
@@ -244,7 +244,7 @@ function Marker({
         </Html>
       </group>
     </group>
-  );
+  )
 }
 
 // ============================================================================
@@ -252,10 +252,10 @@ function Marker({
 // ============================================================================
 
 interface RotatingGlobeProps {
-  config: Required<Globe3DConfig>;
-  markers: GlobeMarker[];
-  onMarkerClick?: (marker: GlobeMarker) => void;
-  onMarkerHover?: (marker: GlobeMarker | null) => void;
+  config: Required<Globe3DConfig>
+  markers: GlobeMarker[]
+  onMarkerClick?: (marker: GlobeMarker) => void
+  onMarkerHover?: (marker: GlobeMarker | null) => void
 }
 
 function RotatingGlobe({
@@ -264,33 +264,33 @@ function RotatingGlobe({
   onMarkerClick,
   onMarkerHover,
 }: RotatingGlobeProps) {
-  const groupRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<THREE.Group>(null)
 
   // Load Earth textures
   const [earthTexture, bumpTexture] = useTexture([
     config.textureUrl,
     config.bumpMapUrl,
-  ]);
+  ])
 
   // Configure textures
   useMemo(() => {
     if (earthTexture) {
-      earthTexture.colorSpace = THREE.SRGBColorSpace;
-      earthTexture.anisotropy = 16;
+      earthTexture.colorSpace = THREE.SRGBColorSpace
+      earthTexture.anisotropy = 16
     }
     if (bumpTexture) {
-      bumpTexture.anisotropy = 8;
+      bumpTexture.anisotropy = 8
     }
-  }, [earthTexture, bumpTexture]);
+  }, [earthTexture, bumpTexture])
 
   // Create geometries
   const geometry = useMemo(() => {
-    return new THREE.SphereGeometry(config.radius, 64, 64);
-  }, [config.radius]);
+    return new THREE.SphereGeometry(config.radius, 64, 64)
+  }, [config.radius])
 
   const wireframeGeometry = useMemo(() => {
-    return new THREE.SphereGeometry(config.radius * 1.002, 32, 16);
-  }, [config.radius]);
+    return new THREE.SphereGeometry(config.radius * 1.002, 32, 16)
+  }, [config.radius])
 
   return (
     <group ref={groupRef}>
@@ -329,7 +329,7 @@ function RotatingGlobe({
         />
       ))}
     </group>
-  );
+  )
 }
 
 // ============================================================================
@@ -337,16 +337,16 @@ function RotatingGlobe({
 // ============================================================================
 
 interface AtmosphereProps {
-  radius: number;
-  color: string;
-  intensity: number;
-  blur: number;
+  radius: number
+  color: string
+  intensity: number
+  blur: number
 }
 
 function Atmosphere({ radius, color, intensity, blur }: AtmosphereProps) {
   // blur controls the fresnel exponent: lower = more diffuse, higher = sharper edge
   // We invert it so higher blur value = more diffuse (lower exponent)
-  const fresnelPower = Math.max(0.5, 5 - blur);
+  const fresnelPower = Math.max(0.5, 5 - blur)
 
   const atmosphereMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -378,15 +378,15 @@ function Atmosphere({ radius, color, intensity, blur }: AtmosphereProps) {
       side: THREE.BackSide,
       transparent: true,
       depthWrite: false,
-    });
-  }, [color, intensity, fresnelPower]);
+    })
+  }, [color, intensity, fresnelPower])
 
   return (
     <mesh scale={[1.12, 1.12, 1.12]}>
       <sphereGeometry args={[radius, 64, 32]} />
       <primitive object={atmosphereMaterial} attach="material" />
     </mesh>
-  );
+  )
 }
 
 // ============================================================================
@@ -394,20 +394,20 @@ function Atmosphere({ radius, color, intensity, blur }: AtmosphereProps) {
 // ============================================================================
 
 interface SceneProps {
-  markers: GlobeMarker[];
-  config: Required<Globe3DConfig>;
-  onMarkerClick?: (marker: GlobeMarker) => void;
-  onMarkerHover?: (marker: GlobeMarker | null) => void;
+  markers: GlobeMarker[]
+  config: Required<Globe3DConfig>
+  onMarkerClick?: (marker: GlobeMarker) => void
+  onMarkerHover?: (marker: GlobeMarker | null) => void
 }
 
 function Scene({ markers, config, onMarkerClick, onMarkerHover }: SceneProps) {
-  const { camera } = useThree();
+  const { camera } = useThree()
 
   // Set initial camera position (pulled back to accommodate markers)
   React.useEffect(() => {
-    camera.position.set(0, 0, config.radius * 3.5);
-    camera.lookAt(0, 0, 0);
-  }, [camera, config.radius]);
+    camera.position.set(0, 0, config.radius * 3.5)
+    camera.lookAt(0, 0, 0)
+  }, [camera, config.radius])
 
   return (
     <>
@@ -456,7 +456,7 @@ function Scene({ markers, config, onMarkerClick, onMarkerHover }: SceneProps) {
         dampingFactor={0.1}
       />
     </>
-  );
+  )
 }
 
 // ============================================================================
@@ -472,7 +472,7 @@ function LoadingFallback() {
         </span>
       </div>
     </Html>
-  );
+  )
 }
 
 // ============================================================================
@@ -481,11 +481,11 @@ function LoadingFallback() {
 
 const defaultConfig: Required<Globe3DConfig> = {
   radius: 2,
-  globeColor: "#1a1a2e",
+  globeColor: '#1a1a2e',
   textureUrl: DEFAULT_EARTH_TEXTURE,
   bumpMapUrl: DEFAULT_BUMP_TEXTURE,
   showAtmosphere: false,
-  atmosphereColor: "#4da6ff",
+  atmosphereColor: '#4da6ff',
   atmosphereIntensity: 0.5,
   atmosphereBlur: 2,
   bumpScale: 1,
@@ -497,11 +497,11 @@ const defaultConfig: Required<Globe3DConfig> = {
   initialRotation: { x: 0, y: 0 },
   markerSize: 0.06,
   showWireframe: false,
-  wireframeColor: "#4a9eff",
+  wireframeColor: '#4a9eff',
   ambientIntensity: 0.6,
   pointLightIntensity: 1.5,
   backgroundColor: null,
-};
+}
 
 export function Globe3D({
   markers = [],
@@ -512,16 +512,16 @@ export function Globe3D({
 }: Globe3DProps) {
   const mergedConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config],
-  );
+    [config]
+  )
 
   return (
-    <div className={cn("relative h-125 w-full", className)}>
+    <div className={cn('relative h-125 w-full', className)}>
       <Canvas
         gl={{
           antialias: true,
           alpha: true,
-          powerPreference: "high-performance",
+          powerPreference: 'high-performance',
         }}
         dpr={[1, 2]}
         camera={{
@@ -531,7 +531,7 @@ export function Globe3D({
           position: [0, 0, mergedConfig.radius * 3.5],
         }}
         style={{
-          background: mergedConfig.backgroundColor || "transparent",
+          background: mergedConfig.backgroundColor || 'transparent',
         }}
       >
         <Suspense fallback={<LoadingFallback />}>
@@ -544,7 +544,7 @@ export function Globe3D({
         </Suspense>
       </Canvas>
     </div>
-  );
+  )
 }
 
-export default Globe3D;
+export default Globe3D
