@@ -1,11 +1,11 @@
 {
-  "extends": "@useticketeur/typescript-config/base.json",
-  "include": ["src"],
-  "exclude": ["node_modules"],
+  "extends": "@ticketur/typescript-config/base.json",
   "compilerOptions": {
+    "jsx": "react-jsx",
     "paths": {
       "@jobs/*": ["./src/*"]
-    },
-    "jsx": "react-jsx"
-  }
+    }
+  },
+  "include": ["src", "trigger.config.ts"],
+  "exclude": ["node_modules"]
 }

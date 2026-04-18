@@ -1,24 +1,15 @@
 {
-  "name": "@useticketeur/jobs",
-  "version": "0.1.0",
+  "name": "@ticketur/jobs",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
-    "clean": "rm -rf .turbo node_modules",
     "dev": "trigger dev",
-    "typecheck": "tsc --noEmit",
-    "deploy": "trigger deploy"
+    "deploy": "trigger deploy",
+    "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@react-email/render": "^2.0.2",
-    "@trigger.dev/sdk": "4.3.2",
-    "@useticketeur/email": "workspace:*",
-    "nanoid": "^5.1.6",
-    "react": "^19.2.3",
-    "resend": "^6.7.0",
-    "trigger.dev": "^4.3.2",
-    "zod": "^4.3.5"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "dotenv": "^17.2.3"
+    "@ticketur/typescript-config": "workspace:*",
+    "typescript": "^6.0.3"
   }
 }

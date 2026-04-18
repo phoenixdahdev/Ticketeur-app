@@ -1,8 +1,9 @@
 {
-  "extends": "@useticketeur/typescript-config/nextjs.json",
+  "extends": "@ticketur/typescript-config/nextjs.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"],
+      "@ticketur/ui/*": ["../../packages/ui/src/*"]
     },
     "plugins": [
       {
@@ -11,12 +12,12 @@
     ]
   },
   "include": [
+    "next-env.d.ts",
+    "next.config.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../types",
-    "next-env.d.ts",
-    "next.config.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next"]
+  "exclude": ["node_modules"]
 }

@@ -1,29 +1,7 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-  experimental: {
-    turbopackFileSystemCacheForDev: true,
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.public.blob.vercel-storage.com',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
+  transpilePackages: ["@ticketur/ui"],
 }
 
 export default nextConfig

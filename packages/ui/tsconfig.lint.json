@@ -1,5 +1,5 @@
 {
-  "extends": "@useticketeur/typescript-config/react-library.json",
+  "extends": "@ticketur/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist"
   },

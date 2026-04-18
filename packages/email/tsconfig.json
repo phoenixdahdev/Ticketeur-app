@@ -1,12 +1,8 @@
 {
-  "extends": "@useticketeur/typescript-config/base.json",
+  "extends": "@ticketur/typescript-config/base.json",
   "compilerOptions": {
-    "composite": false,
     "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "strictNullChecks": true
+    "noEmit": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", ".react-email"]

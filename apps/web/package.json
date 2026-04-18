@@ -1,48 +1,29 @@
 {
-  "name": "useticketeur-web",
-  "version": "0.1.0",
+  "name": "web",
+  "version": "0.0.1",
+  "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3002",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bprogress/next": "^3.2.12",
-    "@hookform/resolvers": "^5.2.2",
-    "@neondatabase/serverless": "^1.0.2",
-    "@t3-oss/env-nextjs": "^0.13.10",
-    "@tanstack/react-query": "^5.90.16",
-    "@tanstack/react-query-devtools": "^5.91.2",
-    "@tiptap/extension-placeholder": "^3.15.3",
-    "@tiptap/react": "^3.15.3",
-    "@tiptap/starter-kit": "^3.15.3",
-    "@trigger.dev/sdk": "^4.3.2",
-    "@useticketeur/db": "workspace:*",
-    "@useticketeur/ui": "workspace:*",
-    "drizzle-orm": "^0.45.1",
-    "framer-motion": "^12.25.0",
-    "input-otp": "^1.4.2",
-    "lucide-react": "^0.562.0",
-    "motion": "^12.25.0",
-    "next": "16.1.1",
-    "next-auth": "5.0.0-beta.29",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-dropzone": "^14.3.8",
-    "react-hook-form": "^7.70.0",
-    "sonner": "^2.0.7",
-    "tailwindcss": "^4.1.18",
-    "zod": "^4.3.5",
-    "zustand": "^5.0.9"
+    "@ticketur/ui": "workspace:*",
+    "next": "16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
-    "@types/react": "^19.2.7",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@useticketeur/eslint-config": "workspace:^",
-    "@useticketeur/typescript-config": "workspace:*",
-    "typescript": "^5.9.3"
+    "@ticketur/eslint-config": "workspace:^",
+    "@ticketur/typescript-config": "workspace:*",
+    "eslint": "^10.2.1",
+    "typescript": "^6.0.3"
   }
 }

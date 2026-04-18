@@ -1,23 +1,25 @@
 {
-  "name": "useticketeur-app",
+  "name": "ticketur",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "turbo format",
+    "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "@useticketeur/eslint-config": "workspace:*",
-    "@useticketeur/typescript-config": "workspace:*",
-    "prettier": "^3.7.4",
+    "@ticketur/eslint-config": "workspace:*",
+    "@ticketur/typescript-config": "workspace:*",
+    "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "turbo": "^2.7.3",
-    "typescript": "5.9.3"
+    "shadcn": "^4.2.0",
+    "turbo": "^2.9.6",
+    "typescript": "6.0.3"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=23"
+    "node": ">=20"
   }
 }

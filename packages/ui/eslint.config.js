@@ -1,4 +1,4 @@
-import { config } from '@useticketeur/eslint-config/react-internal'
+import { config } from "@ticketur/eslint-config/react-internal"
 
 /** @type {import("eslint").Linter.Config} */
 export default config

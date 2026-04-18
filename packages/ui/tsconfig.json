@@ -1,8 +1,9 @@
 {
-  "extends": "@useticketeur/typescript-config/react-library.json",
+  "extends": "@ticketur/typescript-config/react-library.json",
   "compilerOptions": {
+    "types": ["node"],
     "paths": {
-      "@useticketeur/ui/*": ["./src/*"]
+      "@ticketur/ui/*": ["./src/*"]
     }
   },
   "include": ["."],

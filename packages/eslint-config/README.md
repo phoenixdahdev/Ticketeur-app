@@ -1,3 +1,3 @@
-# `@useticketeur/eslint-config`
+# `@ticketur/eslint-config`
 
 Shared eslint configuration for the workspace.
