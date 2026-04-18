@@ -8,7 +8,7 @@ export function EventsPageHeader() {
       aria-labelledby="events-page-title"
       className="w-full px-5 md:px-10 lg:px-10"
     >
-      <div className="mx-auto max-w-[1440px] pt-10 pb-6 md:pt-14 md:pb-8">
+      <div className="mx-auto max-w-360 pt-10 pb-6 md:pt-14 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}

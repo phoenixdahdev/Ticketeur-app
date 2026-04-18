@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import {
   parseAsArrayOf,
   parseAsInteger,
@@ -34,6 +34,7 @@ import {
   type EventTab,
 } from '@/components/sections/events/events-toolbar'
 import { MobileFilterDrawer } from '@/components/sections/events/mobile-filter-drawer'
+import { toIsoDate } from '@/lib/date'
 
 const PAGE_SIZE = 6
 
@@ -201,6 +202,17 @@ export function EventsGridSection() {
     setState({ ...patch, page: 1 })
   }
 
+  const clearFilters = () => {
+    setState({
+      categories: null,
+      date: null,
+      priceMin: null,
+      priceMax: null,
+      location: null,
+      page: 1,
+    })
+  }
+
   const activeFilterCount =
     (state.categories.length > 0 ? 1 : 0) +
     (state.date ? 1 : 0) +
@@ -225,10 +237,7 @@ export function EventsGridSection() {
     }
     if (state.date) {
       list = list.filter((e) => {
-        const d =
-          typeof e.date === 'string'
-            ? e.date
-            : e.date.toISOString().slice(0, 10)
+        const d = typeof e.date === 'string' ? e.date : toIsoDate(e.date)
         return d === state.date
       })
     }
@@ -266,15 +275,47 @@ export function EventsGridSection() {
 
   return (
     <section aria-label="All events" className="relative w-full px-5 md:px-10">
-      <div className="mx-auto flex max-w-[1440px] gap-10 pb-16 md:pb-20">
+      <div className="mx-auto flex max-w-360 gap-10 pb-16 md:pb-20">
         <aside
           aria-label="Filters"
           className="hidden w-[320px] shrink-0 lg:block"
         >
           <div className="sticky top-24">
-            <h2 className="font-heading text-foreground mb-6 text-lg font-semibold">
-              Filters
-            </h2>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <h2 className="font-heading text-foreground text-lg font-semibold">
+                Filters
+              </h2>
+              <AnimatePresence initial={false}>
+                {activeFilterCount > 0 && (
+                  <motion.button
+                    key="clear"
+                    type="button"
+                    onClick={clearFilters}
+                    initial={{ opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 6 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    whileTap={{ scale: 0.96 }}
+                    className="text-primary hover:text-primary-hover inline-flex items-center gap-1 text-sm font-medium transition-colors"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-3.5"
+                      aria-hidden
+                    >
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                    Clear all
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
             <EventFilters values={filterValues} onChange={patchFilters} />
           </div>
         </aside>
@@ -351,7 +392,7 @@ export function EventsGridSection() {
 
 function EmptyState() {
   return (
-    <div className="border-border bg-muted/20 flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+    <div className="border-border bg-muted/20 flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
       <p className="font-heading text-foreground text-lg font-semibold">
         No events match your filters
       </p>

@@ -18,30 +18,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@ticketur/ui/components/popover'
+import { formatShortDate, toDate, toIsoDate } from '@/lib/date'
 
 const SEARCH_KEYS = {
   q: parseAsString.withDefault(''),
   location: parseAsString.withDefault(''),
   date: parseAsString.withDefault(''),
-}
-
-function formatDateLabel(iso: string) {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-').map(Number)
-  if (!y || !m || !d) return ''
-  const date = new Date(y, m - 1, d)
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-function toIsoDate(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
 }
 
 export function EventSearchBar({ className }: { className?: string }) {
@@ -57,12 +39,10 @@ export function EventSearchBar({ className }: { className?: string }) {
     setState({ q: null, location: null, date: null })
   }
 
-  const selectedDate = useMemo(() => {
-    if (!state.date) return undefined
-    const [y, m, d] = state.date.split('-').map(Number)
-    if (!y || !m || !d) return undefined
-    return new Date(y, m - 1, d)
-  }, [state.date])
+  const selectedDate = useMemo(
+    () => toDate(state.date) ?? undefined,
+    [state.date]
+  )
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -122,7 +102,7 @@ export function EventSearchBar({ className }: { className?: string }) {
                       state.date ? 'text-[#282828]' : 'text-[#c6c6c6]'
                     )}
                   >
-                    {state.date ? formatDateLabel(state.date) : 'Date'}
+                    {state.date ? formatShortDate(state.date) : 'Date'}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent

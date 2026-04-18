@@ -8,6 +8,7 @@ import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
+import { formatLongDate } from '@/lib/date'
 
 export type BadgeTone = 'green' | 'blue' | 'gray' | 'purple' | 'amber'
 
@@ -29,16 +30,6 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   gray: 'bg-[#ededed] text-[#484848] dark:bg-white/10 dark:text-muted-foreground',
   purple: 'bg-primary/12 text-primary',
   amber: 'bg-[#f59e0b]/15 text-[#b45309]',
-}
-
-function formatDate(date: string | Date) {
-  const d = typeof date === 'string' ? new Date(date) : date
-  if (Number.isNaN(d.getTime())) return typeof date === 'string' ? date : ''
-  return d.toLocaleDateString(undefined, {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
 }
 
 export function FeaturedEventCard({
@@ -99,7 +90,7 @@ export function FeaturedEventCard({
               className="size-4 shrink-0"
               strokeWidth={1.6}
             />
-            <span>{formatDate(date)}</span>
+            <span>{formatLongDate(date)}</span>
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <HugeiconsIcon

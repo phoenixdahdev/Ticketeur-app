@@ -46,7 +46,7 @@ const FEATURED: (FeaturedEventCardProps & { id: string })[] = [
 export function FeaturedEvents() {
   return (
     <section aria-label="Featured Events" className="w-full px-5 md:px-10">
-      <div className="mx-auto max-w-[1440px] py-10 md:py-16">
+      <div className="mx-auto max-w-360 py-10 md:py-16">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -57,7 +57,7 @@ export function FeaturedEvents() {
           Featured Events
         </motion.h2>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-[35px]">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-8.75">
           {FEATURED.map((event, i) => (
             <motion.div
               key={event.id}

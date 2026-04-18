@@ -12,6 +12,7 @@ import {
 
 import { Button } from '@ticketur/ui/components/button'
 import { LogoIcon } from '@ticketur/ui/icons/logo-icon'
+import { currentYear } from '@/lib/date'
 
 const DISCOVER_LINKS = [
   { href: '/events', label: 'Explore Events' },
@@ -29,7 +30,7 @@ const SOCIALS: {
 ]
 
 export function SiteFooter() {
-  const year = new Date().getFullYear()
+  const year = currentYear()
 
   return (
     <footer className="border-border bg-background border-t">

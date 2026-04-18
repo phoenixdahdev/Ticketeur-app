@@ -9,6 +9,7 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { Checkbox } from '@ticketur/ui/components/checkbox'
 import { Calendar } from '@ticketur/ui/components/calendar'
 import { Slider } from '@ticketur/ui/components/slider'
+import { toDate, toIsoDate } from '@/lib/date'
 
 export const CATEGORIES = ['All', 'Music', 'Fashion', 'Art', 'Tech'] as const
 export type Category = (typeof CATEGORIES)[number]
@@ -43,12 +44,7 @@ export function EventFilters({
   onChange: (patch: Partial<FiltersValue>) => void
   className?: string
 }) {
-  const selectedDate = (() => {
-    if (!values.date) return undefined
-    const [y, m, d] = values.date.split('-').map(Number)
-    if (!y || !m || !d) return undefined
-    return new Date(y, m - 1, d)
-  })()
+  const selectedDate = toDate(values.date) ?? undefined
 
   const isAllSelected = values.categories.length === 0
 
@@ -191,11 +187,4 @@ function FilterSection({
       </AnimatePresence>
     </div>
   )
-}
-
-function toIsoDate(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
 }

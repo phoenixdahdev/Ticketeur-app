@@ -8,6 +8,7 @@ import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
+import { formatLongDate } from '@/lib/date'
 
 export type EventCardProps = {
   id?: string
@@ -20,16 +21,6 @@ export type EventCardProps = {
   overlayBadge?: string
   href?: string
   className?: string
-}
-
-function formatDate(date: string | Date) {
-  const d = typeof date === 'string' ? new Date(date) : date
-  if (Number.isNaN(d.getTime())) return typeof date === 'string' ? date : ''
-  return d.toLocaleDateString(undefined, {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
 }
 
 export function EventCard({
@@ -88,7 +79,7 @@ export function EventCard({
               className="size-4 shrink-0"
               strokeWidth={1.6}
             />
-            <span>{formatDate(date)}</span>
+            <span>{formatLongDate(date)}</span>
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <HugeiconsIcon

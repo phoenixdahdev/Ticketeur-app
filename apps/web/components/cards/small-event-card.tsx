@@ -7,6 +7,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import { formatLongDate } from '@/lib/date'
 
 export type SmallEventStatus = 'upcoming' | 'past' | 'live' | 'sold-out'
 
@@ -36,16 +37,6 @@ const STATUS_LABEL: Record<SmallEventStatus, string> = {
   past: 'Past',
   live: 'Live now',
   'sold-out': 'Sold out',
-}
-
-function formatDate(date: string | Date) {
-  const d = typeof date === 'string' ? new Date(date) : date
-  if (Number.isNaN(d.getTime())) return typeof date === 'string' ? date : ''
-  return d.toLocaleDateString(undefined, {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
 }
 
 export function SmallEventCard({
@@ -105,7 +96,7 @@ export function SmallEventCard({
               className="size-4 shrink-0"
               strokeWidth={1.6}
             />
-            <span>{formatDate(date)}</span>
+            <span>{formatLongDate(date)}</span>
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <HugeiconsIcon
