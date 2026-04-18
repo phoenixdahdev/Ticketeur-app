@@ -40,7 +40,7 @@ export function BuiltOnTrust() {
   return (
     <section
       aria-label="Built on Trust"
-      className="w-full bg-background px-5 py-16 md:px-10 md:py-20"
+      className="bg-background w-full px-5 py-16 md:px-10 md:py-20"
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-10">
         <motion.div
@@ -50,10 +50,10 @@ export function BuiltOnTrust() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col gap-2.5 md:mx-auto md:max-w-[640px] md:text-center"
         >
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground md:text-[40px] md:leading-[1.15]">
+          <h2 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[40px] md:leading-[1.15]">
             Built on Trust
           </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+          <p className="text-muted-foreground text-sm leading-relaxed md:text-base">
             We prioritize safety at every step. Our moderated marketplace
             ensures every ticket is authentic and every transaction is secure.
           </p>
@@ -71,12 +71,12 @@ export function BuiltOnTrust() {
                 duration: 0.5,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="flex flex-col items-start gap-4 md:gap-10 md:text-center md:items-center"
+              className="flex flex-col items-start gap-4 md:items-center md:gap-10 md:text-center"
             >
               <motion.div
                 whileHover={{ scale: 1.08, rotate: -4 }}
                 transition={{ type: 'spring', stiffness: 360, damping: 18 }}
-                className="flex size-[62px] items-center justify-center rounded-[10px] bg-[#f1ebff] text-primary dark:bg-primary/15"
+                className="text-primary dark:bg-primary/15 flex size-[62px] items-center justify-center rounded-[10px] bg-[#f1ebff]"
               >
                 <HugeiconsIcon
                   icon={item.icon}
@@ -85,10 +85,10 @@ export function BuiltOnTrust() {
                 />
               </motion.div>
               <div className="flex flex-col gap-2.5">
-                <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                <h3 className="font-heading text-foreground text-lg font-semibold tracking-tight md:text-xl">
                   {item.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                <p className="text-muted-foreground text-sm leading-relaxed md:text-base">
                   {item.description}
                 </p>
               </div>
