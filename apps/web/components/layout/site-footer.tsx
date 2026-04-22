@@ -40,12 +40,12 @@ export function SiteFooter() {
           <div className="flex max-w-104.25 flex-col gap-5.5">
             <Link
               href="/"
-              aria-label="Ticketur home"
+              aria-label="Ticketeur home"
               className="inline-flex items-center gap-2"
             >
               <LogoIcon className="h-10 w-auto" />
               <span className="font-heading text-foreground text-xl font-semibold tracking-tight md:text-[22px]">
-                Ticketur
+                Ticketeur
               </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -104,7 +104,7 @@ export function SiteFooter() {
 
         <div className="border-border mt-10 flex flex-col-reverse items-center gap-4 border-t pt-8 md:mt-12 md:flex-row md:items-center md:justify-between">
           <p className="text-muted-foreground text-center text-xs md:text-left">
-            &copy; {year} Ticketur Inc. All rights reserved.
+            &copy; {year} Ticketeur Inc. All rights reserved.
           </p>
           <ThemeToggle />
         </div>

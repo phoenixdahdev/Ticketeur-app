@@ -8,10 +8,10 @@ import { cn } from '@ticketur/ui/lib/utils'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ticketur',
-    template: '%s | Ticketur',
+    default: 'Ticketeur',
+    template: '%s | Ticketeur',
   },
-  description: 'Ticketur',
+  description: 'Ticketeur',
   icons: {
     icon: '/logo.svg',
   },

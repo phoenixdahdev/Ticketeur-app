@@ -92,7 +92,7 @@ export function PartnerWithUs() {
             </h2>
             <p className="dark:text-muted-foreground font-sans text-sm font-medium text-[#484848] md:text-base md:font-normal">
               Whether you&rsquo;re organizing an event or providing essential
-              services for events. Ticketur gives you the tools to grow and
+              services for events. Ticketeur gives you the tools to grow and
               manage your business securely.
             </p>
           </div>

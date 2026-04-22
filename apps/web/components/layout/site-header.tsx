@@ -70,7 +70,7 @@ export function SiteHeader() {
         <div className="mx-auto flex h-18 w-full max-w-360 items-center justify-between px-4 md:h-21 md:px-10">
           <Link
             href="/"
-            aria-label="Ticketur home"
+            aria-label="Ticketeur home"
             className="group flex items-center gap-2"
             onClick={() => setMobileOpen(false)}
           >
@@ -82,7 +82,7 @@ export function SiteHeader() {
               <LogoIcon className="h-9 w-auto md:h-10" />
             </motion.div>
             <span className="font-heading text-foreground text-xl font-semibold tracking-tight md:text-[22px]">
-              Ticketur
+              Ticketeur
             </span>
           </Link>
 

@@ -9,7 +9,7 @@ import { OrganisersTrust } from '@/components/sections/organisers/organisers-tru
 export const metadata: Metadata = {
   title: 'For Organizers',
   description:
-    'Empower your events with Ticketur — a secure, moderated marketplace for professional organisers to manage ticketing and vendors flawlessly.',
+    'Empower your events with Ticketeur — a secure, moderated marketplace for professional organisers to manage ticketing and vendors flawlessly.',
 }
 
 export default function OrganisersPage() {

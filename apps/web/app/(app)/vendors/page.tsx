@@ -9,7 +9,7 @@ import { VendorsModerated } from '@/components/sections/vendors/vendors-moderate
 export const metadata: Metadata = {
   title: 'For Vendors',
   description:
-    'Grow your business with Ticketur — join an elite community of verified vendors and showcase your brand at the most exclusive events.',
+    'Grow your business with Ticketeur — join an elite community of verified vendors and showcase your brand at the most exclusive events.',
 }
 
 export default function VendorsPage() {
