@@ -25,7 +25,7 @@ export function VendorsHero() {
               className="font-heading text-foreground text-4xl leading-[1.1] font-bold tracking-tight md:text-[52px] md:leading-[1.05] lg:text-[60px]"
             >
               Grow Your Business with{' '}
-              <span className="text-primary">Ticketur</span>
+              <span className="text-primary">Ticketeur</span>
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed md:text-lg">
               Join an elite community of verified vendors and showcase your

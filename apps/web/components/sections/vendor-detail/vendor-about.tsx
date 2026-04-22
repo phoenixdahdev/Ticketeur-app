@@ -69,7 +69,7 @@ export function VendorAbout({ vendor }: { vendor: VendorRecord }) {
                 <QualityItem
                   icon={CheckmarkBadge02Icon}
                   title="Certified Partner"
-                  description="Fully vetted and verified by the Ticketur platform."
+                  description="Fully vetted and verified by the Ticketeur platform."
                 />
               ) : null}
               {vendor.premium ? (

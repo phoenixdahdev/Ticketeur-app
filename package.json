@@ -1,5 +1,5 @@
 {
-  "name": "ticketur",
+  "name": "ticketeur",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "@ticketur/eslint-config": "workspace:*",
-    "@ticketur/typescript-config": "workspace:*",
+    "@ticketeur/eslint-config": "workspace:*",
+    "@ticketeur/typescript-config": "workspace:*",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "^4.3.0",

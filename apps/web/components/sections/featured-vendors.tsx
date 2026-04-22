@@ -72,7 +72,7 @@ export function FeaturedVendors() {
             </p>
           </div>
           <Link
-            href="/vendors"
+            href="/vendors/list"
             className="group text-primary hover:text-primary-hover inline-flex items-center gap-2 text-base font-medium transition-colors"
           >
             View all

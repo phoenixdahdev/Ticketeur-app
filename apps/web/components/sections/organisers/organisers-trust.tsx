@@ -56,7 +56,7 @@ export function OrganisersTrust() {
               Built on a Foundation of Trust
             </h2>
             <p className="font-heading dark:text-muted-foreground text-sm leading-relaxed text-[#484848] md:text-lg md:font-normal">
-              Unlike other open marketplaces, Ticketur is a moderated platform.
+              Unlike other open marketplaces, Ticketeur is a moderated platform.
               Every organiser, vendor, and event is vetted to ensure high
               quality and prevent fraudulent activities. We protect your
               reputation and your revenue.

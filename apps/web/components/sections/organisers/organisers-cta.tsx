@@ -25,7 +25,7 @@ export function OrganisersCta() {
           Ready to host your next masterpiece?
         </h2>
         <p className="font-heading text-muted-foreground max-w-[680px] text-base leading-relaxed md:text-xl md:font-normal">
-          Join thousands of professional organizers who trust Ticketur for their
+          Join thousands of professional organizers who trust Ticketeur for their
           most important events.
         </p>
         <Button size="xl" asChild className="w-fit">
