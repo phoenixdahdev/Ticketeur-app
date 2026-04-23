@@ -82,7 +82,11 @@ export function createAuth(cookiePrefix: string) {
 
     user: {
       additionalFields: {
-        role: {
+        // `role` is managed by the admin plugin and is NOT accepted from
+        // client input (Better Auth returns FIELD_NOT_ALLOWED). Pass the
+        // requested role via `requestedRole` instead — the databaseHook
+        // below reads it and assigns the real `role` server-side.
+        requestedRole: {
           type: 'string',
           required: false,
           input: true,
@@ -119,12 +123,15 @@ export function createAuth(cookiePrefix: string) {
       user: {
         create: {
           before: async (user) => {
-            // Sanitize self-assigned role — only business roles are allowed
-            // at signup. Platform admin has to be assigned via admin.setRole.
+            // Promote the client-submitted `requestedRole` to `role` after
+            // validating it against our business roles. `admin` is never
+            // self-assignable — platform admin has to go through
+            // auth.api.setRole with an existing admin session.
             const allowed = ['attendee', 'organizer', 'vendor']
-            const submitted =
-              typeof user.role === 'string' ? user.role : ''
-            const role = allowed.includes(submitted) ? submitted : 'attendee'
+            const requested = (user as unknown as Record<string, unknown>)
+              .requestedRole
+            const candidate = typeof requested === 'string' ? requested : ''
+            const role = allowed.includes(candidate) ? candidate : 'attendee'
             return { data: { ...user, role } }
           },
         },
