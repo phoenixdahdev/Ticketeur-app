@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm, type Resolver } from 'react-hook-form'
@@ -52,6 +52,7 @@ type SignupFormValues = {
 export function SignupForm({ config }: { config: SignupRoleConfig }) {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const schema = SIGNUP_SCHEMAS[config.role]
   const form = useForm<SignupFormValues>({
@@ -62,46 +63,49 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
 
   const password = form.watch('password') ?? ''
 
-  async function onSubmit(data: SignupFormValues) {
-    const name =
-      (data.fullName ?? data.orgName ?? data.businessName ?? '').trim()
+  function onSubmit(data: SignupFormValues) {
+    startTransition(async () => {
+      const name = (
+        data.fullName ??
+        data.orgName ??
+        data.businessName ??
+        ''
+      ).trim()
 
-    const additionalFields: Record<string, string> = {}
-    if (data.orgName) additionalFields.orgName = data.orgName
-    if (data.orgType) additionalFields.orgType = data.orgType
-    if (data.businessName) additionalFields.businessName = data.businessName
-    if (data.category) additionalFields.businessCategory = data.category
-    if (data.description)
-      additionalFields.businessDescription = data.description
+      const additionalFields: Record<string, string> = {}
+      if (data.orgName) additionalFields.orgName = data.orgName
+      if (data.orgType) additionalFields.orgType = data.orgType
+      if (data.businessName) additionalFields.businessName = data.businessName
+      if (data.category) additionalFields.businessCategory = data.category
+      if (data.description)
+        additionalFields.businessDescription = data.description
 
-    const { error } = await authClient.signUp.email({
-      name,
-      email: data.email ?? '',
-      password: data.password,
-      // `role` is protected by the admin plugin; we pass `requestedRole`
-      // and a server-side databaseHook promotes it to `role` after
-      // validating it against our business roles.
-      requestedRole: config.role,
-      ...additionalFields,
-    })
-
-    if (error) {
-      toast.error('Sign up failed', {
-        description: error.message ?? 'Please try again.',
+      const { error } = await authClient.signUp.email({
+        name,
+        email: data.email ?? '',
+        password: data.password,
+        requestedRole: config.role,
+        ...additionalFields,
       })
-      return
-    }
 
-    toast.success('Account created', {
-      description: 'Check your inbox for a verification code.',
+      if (error) {
+        toast.error('Sign up failed', {
+          description: error.message ?? 'Please try again.',
+        })
+        return
+      }
+
+      toast.success('Account created', {
+        description: 'Check your inbox for a verification code.',
+      })
+      router.push(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
     })
-    router.push(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
   }
 
   return (
     <form
       className="flex flex-col gap-6"
-      onSubmit={form.handleSubmit(onSubmit)}  
+      onSubmit={form.handleSubmit(onSubmit)}
       noValidate
     >
       <FieldGroup>
@@ -143,7 +147,7 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
                     <SelectTrigger
                       id={rhf.name}
                       aria-invalid={fieldState.invalid}
-                      className="h-13 w-full rounded-[8px] px-4 text-base md:text-sm"
+                      className="h-13! w-full rounded-[8px] px-4 text-base md:text-sm"
                     >
                       <SelectValue placeholder={field.placeholder} />
                     </SelectTrigger>
@@ -203,9 +207,7 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  aria-label={
-                    showPassword ? 'Hide password' : 'Show password'
-                  }
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-1 transition-colors"
                 >
                   <HugeiconsIcon
@@ -267,13 +269,8 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
         )}
       />
 
-      <Button
-        type="submit"
-        size="xl"
-        className="w-full"
-        disabled={form.formState.isSubmitting}
-      >
-        {form.formState.isSubmitting ? 'Creating account…' : 'Sign Up'}
+      <Button type="submit" size="xl" className="w-full" disabled={isPending}>
+        {isPending ? 'Creating account…' : 'Sign Up'}
       </Button>
 
       <FieldSeparator>or</FieldSeparator>

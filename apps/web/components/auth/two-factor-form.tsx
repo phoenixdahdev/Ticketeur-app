@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -23,45 +23,45 @@ export function TwoFactorForm() {
   const [mode, setMode] = useState<Mode>('totp')
   const [code, setCode] = useState('')
   const [trustDevice, setTrustDevice] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [submitting, startSubmit] = useTransition()
 
-  async function verifyTotp(value: string) {
-    setSubmitting(true)
-    const { error } = await authClient.twoFactor.verifyTotp({
-      code: value,
-      trustDevice,
-    })
-    setSubmitting(false)
-
-    if (error) {
-      toast.error('Invalid code', {
-        description: error.message ?? 'Double-check the code and try again.',
+  function verifyTotp(value: string) {
+    startSubmit(async () => {
+      const { error } = await authClient.twoFactor.verifyTotp({
+        code: value,
+        trustDevice,
       })
-      setCode('')
-      return
-    }
 
-    toast.success('Signed in')
-    router.push('/')
+      if (error) {
+        toast.error('Invalid code', {
+          description: error.message ?? 'Double-check the code and try again.',
+        })
+        setCode('')
+        return
+      }
+
+      toast.success('Signed in')
+      router.push('/')
+    })
   }
 
-  async function verifyBackup() {
+  function verifyBackup() {
     if (!code.trim()) return
-    setSubmitting(true)
-    const { error } = await authClient.twoFactor.verifyBackupCode({
-      code: code.trim(),
-    })
-    setSubmitting(false)
-
-    if (error) {
-      toast.error('Invalid backup code', {
-        description: error.message ?? 'Try another code.',
+    startSubmit(async () => {
+      const { error } = await authClient.twoFactor.verifyBackupCode({
+        code: code.trim(),
       })
-      return
-    }
 
-    toast.success('Signed in with backup code')
-    router.push('/')
+      if (error) {
+        toast.error('Invalid backup code', {
+          description: error.message ?? 'Try another code.',
+        })
+        return
+      }
+
+      toast.success('Signed in with backup code')
+      router.push('/')
+    })
   }
 
   return (

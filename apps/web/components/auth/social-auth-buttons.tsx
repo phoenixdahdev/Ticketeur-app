@@ -98,6 +98,7 @@ export function SocialAuthButtons() {
           type="button"
           onClick={p.onClick}
           aria-label={p.label}
+          disabled
           className="border-border/70 bg-background hover:border-primary/60 hover:bg-muted/40 flex size-11 items-center justify-center rounded-full border transition-colors"
         >
           {p.icon}

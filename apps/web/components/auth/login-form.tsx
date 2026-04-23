@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
@@ -33,6 +33,7 @@ type LoginValues = z.infer<typeof loginSchema>
 export function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -40,26 +41,29 @@ export function LoginForm() {
     mode: 'onTouched',
   })
 
-  async function onSubmit(data: LoginValues) {
-    const { data: result, error } = await authClient.signIn.email({
-      email: data.email,
-      password: data.password,
-    })
-
-    if (error) {
-      toast.error('Sign in failed', {
-        description: error.message ?? 'Check your credentials and try again.',
+  function onSubmit(data: LoginValues) {
+    startTransition(async () => {
+      const { data: result, error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
       })
-      return
-    }
 
-    if (result && 'twoFactorRedirect' in result && result.twoFactorRedirect) {
-      router.push('/two-factor')
-      return
-    }
+      if (error) {
+        toast.error('Sign in failed', {
+          description:
+            error.message ?? 'Check your credentials and try again.',
+        })
+        return
+      }
 
-    toast.success('Welcome back')
-    router.push('/')
+      if (result && 'twoFactorRedirect' in result && result.twoFactorRedirect) {
+        router.push('/two-factor')
+        return
+      }
+
+      toast.success('Welcome back')
+      router.push('/')
+    })
   }
 
   return (
@@ -155,9 +159,9 @@ export function LoginForm() {
         type="submit"
         size="xl"
         className="w-full"
-        disabled={form.formState.isSubmitting}
+        disabled={isPending}
       >
-        {form.formState.isSubmitting ? 'Signing in…' : 'Sign In'}
+        {isPending ? 'Signing in…' : 'Sign In'}
       </Button>
 
       <FieldSeparator>or</FieldSeparator>

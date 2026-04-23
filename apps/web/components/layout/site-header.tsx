@@ -2,18 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   AnimatePresence,
   motion,
   useScroll,
   useMotionValueEvent,
 } from 'motion/react'
+import { toast } from 'sonner'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { LogoIcon } from '@ticketur/ui/icons/logo-icon'
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@ticketur/ui/components/avatar'
+
 import { ThemeToggle } from '@/components/misc/theme-toggle'
+import { UserMenu, type UserMenuUser } from '@/components/layout/user-menu'
+import { authClient } from '@/lib/auth-client'
 
 const NAV_LINKS = [
   { href: '/events', label: 'Find Events' },
@@ -26,7 +35,23 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function SiteHeader() {
+function getInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
+  return initials || '?'
+}
+
+export type SiteHeaderSession = { user: UserMenuUser } | null
+
+export function SiteHeader({
+  session = null,
+}: {
+  session?: SiteHeaderSession
+}) {
   const pathname = usePathname() ?? '/'
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -126,13 +151,30 @@ export function SiteHeader() {
               })}
             </ul>
             <ThemeToggle />
-            <Button size="xl" asChild>
-              <Link href="/get-started">Get Started</Link>
-            </Button>
+            {session ? (
+              <UserMenu user={session.user} />
+            ) : (
+              <Button size="xl" asChild>
+                <Link href="/get-started">Get Started</Link>
+              </Button>
+            )}
           </nav>
 
           <div className="flex items-center gap-1 md:hidden">
             <ThemeToggle />
+            {session ? (
+              <Avatar className="border-border/60 size-9 border-2">
+                {session.user.image ? (
+                  <AvatarImage
+                    src={session.user.image}
+                    alt={session.user.name}
+                  />
+                ) : null}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                  {getInitials(session.user.name)}
+                </AvatarFallback>
+              </Avatar>
+            ) : null}
             <MenuToggle
               open={mobileOpen}
               onClick={() => setMobileOpen((v) => !v)}
@@ -145,6 +187,7 @@ export function SiteHeader() {
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         pathname={pathname}
+        session={session}
       />
     </>
   )
@@ -176,11 +219,32 @@ function MobileMenu({
   open,
   onClose,
   pathname,
+  session,
 }: {
   open: boolean
   onClose: () => void
   pathname: string
+  session: SiteHeaderSession
 }) {
+  const router = useRouter()
+
+  async function handleSignOut() {
+    onClose()
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success('Signed out')
+          router.push('/')
+          router.refresh()
+        },
+        onError: (ctx) => {
+          toast.error('Could not sign out', {
+            description: ctx.error.message ?? 'Please try again.',
+          })
+        },
+      },
+    })
+  }
   return (
     <AnimatePresence>
       {open && (
@@ -304,21 +368,65 @@ function MobileMenu({
               }}
               className="mt-8 flex flex-col gap-4"
             >
-              <Button size="xl" asChild className="w-full">
-                <Link href="/get-started" onClick={onClose}>
-                  Get Started
-                </Link>
-              </Button>
-              <p className="text-muted-foreground text-center text-sm">
-                Already have an account?{' '}
-                <Link
-                  href="/login"
-                  onClick={onClose}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign in
-                </Link>
-              </p>
+              {session ? (
+                <>
+                  <div className="border-border/70 flex items-center gap-3 rounded-2xl border p-3">
+                    <Avatar className="size-12 shrink-0">
+                      {session.user.image ? (
+                        <AvatarImage
+                          src={session.user.image}
+                          alt={session.user.name}
+                        />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials(session.user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="text-foreground truncate text-base font-semibold">
+                        {session.user.name}
+                      </span>
+                      <span className="text-muted-foreground truncate text-sm">
+                        {session.user.email}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    href="/account"
+                    onClick={onClose}
+                    className="border-border/70 hover:border-primary/60 text-foreground rounded-2xl border px-4 py-3 text-center font-medium transition-colors"
+                  >
+                    Profile
+                  </Link>
+                  <Button
+                    type="button"
+                    size="xl"
+                    variant="outline"
+                    className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive w-full"
+                    onClick={handleSignOut}
+                  >
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="xl" asChild className="w-full">
+                    <Link href="/get-started" onClick={onClose}>
+                      Get Started
+                    </Link>
+                  </Button>
+                  <p className="text-muted-foreground text-center text-sm">
+                    Already have an account?{' '}
+                    <Link
+                      href="/login"
+                      onClick={onClose}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      Sign in
+                    </Link>
+                  </p>
+                </>
+              )}
             </motion.div>
           </div>
         </motion.div>
