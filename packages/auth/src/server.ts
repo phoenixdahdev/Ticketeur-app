@@ -6,7 +6,7 @@ import { tasks } from '@trigger.dev/sdk'
 import { db } from '@ticketur/db'
 import { env } from '@ticketur/env/core'
 
-import { ac, attendee, organizer, vendor } from './permissions'
+import { ac, attendee, organizer, vendor, admin as adminRole } from './permissions'
 
 export function createAuth(cookiePrefix: string) {
   return betterAuth({
@@ -73,6 +73,7 @@ export function createAuth(cookiePrefix: string) {
           attendee,
           organizer,
           vendor,
+          admin: adminRole,
         },
         defaultRole: 'attendee',
         adminRoles: ['admin'],

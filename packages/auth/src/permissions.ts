@@ -1,5 +1,5 @@
 import { createAccessControl } from 'better-auth/plugins/access'
-import { defaultStatements } from 'better-auth/plugins/admin/access'
+import { defaultStatements, adminAc } from 'better-auth/plugins/admin/access'
 
 // Resource statements — the actions our roles can perform on each resource.
 // Merged with Better Auth's default admin statements (user, session).
@@ -29,6 +29,13 @@ export const vendor = ac.newRole({
   event: ['view'],
 })
 
-// Platform admin uses Better Auth's built-in "admin" role — no custom definition
-// needed. It gets default user/session permissions and is listed in `adminRoles`
-// on the plugin config.
+// ─── Platform admin ─────────────────────────────────────────────────────────
+// Required when using custom access control — Better Auth's default `admin`
+// role only exists when no `ac`/`roles` are passed. Since we pass both, we
+// must explicitly define `admin` and list it in `adminRoles`.
+export const admin = ac.newRole({
+  ...adminAc.statements,
+  event: ['create', 'update', 'delete', 'view'],
+  booth: ['create', 'update', 'delete', 'view'],
+  registration: ['register', 'unregister', 'manage'],
+})

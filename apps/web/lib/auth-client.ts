@@ -8,7 +8,13 @@ import {
   twoFactorClient,
 } from 'better-auth/client/plugins'
 
-import { ac, attendee, organizer, vendor } from '@ticketur/auth/permissions'
+import {
+  ac,
+  attendee,
+  organizer,
+  vendor,
+  admin as adminRole,
+} from '@ticketur/auth/permissions'
 import type { Auth } from './auth'
 
 type AuthClient = ReturnType<typeof createAuthClient>
@@ -23,7 +29,7 @@ export const authClient = createAuthClient({
     }),
     adminClient({
       ac,
-      roles: { attendee, organizer, vendor },
+      roles: { attendee, organizer, vendor, admin: adminRole },
     }),
   ],
 }) satisfies AuthClient

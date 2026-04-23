@@ -5,7 +5,13 @@ import {
   emailOTPClient,
 } from 'better-auth/client/plugins'
 
-import { ac, attendee, organizer, vendor } from './permissions'
+import {
+  ac,
+  attendee,
+  organizer,
+  vendor,
+  admin as adminRole,
+} from './permissions'
 
 export function createClient(baseURL: string) {
   return createAuthClient({
@@ -21,6 +27,7 @@ export function createClient(baseURL: string) {
           attendee,
           organizer,
           vendor,
+          admin: adminRole,
         },
       }),
     ],
