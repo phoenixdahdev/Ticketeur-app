@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes'
 import { TRPCReactProvider } from './trpc-provider'
 import type { ThemeProviderProps } from 'next-themes'
 import { TooltipProvider } from '../components/tooltip'
+import { Toaster } from '../components/sonner'
 import ThemeSwitcher from '../miscellaneous/theme-switcher'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
@@ -32,6 +33,7 @@ export function DefaultProvider({
         {...rest}
       >
         <TooltipProvider>{children}</TooltipProvider>
+        <Toaster position="top-right" richColors closeButton />
         {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
         <ThemeSwitcher />
       </ThemeProvider>

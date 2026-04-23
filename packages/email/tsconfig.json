@@ -2,8 +2,9 @@
   "extends": "@ticketur/typescript-config/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    "types": []
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", ".react-email"]
+  "exclude": ["node_modules", ".react-email", "scripts"]
 }

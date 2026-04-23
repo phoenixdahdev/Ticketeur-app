@@ -15,11 +15,19 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@ticketur/db": "workspace:*",
+    "@ticketur/env": "workspace:*",
+    "@trigger.dev/sdk": "4.4.4",
+    "better-auth": "^1.6.8",
+    "drizzle-orm": "^0.45.2"
+  },
   "devDependencies": {
     "@ticketur/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
+    "next": "16.2.4",
+    "react": "^19.2.5",
     "typescript": "^6.0.3"
   }
 }

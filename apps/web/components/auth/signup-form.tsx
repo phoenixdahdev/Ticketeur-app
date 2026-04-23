@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Controller, useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ViewIcon, ViewOffSlashIcon } from '@hugeicons/core-free-icons'
 
@@ -11,6 +13,13 @@ import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
 import { Textarea } from '@ticketur/ui/components/textarea'
 import { Checkbox } from '@ticketur/ui/components/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ticketur/ui/components/select'
 import {
   Field,
   FieldError,
@@ -24,6 +33,7 @@ import {
   getSignupDefaultValues,
   type SignupRoleConfig,
 } from '@/lib/signup-roles'
+import { authClient } from '@/lib/auth-client'
 import { PasswordStrength } from '@/components/auth/password-strength'
 import { SocialAuthButtons } from '@/components/auth/social-auth-buttons'
 
@@ -40,6 +50,7 @@ type SignupFormValues = {
 }
 
 export function SignupForm({ config }: { config: SignupRoleConfig }) {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
 
   const schema = SIGNUP_SCHEMAS[config.role]
@@ -51,8 +62,37 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
 
   const password = form.watch('password') ?? ''
 
-  function onSubmit(data: SignupFormValues) {
-    console.log('signup submit', { role: config.role, data })
+  async function onSubmit(data: SignupFormValues) {
+    const name =
+      (data.fullName ?? data.orgName ?? data.businessName ?? '').trim()
+
+    const additionalFields: Record<string, string> = {}
+    if (data.orgName) additionalFields.orgName = data.orgName
+    if (data.orgType) additionalFields.orgType = data.orgType
+    if (data.businessName) additionalFields.businessName = data.businessName
+    if (data.category) additionalFields.businessCategory = data.category
+    if (data.description)
+      additionalFields.businessDescription = data.description
+
+    const { error } = await authClient.signUp.email({
+      name,
+      email: data.email ?? '',
+      password: data.password,
+      role: config.role,
+      ...additionalFields,
+    })
+
+    if (error) {
+      toast.error('Sign up failed', {
+        description: error.message ?? 'Please try again.',
+      })
+      return
+    }
+
+    toast.success('Account created', {
+      description: 'Check your inbox for a verification code.',
+    })
+    router.push('/login')
   }
 
   return (
@@ -88,6 +128,30 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
                     aria-invalid={fieldState.invalid}
                     className="min-h-20 resize-none rounded-[8px] py-3.5"
                   />
+                ) : field.type === 'select' ? (
+                  <Select
+                    name={rhf.name}
+                    value={typeof rhf.value === 'string' ? rhf.value : ''}
+                    onValueChange={(v) => {
+                      rhf.onChange(v)
+                      rhf.onBlur()
+                    }}
+                  >
+                    <SelectTrigger
+                      id={rhf.name}
+                      aria-invalid={fieldState.invalid}
+                      className="h-13 w-full rounded-[8px] px-4 text-base md:text-sm"
+                    >
+                      <SelectValue placeholder={field.placeholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <Input
                     name={rhf.name}

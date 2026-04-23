@@ -2,15 +2,19 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   CheckmarkCircle02Icon,
   ViewIcon,
   ViewOffSlashIcon,
 } from '@hugeicons/core-free-icons'
+
+import { authClient } from '@/lib/auth-client'
 
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
@@ -37,6 +41,8 @@ const schema = z
 type Values = z.infer<typeof schema>
 
 export function ResetPassword() {
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token') ?? ''
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [done, setDone] = useState(false)
@@ -49,8 +55,26 @@ export function ResetPassword() {
 
   const password = form.watch('password') ?? ''
 
-  function onSubmit(data: Values) {
-    console.log('reset-password submit', data)
+  async function onSubmit(data: Values) {
+    if (!token) {
+      toast.error('Reset link is missing or invalid', {
+        description: 'Request a new reset email from the forgot-password page.',
+      })
+      return
+    }
+
+    const { error } = await authClient.resetPassword({
+      newPassword: data.password,
+      token,
+    })
+
+    if (error) {
+      toast.error('Could not reset password', {
+        description: error.message ?? 'Your reset link may have expired.',
+      })
+      return
+    }
+
     setDone(true)
   }
 

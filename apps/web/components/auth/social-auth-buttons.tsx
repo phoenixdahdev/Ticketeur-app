@@ -1,7 +1,11 @@
+'use client'
+
 import { HugeiconsIcon } from '@hugeicons/react'
 import { InstagramIcon } from '@hugeicons/core-free-icons'
+import { toast } from 'sonner'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import { authClient } from '@/lib/auth-client'
 
 type SocialProvider = {
   label: string
@@ -43,8 +47,30 @@ function AppleGlyph({ className }: { className?: string }) {
   )
 }
 
+async function continueWithGoogle() {
+  const { error } = await authClient.signIn.social({
+    provider: 'google',
+    callbackURL: '/',
+  })
+  if (error) {
+    toast.error('Google sign-in failed', {
+      description: error.message ?? 'Please try again.',
+    })
+  }
+}
+
+function notYetWired() {
+  toast('Coming soon', {
+    description: 'This provider is not wired up yet.',
+  })
+}
+
 const PROVIDERS: SocialProvider[] = [
-  { label: 'Continue with Google', icon: <GoogleGlyph /> },
+  {
+    label: 'Continue with Google',
+    icon: <GoogleGlyph />,
+    onClick: continueWithGoogle,
+  },
   {
     label: 'Continue with Instagram',
     icon: (
@@ -54,8 +80,13 @@ const PROVIDERS: SocialProvider[] = [
         strokeWidth={1.8}
       />
     ),
+    onClick: notYetWired,
   },
-  { label: 'Continue with Apple', icon: <AppleGlyph className="text-foreground" /> },
+  {
+    label: 'Continue with Apple',
+    icon: <AppleGlyph className="text-foreground" />,
+    onClick: notYetWired,
+  },
 ]
 
 export function SocialAuthButtons() {
@@ -65,6 +96,7 @@ export function SocialAuthButtons() {
         <button
           key={p.label}
           type="button"
+          onClick={p.onClick}
           aria-label={p.label}
           className="border-border/70 bg-background hover:border-primary/60 hover:bg-muted/40 flex size-11 items-center justify-center rounded-full border transition-colors"
         >

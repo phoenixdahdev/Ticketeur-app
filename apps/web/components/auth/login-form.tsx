@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ViewIcon, ViewOffSlashIcon } from '@hugeicons/core-free-icons'
 
@@ -18,6 +20,7 @@ import {
   FieldSeparator,
 } from '@ticketur/ui/components/field'
 
+import { authClient } from '@/lib/auth-client'
 import { SocialAuthButtons } from '@/components/auth/social-auth-buttons'
 
 const loginSchema = z.object({
@@ -28,6 +31,7 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>
 
 export function LoginForm() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<LoginValues>({
@@ -36,8 +40,26 @@ export function LoginForm() {
     mode: 'onTouched',
   })
 
-  function onSubmit(data: LoginValues) {
-    console.log('login submit', data)
+  async function onSubmit(data: LoginValues) {
+    const { data: result, error } = await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+    })
+
+    if (error) {
+      toast.error('Sign in failed', {
+        description: error.message ?? 'Check your credentials and try again.',
+      })
+      return
+    }
+
+    if (result && 'twoFactorRedirect' in result && result.twoFactorRedirect) {
+      router.push('/two-factor')
+      return
+    }
+
+    toast.success('Welcome back')
+    router.push('/')
   }
 
   return (
