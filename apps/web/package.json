@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.2.5",
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
@@ -20,9 +21,8 @@
     "@ticketur/db": "workspace:*",
     "@ticketur/env": "workspace:*",
     "@ticketur/ui": "workspace:*",
-    "better-auth": "^1.6.5",
-    "sonner": "^2.0.7",
     "@trpc/server": "^11.16.0",
+    "better-auth": "^1.6.5",
     "date-fns": "^4.1.0",
     "lenis": "^1.3.23",
     "motion": "^12.38.0",
@@ -32,6 +32,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.73.1",
+    "sonner": "^2.0.7",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
