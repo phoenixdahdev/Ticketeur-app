@@ -1,5 +1,10 @@
 {
   "extends": "@ticketur/typescript-config/base.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"]
+  },
   "include": ["src"],
   "exclude": ["node_modules"]
 }

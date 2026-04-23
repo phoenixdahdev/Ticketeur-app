@@ -96,7 +96,7 @@ export function SiteFooter() {
               ))}
             </ul>
             <Button size="xl" asChild className="mt-2">
-              <Link href="/signup">Get Started</Link>
+              <Link href="/get-started">Get Started</Link>
             </Button>
           </div>
         </div>

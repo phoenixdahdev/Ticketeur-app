@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
+
+import { authClient } from '@/lib/auth-client'
 
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
@@ -30,8 +33,19 @@ export function ForgotPassword() {
     mode: 'onTouched',
   })
 
-  function onSubmit(data: Values) {
-    console.log('forgot-password request', data)
+  async function onSubmit(data: Values) {
+    const { error } = await authClient.requestPasswordReset({
+      email: data.email,
+      redirectTo: '/reset-password',
+    })
+
+    if (error) {
+      toast.error('Could not send reset link', {
+        description: error.message ?? 'Please try again.',
+      })
+      return
+    }
+
     setEmail(data.email)
   }
 

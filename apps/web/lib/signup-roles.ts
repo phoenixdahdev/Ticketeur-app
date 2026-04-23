@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export type SignupRole = 'attendee' | 'organizer' | 'vendor'
 
-export type SignupFieldType = 'text' | 'email' | 'textarea'
+export type SignupFieldType = 'text' | 'email' | 'textarea' | 'select'
 
 export type SignupField = {
   name: string
@@ -10,7 +10,17 @@ export type SignupField = {
   type: SignupFieldType
   placeholder: string
   autoComplete?: string
+  options?: readonly string[]
 }
+
+export const ORG_TYPE_OPTIONS = [
+  'Corporate',
+  'Entertainment',
+  'Social',
+  'Religious',
+  'Educational',
+  'Other',
+] as const
 
 export const passwordSchema = z
   .string()
@@ -33,7 +43,9 @@ const attendeeSchema = z.object({
 const organizerSchema = z.object({
   orgName: z.string().trim().min(1, 'Organization name is required'),
   email: z.email('Enter a valid email'),
-  orgType: z.string().trim().min(1, 'Organization type is required'),
+  orgType: z.enum(ORG_TYPE_OPTIONS, {
+    message: 'Please choose an organization type',
+  }),
   password: passwordSchema,
   agree: agreeSchema,
 })
@@ -120,8 +132,9 @@ export const SIGNUP_ROLES: Record<SignupRole, SignupRoleConfig> = {
       {
         name: 'orgType',
         label: 'Organization Type',
-        type: 'text',
-        placeholder: 'Tech',
+        type: 'select',
+        placeholder: 'Select organization type',
+        options: ORG_TYPE_OPTIONS,
       },
     ],
     imageSrc: '/auth/org-auth.png',

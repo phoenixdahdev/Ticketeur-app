@@ -3,16 +3,24 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./emails/*": "./emails/*.tsx"
+    "./emails/*": "./emails/*.tsx",
+    "./components/*": "./components/*.tsx"
   },
   "scripts": {
     "dev": "email dev",
-    "export": "email export"
+    "export": "email export",
+    "convert-fonts": "node scripts/convert-trap-fonts.mjs"
   },
-  "dependencies": {},
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
   "devDependencies": {
+    "@react-email/ui": "6.0.0",
     "@ticketur/typescript-config": "workspace:*",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "react-email": "^6.0.0",
+    "wawoff2": "^2.0.1"
   }
 }
