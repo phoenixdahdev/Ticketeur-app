@@ -139,6 +139,13 @@ export function createAuth(cookiePrefix: string) {
             const role = allowed.includes(candidate) ? candidate : 'attendee'
             return { data: { ...user, role } }
           },
+          after: async (user) => {
+            // Fire and forget — a failing welcome email must not block signup.
+            void tasks.trigger('send-welcome', {
+              email: user.email,
+              name: user.name,
+            })
+          },
         },
       },
     },

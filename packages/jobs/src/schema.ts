@@ -19,6 +19,12 @@ export const twoFactorOtpSchema = z.object({
   otp: z.string(),
 })
 
+export const welcomeEmailSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+})
+
 export type VerificationOtpPayload = z.infer<typeof verificationOtpSchema>
 export type PasswordResetPayload = z.infer<typeof passwordResetSchema>
 export type TwoFactorOtpPayload = z.infer<typeof twoFactorOtpSchema>
+export type WelcomeEmailPayload = z.infer<typeof welcomeEmailSchema>
