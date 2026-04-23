@@ -12,7 +12,6 @@ import {
 
 import { Button } from '@ticketur/ui/components/button'
 import { LogoIcon } from '@ticketur/ui/icons/logo-icon'
-import { ThemeToggle } from '@/components/misc/theme-toggle'
 import { currentYear } from '@/lib/date'
 
 const DISCOVER_LINKS = [
@@ -102,11 +101,10 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border mt-10 flex flex-col-reverse items-center gap-4 border-t pt-8 md:mt-12 md:flex-row md:items-center md:justify-between">
+        <div className="border-border mt-10 border-t pt-8 md:mt-12">
           <p className="text-muted-foreground text-center text-xs md:text-left">
             &copy; {year} Ticketeur Inc. All rights reserved.
           </p>
-          <ThemeToggle />
         </div>
       </div>
     </footer>

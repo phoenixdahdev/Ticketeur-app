@@ -13,6 +13,7 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { LogoIcon } from '@ticketur/ui/icons/logo-icon'
+import { ThemeToggle } from '@/components/misc/theme-toggle'
 
 const NAV_LINKS = [
   { href: '/events', label: 'Find Events' },
@@ -94,41 +95,49 @@ export function SiteHeader() {
               {NAV_LINKS.map((link) => {
                 const active = isActivePath(pathname, link.href)
                 return (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'group relative inline-flex text-base font-medium transition-colors',
-                      active
-                        ? 'text-primary'
-                        : 'text-foreground hover:text-primary'
-                    )}
-                  >
-                    {link.label}
-                    {active ? (
-                      <motion.span
-                        layoutId="site-nav-underline"
-                        className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-full rounded-full"
-                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                      />
-                    ) : (
-                      <span className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-0 rounded-full transition-[width] duration-300 ease-out group-hover:w-full" />
-                    )}
-                  </Link>
-                </li>
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'group relative inline-flex text-base font-medium transition-colors',
+                        active
+                          ? 'text-primary'
+                          : 'text-foreground hover:text-primary'
+                      )}
+                    >
+                      {link.label}
+                      {active ? (
+                        <motion.span
+                          layoutId="site-nav-underline"
+                          className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-full rounded-full"
+                          transition={{
+                            type: 'spring',
+                            stiffness: 420,
+                            damping: 32,
+                          }}
+                        />
+                      ) : (
+                        <span className="bg-primary pointer-events-none absolute -bottom-1 left-0 h-0.5 w-0 rounded-full transition-[width] duration-300 ease-out group-hover:w-full" />
+                      )}
+                    </Link>
+                  </li>
                 )
               })}
             </ul>
+            <ThemeToggle />
             <Button size="xl" asChild>
-              <Link href="/signup">Get Started</Link>
+              <Link href="/get-started">Get Started</Link>
             </Button>
           </nav>
 
-          <MenuToggle
-            open={mobileOpen}
-            onClick={() => setMobileOpen((v) => !v)}
-          />
+          <div className="flex items-center gap-1 md:hidden">
+            <ThemeToggle />
+            <MenuToggle
+              open={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+            />
+          </div>
         </div>
       </motion.header>
 
@@ -296,7 +305,7 @@ function MobileMenu({
               className="mt-8 flex flex-col gap-4"
             >
               <Button size="xl" asChild className="w-full">
-                <Link href="/signup" onClick={onClose}>
+                <Link href="/get-started" onClick={onClose}>
                   Get Started
                 </Link>
               </Button>

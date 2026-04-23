@@ -138,7 +138,7 @@ export default function RootLayout({
       >
         <NuqsAdapter>
           <DefaultProvider
-            useLens={true}
+            useLens={false}
             trpcUrl="/api/trpc"
             defaultTheme="light"
           >
