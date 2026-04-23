@@ -5,10 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  MailValidation01Icon,
-  Loading03Icon,
-} from '@hugeicons/core-free-icons'
+import { MailValidation01Icon, Loading03Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import {
@@ -27,8 +24,8 @@ export function VerifyEmailForm() {
   const email = searchParams.get('email') ?? ''
 
   const [otp, setOtp] = useState('')
-  const [verifying, setVerifying] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [verifying, startVerify] = useTransition()
   const [resending, startResend] = useTransition()
   const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -42,32 +39,32 @@ export function VerifyEmailForm() {
     }
   }, [cooldown])
 
-  async function verify(value: string) {
+  function verify(value: string) {
     if (!email) {
       toast.error('Missing email', {
         description: 'Open this page from the link we sent to your inbox.',
       })
       return
     }
-    setVerifying(true)
-    const { error } = await authClient.emailOtp.verifyEmail({
-      email,
-      otp: value,
-    })
-    setVerifying(false)
-
-    if (error) {
-      toast.error('Invalid or expired code', {
-        description: error.message ?? 'Double-check the code and try again.',
+    startVerify(async () => {
+      const { error } = await authClient.emailOtp.verifyEmail({
+        email,
+        otp: value,
       })
-      setOtp('')
-      return
-    }
 
-    toast.success('Email verified', {
-      description: 'You can now sign in to your account.',
+      if (error) {
+        toast.error('Invalid or expired code', {
+          description: error.message ?? 'Double-check the code and try again.',
+        })
+        setOtp('')
+        return
+      }
+
+      toast.success('Email verified', {
+        description: 'You can now sign in to your account.',
+      })
+      router.push('/')
     })
-    router.push('/login')
   }
 
   function resend() {

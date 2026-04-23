@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
@@ -46,6 +46,7 @@ export function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [done, setDone] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -55,27 +56,30 @@ export function ResetPassword() {
 
   const password = form.watch('password') ?? ''
 
-  async function onSubmit(data: Values) {
+  function onSubmit(data: Values) {
     if (!token) {
       toast.error('Reset link is missing or invalid', {
-        description: 'Request a new reset email from the forgot-password page.',
+        description:
+          'Request a new reset email from the forgot-password page.',
       })
       return
     }
 
-    const { error } = await authClient.resetPassword({
-      newPassword: data.password,
-      token,
+    startTransition(async () => {
+      const { error } = await authClient.resetPassword({
+        newPassword: data.password,
+        token,
+      })
+
+      if (error) {
+        toast.error('Could not reset password', {
+          description: error.message ?? 'Your reset link may have expired.',
+        })
+        return
+      }
+
+      setDone(true)
     })
-
-    if (error) {
-      toast.error('Could not reset password', {
-        description: error.message ?? 'Your reset link may have expired.',
-      })
-      return
-    }
-
-    setDone(true)
   }
 
   if (done) {
@@ -221,9 +225,9 @@ export function ResetPassword() {
             type="submit"
             size="xl"
             className="w-full"
-            disabled={form.formState.isSubmitting}
+            disabled={isPending}
           >
-            {form.formState.isSubmitting ? 'Resetting…' : 'Reset Password'}
+            {isPending ? 'Resetting…' : 'Reset Password'}
           </Button>
           <Button
             variant="outline-primary"

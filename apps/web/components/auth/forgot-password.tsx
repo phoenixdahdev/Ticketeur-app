@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,6 +26,7 @@ type Values = z.infer<typeof schema>
 
 export function ForgotPassword() {
   const [email, setEmail] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -33,20 +34,22 @@ export function ForgotPassword() {
     mode: 'onTouched',
   })
 
-  async function onSubmit(data: Values) {
-    const { error } = await authClient.requestPasswordReset({
-      email: data.email,
-      redirectTo: '/reset-password',
-    })
-
-    if (error) {
-      toast.error('Could not send reset link', {
-        description: error.message ?? 'Please try again.',
+  function onSubmit(data: Values) {
+    startTransition(async () => {
+      const { error } = await authClient.requestPasswordReset({
+        email: data.email,
+        redirectTo: '/reset-password',
       })
-      return
-    }
 
-    setEmail(data.email)
+      if (error) {
+        toast.error('Could not send reset link', {
+          description: error.message ?? 'Please try again.',
+        })
+        return
+      }
+
+      setEmail(data.email)
+    })
   }
 
   if (email) {
@@ -137,9 +140,9 @@ export function ForgotPassword() {
             type="submit"
             size="xl"
             className="w-full"
-            disabled={form.formState.isSubmitting}
+            disabled={isPending}
           >
-            {form.formState.isSubmitting ? 'Sending…' : 'Send Reset Link'}
+            {isPending ? 'Sending…' : 'Send Reset Link'}
           </Button>
           <Button
             variant="outline-primary"
