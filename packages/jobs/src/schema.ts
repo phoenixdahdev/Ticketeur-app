@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const verificationOtpSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   otp: z.string(),
   type: z
     .enum(['email-verification', 'sign-in', 'forget-password'])
@@ -9,18 +9,18 @@ export const verificationOtpSchema = z.object({
 })
 
 export const passwordResetSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   name: z.string(),
-  resetUrl: z.string().url(),
+  resetUrl: z.url(),
 })
 
 export const twoFactorOtpSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   otp: z.string(),
 })
 
 export const welcomeEmailSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   name: z.string(),
 })
 
