@@ -1,7 +1,13 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@ticketur/ui'],
+  transpilePackages: ['@ticketur/ui', '@ticketur/auth'],
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  typescript: {
+    ignoreBuildErrors: process.env.NODE_ENV === 'production',
+  },
   images: {
     remotePatterns: [
       {
