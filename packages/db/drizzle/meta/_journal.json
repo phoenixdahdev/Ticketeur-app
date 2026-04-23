@@ -15,6 +15,13 @@
       "when": 1776966621502,
       "tag": "0001_cloudy_umar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776967226477,
+      "tag": "0002_living_galactus",
+      "breakpoints": true
     }
   ]
 }
