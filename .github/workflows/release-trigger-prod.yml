@@ -7,6 +7,7 @@ on:
       - "packages/jobs/**"
       - "packages/db/**"
       - "packages/email/**"
+  workflow_dispatch:
 jobs:
   deploy:
     runs-on: ubuntu-latest
