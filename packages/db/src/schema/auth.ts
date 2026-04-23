@@ -17,6 +17,9 @@ export const user = pgTable('user', {
   banExpires: timestamp('ban_expires'),
   // two-factor plugin
   twoFactorEnabled: boolean('two_factor_enabled'),
+  // role requested at signup — gets copied to `role` by a databaseHook
+  // after validation. See packages/auth/src/server.ts.
+  requestedRole: text('requested_role'),
   // organizer role fields
   orgName: text('org_name'),
   orgType: text('org_type'),

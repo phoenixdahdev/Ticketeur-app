@@ -78,7 +78,10 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
       name,
       email: data.email ?? '',
       password: data.password,
-      role: config.role,
+      // `role` is protected by the admin plugin; we pass `requestedRole`
+      // and a server-side databaseHook promotes it to `role` after
+      // validating it against our business roles.
+      requestedRole: config.role,
       ...additionalFields,
     })
 
