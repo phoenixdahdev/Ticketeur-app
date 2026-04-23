@@ -35,14 +35,14 @@ const agreeSchema = z
 
 const attendeeSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
-  email: z.email('Enter a valid email'),
+  email: z.string().email('Enter a valid email'),
   password: passwordSchema,
   agree: agreeSchema,
 })
 
 const organizerSchema = z.object({
   orgName: z.string().trim().min(1, 'Organization name is required'),
-  email: z.email('Enter a valid email'),
+  email: z.string().email('Enter a valid email'),
   orgType: z.enum(ORG_TYPE_OPTIONS, {
     message: 'Please choose an organization type',
   }),
@@ -52,7 +52,7 @@ const organizerSchema = z.object({
 
 const vendorSchema = z.object({
   businessName: z.string().trim().min(1, 'Business name is required'),
-  email: z.email('Enter a valid email'),
+  email: z.string().email('Enter a valid email'),
   category: z.string().trim().min(1, 'Business category is required'),
   description: z
     .string()

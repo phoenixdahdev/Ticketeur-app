@@ -19,7 +19,7 @@ import {
 } from '@ticketur/ui/components/field'
 
 const schema = z.object({
-  email: z.email('Enter a valid email'),
+  email: z.string().email('Enter a valid email'),
 })
 
 type Values = z.infer<typeof schema>
