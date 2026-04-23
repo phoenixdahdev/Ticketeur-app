@@ -16,7 +16,7 @@ import {
   admin as adminRole,
 } from '@ticketur/auth/permissions'
 import type { Auth } from './auth'
-import { sentinelClient } from '@better-auth/infra/client'
+// import { sentinelClient } from '@better-auth/infra/client'
 
 type AuthClient = ReturnType<typeof createAuthClient>
 
@@ -32,7 +32,7 @@ export const authClient = createAuthClient({
       ac,
       roles: { attendee, organizer, vendor, admin: adminRole },
     }),
-    sentinelClient(),
+    // sentinelClient(),
   ],
 }) satisfies AuthClient
 
