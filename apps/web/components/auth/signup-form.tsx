@@ -95,7 +95,7 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
     toast.success('Account created', {
       description: 'Check your inbox for a verification code.',
     })
-    router.push('/login')
+    router.push(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
   }
 
   return (

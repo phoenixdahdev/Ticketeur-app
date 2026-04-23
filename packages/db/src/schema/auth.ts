@@ -39,7 +39,7 @@ export const session = pgTable('session', {
   userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+    .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   // admin plugin
   impersonatedBy: text('impersonated_by'),
 })
@@ -50,7 +50,7 @@ export const account = pgTable('account', {
   providerId: text('provider_id').notNull(),
   userId: text('user_id')
     .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+    .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
@@ -80,5 +80,5 @@ export const twoFactor = pgTable('two_factor', {
   verified: boolean('verified').notNull().default(false),
   userId: text('user_id')
     .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+    .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 })

@@ -2,11 +2,18 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, twoFactor, emailOTP } from 'better-auth/plugins'
 import { tasks } from '@trigger.dev/sdk'
+import { dash } from '@better-auth/infra'
 
 import { db } from '@ticketur/db'
 import { env } from '@ticketur/env/core'
 
-import { ac, attendee, organizer, vendor, admin as adminRole } from './permissions'
+import {
+  ac,
+  attendee,
+  organizer,
+  vendor,
+  admin as adminRole,
+} from './permissions'
 
 export function createAuth(cookiePrefix: string) {
   return betterAuth({
@@ -35,8 +42,7 @@ export function createAuth(cookiePrefix: string) {
       google: {
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        enabled:
-          env.GOOGLE_CLIENT_ID !== '' && env.GOOGLE_CLIENT_SECRET !== '',
+        enabled: env.GOOGLE_CLIENT_ID !== '' && env.GOOGLE_CLIENT_SECRET !== '',
       },
     },
 
@@ -54,7 +60,6 @@ export function createAuth(cookiePrefix: string) {
           })
         },
       }),
-
       twoFactor({
         issuer: 'Ticketur',
         otpOptions: {
@@ -66,7 +71,6 @@ export function createAuth(cookiePrefix: string) {
           },
         },
       }),
-
       admin({
         ac,
         roles: {
@@ -78,6 +82,7 @@ export function createAuth(cookiePrefix: string) {
         defaultRole: 'attendee',
         adminRoles: ['admin'],
       }),
+      dash(),
     ],
 
     user: {
