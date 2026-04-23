@@ -180,7 +180,7 @@ export function TicketSelector({
                 className="text-primary size-4"
                 strokeWidth={1.8}
               />
-              <span>Secure checkout processed by Ticketur</span>
+              <span>Secure checkout processed by Ticketeur</span>
             </li>
             <li className="flex items-center gap-2">
               <HugeiconsIcon

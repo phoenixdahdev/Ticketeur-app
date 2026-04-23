@@ -8,10 +8,10 @@ importers:
 
   .:
     devDependencies:
-      '@ticketur/eslint-config':
+      '@ticketeur/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
-      '@ticketur/typescript-config':
+      '@ticketeur/typescript-config':
         specifier: workspace:*
         version: link:packages/typescript-config
       prettier:

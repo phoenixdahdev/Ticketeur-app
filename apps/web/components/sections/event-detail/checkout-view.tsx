@@ -220,7 +220,7 @@ export function CheckoutView({
             />
             <p className="text-sm text-[#92400e] dark:text-[#fbbf24]">
               <strong className="font-semibold">No-Refund Policy:</strong> All
-              sales are final. Since Ticketur is a moderated marketplace for
+              sales are final. Since Ticketeur is a moderated marketplace for
               community events, we cannot offer refunds once the purchase is
               complete.
             </p>

@@ -49,7 +49,7 @@ export function VendorsModerated() {
               A Moderated Ecosystem for Quality Brands
             </h2>
             <p className="dark:text-muted-foreground text-sm leading-relaxed text-[#484848] md:text-base">
-              Ticketur is not an open-for-all directory. We pride ourselves on
+              Ticketeur is not an open-for-all directory. We pride ourselves on
               manual moderation and brand verification. Every vendor on our
               platform meets strict quality guidelines, ensuring that organizers
               and attendees interact with only the most professional businesses.
