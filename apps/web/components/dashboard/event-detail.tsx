@@ -74,7 +74,7 @@ export function EventDetail({ event }: { event: OrgEvent }) {
           </p>
         </div>
         <Button size="xl" asChild className="w-full md:w-auto">
-          <Link href="/org/events/new" className="gap-2">
+          <Link href="/org/create-event" className="gap-2">
             <HugeiconsIcon
               icon={PlusSignIcon}
               className="size-5"
@@ -238,58 +238,78 @@ function HeroCard({
 }
 
 function ReviewStepper() {
-  const steps = [
-    { label: 'Published', state: 'done' as const },
-    { label: 'In - Review', state: 'active' as const },
-    { label: 'Approved', state: 'pending' as const },
-  ]
   return (
-    <div className="border-border/60 bg-background flex shrink-0 flex-col gap-3 rounded-2xl border p-5">
-      <div className="relative flex items-center justify-between">
-        <div className="bg-border/60 absolute top-1/2 right-4 left-4 h-1 -translate-y-1/2 rounded-full" />
-        <div
-          aria-hidden
-          className="bg-primary absolute top-1/2 left-4 h-1 w-[calc(50%-1rem)] -translate-y-1/2 rounded-full"
+    <div className="border-border/60 bg-background flex shrink-0 rounded-2xl border p-5 md:p-6">
+      <div className="flex w-full items-start">
+        <StepperStep
+          bullet={
+            <span className="bg-primary flex size-7 items-center justify-center rounded-full text-white">
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                className="size-4"
+                strokeWidth={2.5}
+              />
+            </span>
+          }
+          label="Published"
+          tone="active"
         />
-        {steps.map((s) => (
-          <div
-            key={s.label}
-            className="relative flex flex-col items-center gap-2"
-          >
-            <span
-              className={cn(
-                'flex size-8 items-center justify-center rounded-full border-2 transition-colors',
-                s.state === 'done' &&
-                  'border-primary bg-primary text-primary-foreground',
-                s.state === 'active' &&
-                  'border-primary bg-primary text-primary-foreground ring-primary/20 ring-4',
-                s.state === 'pending' &&
-                  'border-border bg-background text-muted-foreground'
-              )}
-            >
-              {s.state === 'done' ? (
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  className="size-4"
-                  strokeWidth={2}
-                />
-              ) : (
-                <span className="size-2 rounded-full bg-current" />
-              )}
+        <StepperConnector filled />
+        <StepperStep
+          bullet={
+            <span className="bg-primary flex size-7 items-center justify-center rounded-full">
+              <span className="bg-background flex size-3.5 items-center justify-center rounded-full">
+                <span className="bg-primary size-1.5 rounded-full" />
+              </span>
             </span>
-            <span
-              className={cn(
-                'text-xs font-medium md:text-sm',
-                s.state === 'pending'
-                  ? 'text-muted-foreground'
-                  : 'text-foreground'
-              )}
-            >
-              {s.label}
-            </span>
-          </div>
-        ))}
+          }
+          label="In - Review"
+          tone="active"
+        />
+        <StepperConnector filled={false} />
+        <StepperStep
+          bullet={<span className="bg-muted-foreground/40 size-1.5 rounded-full" />}
+          label="Approved"
+          tone="muted"
+        />
       </div>
+    </div>
+  )
+}
+
+function StepperStep({
+  bullet,
+  label,
+  tone,
+}: {
+  bullet: React.ReactNode
+  label: string
+  tone: 'active' | 'muted'
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex h-7 items-center justify-center">{bullet}</div>
+      <span
+        className={cn(
+          'text-xs font-medium md:text-sm',
+          tone === 'muted' ? 'text-muted-foreground' : 'text-foreground'
+        )}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function StepperConnector({ filled }: { filled: boolean }) {
+  return (
+    <div className="flex h-7 flex-1 items-center px-1">
+      <div
+        className={cn(
+          'h-0.5 w-full rounded-full',
+          filled ? 'bg-primary' : 'bg-border/40'
+        )}
+      />
     </div>
   )
 }

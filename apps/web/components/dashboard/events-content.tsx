@@ -146,7 +146,7 @@ export function EventsContent() {
           </p>
         </div>
         <Button size="xl" asChild className="w-full md:w-auto">
-          <Link href="/org/events/new" className="gap-2">
+          <Link href="/org/create-event" className="gap-2">
             <HugeiconsIcon
               icon={PlusSignIcon}
               className="size-5"
