@@ -6,7 +6,7 @@ import { AuthHeader } from '@/components/layout/auth-header'
 
 export const metadata: Metadata = {
   title: 'Get Started',
-  description: 'Choose how you want to join Ticketur.',
+  description: 'Choose how you want to join Ticketeur.',
 }
 
 const ROLES: Array<Omit<RoleCardProps, 'index'>> = [
@@ -44,7 +44,7 @@ export default function GetStartedPage() {
         <div className="mx-auto flex w-full max-w-360 flex-col items-center gap-12 px-4 py-16 md:px-10 md:py-20">
           <header className="flex max-w-225 flex-col items-center gap-4 text-center">
             <h1 className="font-heading text-foreground text-3xl leading-tight font-bold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.17]">
-              How would you like to join Ticketur?
+              How would you like to join Ticketeur?
             </h1>
             <p className="font-heading text-muted-foreground max-w-172 text-base leading-7 font-normal sm:text-lg md:text-xl">
               Choose the role that best fits your needs. You can always explore

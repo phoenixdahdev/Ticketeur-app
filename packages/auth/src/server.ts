@@ -2,7 +2,6 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, twoFactor, emailOTP } from 'better-auth/plugins'
 import { tasks } from '@trigger.dev/sdk'
-// import { dash } from '@better-auth/infra'
 
 import { db } from '@ticketur/db'
 import { env } from '@ticketur/env/core'
@@ -60,9 +59,6 @@ export function createAuth(cookiePrefix: string) {
           })
         },
       }),
-      // dash({
-      //   apiKey: env.BETTER_AUTH_API_KEY,
-      // }),
       twoFactor({
         issuer: 'Ticketur',
         otpOptions: {

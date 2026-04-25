@@ -8,6 +8,10 @@ export async function SiteHeaderWithSession() {
     headers: await headers(),
   })
 
+  const role =
+    (session?.user as unknown as { role?: string | null } | undefined)?.role ??
+    null
+
   return (
     <SiteHeader
       session={
@@ -18,6 +22,7 @@ export async function SiteHeaderWithSession() {
                 email: session.user.email,
                 image: session.user.image ?? null,
               },
+              role,
             }
           : null
       }

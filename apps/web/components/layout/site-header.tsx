@@ -23,6 +23,7 @@ import {
 import { ThemeToggle } from '@/components/misc/theme-toggle'
 import { UserMenu, type UserMenuUser } from '@/components/layout/user-menu'
 import { authClient } from '@/lib/auth-client'
+import { getPostLoginPath } from '@/lib/post-login-redirect'
 
 const NAV_LINKS = [
   { href: '/events', label: 'Find Events' },
@@ -45,7 +46,10 @@ function getInitials(name: string) {
   return initials || '?'
 }
 
-export type SiteHeaderSession = { user: UserMenuUser } | null
+export type SiteHeaderSession = {
+  user: UserMenuUser
+  role?: string | null
+} | null
 
 export function SiteHeader({
   session = null,
@@ -56,6 +60,9 @@ export function SiteHeader({
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { scrollY } = useScroll()
+
+  const dashboardHref = session ? getPostLoginPath(session.role) : '/'
+  const showDashboard = dashboardHref !== '/'
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 20)
@@ -152,7 +159,10 @@ export function SiteHeader({
             </ul>
             <ThemeToggle />
             {session ? (
-              <UserMenu user={session.user} />
+              <UserMenu
+                user={session.user}
+                dashboardHref={showDashboard ? dashboardHref : undefined}
+              />
             ) : (
               <Button size="xl" asChild>
                 <Link href="/get-started">Get Started</Link>
@@ -188,6 +198,7 @@ export function SiteHeader({
         onClose={() => setMobileOpen(false)}
         pathname={pathname}
         session={session}
+        dashboardHref={showDashboard ? dashboardHref : null}
       />
     </>
   )
@@ -220,11 +231,13 @@ function MobileMenu({
   onClose,
   pathname,
   session,
+  dashboardHref,
 }: {
   open: boolean
   onClose: () => void
   pathname: string
   session: SiteHeaderSession
+  dashboardHref: string | null
 }) {
   const router = useRouter()
 
@@ -391,6 +404,13 @@ function MobileMenu({
                       </span>
                     </div>
                   </div>
+                  {dashboardHref ? (
+                    <Button size="xl" asChild className="w-full">
+                      <Link href={dashboardHref} onClick={onClose}>
+                        Dashboard
+                      </Link>
+                    </Button>
+                  ) : null}
                   <Link
                     href="/account"
                     onClick={onClose}
