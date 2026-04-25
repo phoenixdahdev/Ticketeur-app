@@ -7,7 +7,7 @@ import { resolveSignupRole } from '@/lib/signup-roles'
 
 export const metadata: Metadata = {
   title: 'Sign Up',
-  description: 'Create your Ticketur account.',
+  description: 'Create your Ticketeur account.',
 }
 
 export default async function SignupPage(props: PageProps<'/signup'>) {

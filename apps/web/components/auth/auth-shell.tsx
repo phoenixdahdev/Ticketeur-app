@@ -40,12 +40,12 @@ export function AuthShell({
         />
         <Link
           href="/"
-          aria-label="Ticketur home"
+          aria-label="Ticketeur home"
           className="bg-background/95 absolute top-4 left-4 z-10 inline-flex items-center gap-2 rounded-xl px-3 py-2 shadow-sm backdrop-blur md:top-6 md:left-6"
         >
           <LogoIcon className="h-7 w-auto" />
           <span className="font-heading text-foreground text-base font-semibold tracking-tight">
-            Ticketur
+            Ticketeur
           </span>
         </Link>
       </aside>

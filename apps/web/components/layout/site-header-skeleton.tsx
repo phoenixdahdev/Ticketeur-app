@@ -8,7 +8,7 @@ export function SiteHeaderSkeleton() {
         <div className="flex items-center gap-2">
           <LogoIcon className="h-9 w-auto md:h-10" />
           <span className="font-heading text-foreground text-xl font-semibold tracking-tight md:text-[22px]">
-            Ticketur
+            Ticketeur
           </span>
         </div>
 

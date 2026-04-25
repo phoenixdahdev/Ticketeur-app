@@ -7,7 +7,7 @@ import { SIGNUP_ROLES } from '@/lib/signup-roles'
 
 export const metadata: Metadata = {
   title: 'Sign In',
-  description: 'Sign in to your Ticketur account.',
+  description: 'Sign in to your Ticketeur account.',
 }
 
 export default function LoginPage() {
@@ -34,7 +34,7 @@ export default function LoginPage() {
           Welcome back
         </h1>
         <p className="text-muted-foreground text-base leading-6">
-          Sign in to your Ticketur account to continue.
+          Sign in to your Ticketeur account to continue.
         </p>
       </header>
 

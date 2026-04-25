@@ -46,12 +46,14 @@ type SignupFormValues = {
   description?: string
   email?: string
   password: string
+  confirmPassword: string
   agree: boolean
 }
 
 export function SignupForm({ config }: { config: SignupRoleConfig }) {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const schema = SIGNUP_SCHEMAS[config.role]
@@ -218,6 +220,51 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
                 </button>
               </div>
               <PasswordStrength password={password ?? ''} />
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="confirmPassword"
+          control={form.control}
+          render={({ field: rhf, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel
+                htmlFor={rhf.name}
+                className="text-foreground text-base font-semibold"
+              >
+                Confirm Password
+              </FieldLabel>
+              <div className="relative">
+                <Input
+                  name={rhf.name}
+                  ref={rhf.ref}
+                  value={typeof rhf.value === 'string' ? rhf.value : ''}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  id={rhf.name}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  autoComplete="new-password"
+                  aria-invalid={fieldState.invalid}
+                  className="pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={
+                    showConfirmPassword ? 'Hide password' : 'Show password'
+                  }
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-1 transition-colors"
+                >
+                  <HugeiconsIcon
+                    icon={showConfirmPassword ? ViewOffSlashIcon : ViewIcon}
+                    className="size-5"
+                    strokeWidth={1.8}
+                  />
+                </button>
+              </div>
+              <FieldError errors={[fieldState.error]} />
             </Field>
           )}
         />

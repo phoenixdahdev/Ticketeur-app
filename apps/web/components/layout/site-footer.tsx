@@ -19,6 +19,11 @@ const DISCOVER_LINKS = [
   { href: '/vendors/list', label: 'Explore Vendors' },
 ] as const
 
+const LEGAL_LINKS = [
+  { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/terms', label: 'Terms & Conditions' },
+] as const
+
 const SOCIALS: {
   href: string
   label: string
@@ -101,10 +106,22 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border mt-10 border-t pt-8 md:mt-12">
+        <div className="border-border mt-10 flex flex-col items-center gap-4 border-t pt-8 md:mt-12 md:flex-row md:justify-between md:gap-6">
           <p className="text-muted-foreground text-center text-xs md:text-left">
             &copy; {year} Ticketeur Inc. All rights reserved.
           </p>
+          <ul className="flex items-center gap-5">
+            {LEGAL_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-muted-foreground hover:text-primary text-xs transition-colors"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

@@ -33,34 +33,51 @@ const agreeSchema = z
   .boolean()
   .refine((v) => v === true, 'Please accept the Terms and Privacy Policy')
 
-const attendeeSchema = z.object({
-  fullName: z.string().trim().min(1, 'Full name is required'),
-  email: z.email('Enter a valid email'),
-  password: passwordSchema,
-  agree: agreeSchema,
-})
+const confirmPasswordSchema = z.string().min(1, 'Please confirm your password')
 
-const organizerSchema = z.object({
-  orgName: z.string().trim().min(1, 'Organization name is required'),
-  email: z.email('Enter a valid email'),
-  orgType: z.enum(ORG_TYPE_OPTIONS, {
-    message: 'Please choose an organization type',
-  }),
-  password: passwordSchema,
-  agree: agreeSchema,
-})
+const passwordsMatch = {
+  check: (data: { password: string; confirmPassword: string }) =>
+    data.password === data.confirmPassword,
+  options: { message: "Passwords don't match", path: ['confirmPassword'] },
+}
 
-const vendorSchema = z.object({
-  businessName: z.string().trim().min(1, 'Business name is required'),
-  email: z.email('Enter a valid email'),
-  category: z.string().trim().min(1, 'Business category is required'),
-  description: z
-    .string()
-    .trim()
-    .min(10, 'Add at least 10 characters describing your business'),
-  password: passwordSchema,
-  agree: agreeSchema,
-})
+const attendeeSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Full name is required'),
+    email: z.email('Enter a valid email'),
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+    agree: agreeSchema,
+  })
+  .refine(passwordsMatch.check, passwordsMatch.options)
+
+const organizerSchema = z
+  .object({
+    orgName: z.string().trim().min(1, 'Organization name is required'),
+    email: z.email('Enter a valid email'),
+    orgType: z.enum(ORG_TYPE_OPTIONS, {
+      message: 'Please choose an organization type',
+    }),
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+    agree: agreeSchema,
+  })
+  .refine(passwordsMatch.check, passwordsMatch.options)
+
+const vendorSchema = z
+  .object({
+    businessName: z.string().trim().min(1, 'Business name is required'),
+    email: z.email('Enter a valid email'),
+    category: z.string().trim().min(1, 'Business category is required'),
+    description: z
+      .string()
+      .trim()
+      .min(10, 'Add at least 10 characters describing your business'),
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+    agree: agreeSchema,
+  })
+  .refine(passwordsMatch.check, passwordsMatch.options)
 
 export const SIGNUP_SCHEMAS = {
   attendee: attendeeSchema,
@@ -197,6 +214,7 @@ export function getSignupDefaultValues(
     defaults[field.name] = ''
   }
   defaults.password = ''
+  defaults.confirmPassword = ''
   defaults.agree = false
   return defaults
 }

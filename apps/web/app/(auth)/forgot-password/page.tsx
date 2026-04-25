@@ -6,7 +6,7 @@ import { SIGNUP_ROLES } from '@/lib/signup-roles'
 
 export const metadata: Metadata = {
   title: 'Forgot Password',
-  description: 'Reset your Ticketur account password.',
+  description: 'Reset your Ticketeur account password.',
 }
 
 export default function ForgotPasswordPage() {
