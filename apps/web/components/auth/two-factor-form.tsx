@@ -41,7 +41,7 @@ export function TwoFactorForm() {
       }
 
       toast.success('Signed in')
-      router.push('/')
+      router.push('/post-login')
     })
   }
 
@@ -60,7 +60,7 @@ export function TwoFactorForm() {
       }
 
       toast.success('Signed in with backup code')
-      router.push('/')
+      router.push('/post-login')
     })
   }
 

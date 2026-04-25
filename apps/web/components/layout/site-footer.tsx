@@ -30,8 +30,12 @@ const SOCIALS: {
   icon: IconSvgElement
 }[] = [
   { href: 'https://facebook.com', label: 'Facebook', icon: Facebook02Icon },
-  { href: 'https://instagram.com', label: 'Instagram', icon: InstagramIcon },
-  { href: 'https://x.com', label: 'X', icon: NewTwitterIcon },
+  {
+    href: 'https://www.instagram.com/ticketeur',
+    label: 'Instagram',
+    icon: InstagramIcon,
+  },
+  { href: 'https://x.com/ticketeur_', label: 'X', icon: NewTwitterIcon },
 ]
 
 export function SiteFooter() {

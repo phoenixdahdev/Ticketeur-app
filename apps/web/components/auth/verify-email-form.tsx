@@ -63,7 +63,7 @@ export function VerifyEmailForm() {
       toast.success('Email verified', {
         description: 'You can now sign in to your account.',
       })
-      router.push('/')
+      router.push('/post-login')
     })
   }
 

@@ -50,7 +50,7 @@ function AppleGlyph({ className }: { className?: string }) {
 async function continueWithGoogle() {
   const { error } = await authClient.signIn.social({
     provider: 'google',
-    callbackURL: '/',
+    callbackURL: '/post-login',
   })
   if (error) {
     toast.error('Google sign-in failed', {
