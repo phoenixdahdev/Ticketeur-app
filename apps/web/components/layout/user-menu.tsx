@@ -15,6 +15,7 @@ import {
   Settings02Icon,
   Logout02Icon,
   Ticket01Icon,
+  DashboardSquare02Icon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
@@ -78,7 +79,13 @@ const itemVariants: Variants = {
   },
 }
 
-export function UserMenu({ user }: { user: UserMenuUser }) {
+export function UserMenu({
+  user,
+  dashboardHref,
+}: {
+  user: UserMenuUser
+  dashboardHref?: string
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -188,6 +195,14 @@ export function UserMenu({ user }: { user: UserMenuUser }) {
             </motion.div>
 
             <nav className="flex flex-col p-1">
+              {dashboardHref ? (
+                <MenuLink
+                  href={dashboardHref}
+                  icon={DashboardSquare02Icon}
+                  label="Dashboard"
+                  onClick={() => setOpen(false)}
+                />
+              ) : null}
               <MenuLink
                 href="/account"
                 icon={UserIcon}

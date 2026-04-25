@@ -37,7 +37,7 @@ export function DashboardShell({
   }, [mobileOpen])
 
   return (
-    <div className="bg-muted/40 dark:bg-background min-h-svh">
+    <div className="bg-muted/40 dark:bg-background flex h-svh flex-col overflow-hidden">
       <aside
         aria-label="Primary"
         className="border-border/60 bg-background hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-[255px] md:flex-col md:border-r"
@@ -111,8 +111,8 @@ export function DashboardShell({
         ) : null}
       </AnimatePresence>
 
-      <main className="md:pl-63.75">
-        <div className="mx-auto w-full px-4 py-6 md:px-8 md:py-10">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden md:pl-63.75">
+        <div className="mx-auto flex min-h-0 w-full flex-1 flex-col px-4 py-6 md:px-8 md:py-10">
           {children}
         </div>
       </main>

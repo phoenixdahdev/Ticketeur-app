@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function OrgDashboardPage() {
   return (
-    <div className="flex flex-col gap-6 md:gap-8">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
         <div className="flex flex-col gap-1.5">
           <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">

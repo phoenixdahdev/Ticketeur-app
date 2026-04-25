@@ -66,13 +66,179 @@ export const ORG_EVENTS: OrgEvent[] = [
   mk('24', 'Year-End Industry Mixer', 'YE', '2025-12-12', 'Dubai, UAE', 'draft', 0, 350),
 ]
 
-export const EVENTS_PAGE_SIZE = 7
+export const EVENTS_PAGE_SIZE = 10
 
 export const STATUS_LABEL: Record<EventStatus, string> = {
   upcoming: 'Upcoming',
   'in-review': 'In Review',
   draft: 'Draft',
   archived: 'Archived',
+}
+
+export function findEventById(id: string): OrgEvent | undefined {
+  return ORG_EVENTS.find((e) => e.id === id)
+}
+
+export function eventCode(id: string): string {
+  return `EVT-${id.padStart(5, '0')}`
+}
+
+export type TicketTier = {
+  name: string
+  tier: string
+  sold: number
+  total: number
+  price: string
+}
+
+export type VendorEntry = {
+  name: string
+  category: string
+  description: string
+  image: string
+  status: 'verified' | 'pending'
+}
+
+export type EventDetail = {
+  title: string
+  code: string
+  description: string
+  date: string
+  weekday: string
+  time: string
+  location: string
+  status: EventStatus
+  revenue: string
+  sold: number
+  total: number
+  pct: number
+  tiers: TicketTier[]
+  vendors: VendorEntry[]
+  hasEnded: boolean
+}
+
+const FALLBACK_DESCRIPTION =
+  "Join the brightest minds in tech for a day of innovation, networking, and expert-led sessions. This year's conference focuses on the intersection of Artificial Intelligence and Sustainable Infrastructure. Keynote speakers include industry pioneers from leading global tech giants."
+
+const FALLBACK_VENDORS: VendorEntry[] = [
+  {
+    name: 'Neon Bites',
+    category: 'Food & Drink',
+    description:
+      "Serving award-winning wagyu sliders and truffle fries throughout the event.",
+    image: '/event-detail/neon-bites.jpg',
+    status: 'verified',
+  },
+  {
+    name: 'Glow Threads',
+    category: 'Apparel',
+    description:
+      'Exclusive LED-integrated apparel and limited edition artist collaborations.',
+    image: '/event-detail/glow-threads.jpg',
+    status: 'verified',
+  },
+  {
+    name: 'Liquid Dreams',
+    category: 'Beverages',
+    description:
+      'Experience our signature “Neon Rush” & other molecular delights.',
+    image: '/event-detail/liquid-dreams.jpg',
+    status: 'verified',
+  },
+  {
+    name: 'Prism Arts',
+    category: 'Decor',
+    description:
+      'Browse and purchase unique digital collectibles and interactive physical pieces.',
+    image: '/event-detail/prism-arts.jpg',
+    status: 'pending',
+  },
+]
+
+export function buildEventDetail(ev: OrgEvent): EventDetail {
+  const totalTickets = ev.total > 0 ? ev.total : 1000
+  const sold = ev.sold
+
+  const isDraft = ev.status === 'draft'
+  const isInReview = ev.status === 'in-review'
+  const isArchived = ev.status === 'archived'
+
+  const tiers: TicketTier[] = isDraft
+    ? [
+        {
+          name: 'Early Bird Pass',
+          tier: 'Tier 1',
+          sold: 0,
+          total: 200,
+          price: '₦10,000',
+        },
+      ]
+    : [
+        {
+          name: 'Early Bird Pass',
+          tier: 'Tier 1',
+          sold: isArchived ? 250 : isInReview ? 0 : Math.min(250, sold),
+          total: 250,
+          price: '₦10,000',
+        },
+        {
+          name: 'General Admission',
+          tier: 'Tier 2',
+          sold: isArchived
+            ? 600
+            : isInReview
+              ? 0
+              : Math.min(600, Math.max(0, sold - 250)),
+          total: 600,
+          price: '₦15,000',
+        },
+        {
+          name: 'VIP Networking Pass',
+          tier: 'Tier 3',
+          sold: isArchived
+            ? 150
+            : isInReview
+              ? 0
+              : Math.min(150, Math.max(0, sold - 850)),
+          total: 150,
+          price: '₦30,000',
+        },
+      ]
+
+  const computedSold = isArchived
+    ? totalTickets
+    : isDraft || isInReview
+      ? 0
+      : sold
+  const pct =
+    totalTickets > 0
+      ? Math.min(100, Math.round((computedSold / totalTickets) * 100))
+      : 0
+  const revenueValue = computedSold * 282
+  const revenue = `₦${revenueValue.toLocaleString('en-US')}`
+
+  return {
+    title: ev.name,
+    code: eventCode(ev.id),
+    description: FALLBACK_DESCRIPTION,
+    date: ev.date,
+    weekday: new Date(ev.dateMs).toLocaleDateString('en-US', {
+      weekday: 'long',
+    }),
+    time: '09:00 AM – 06:00 PM',
+    location:
+      ev.location === 'Online Event'
+        ? 'Online Event'
+        : `Main Ballroom, ${ev.location}`,
+    status: ev.status,
+    revenue,
+    sold: computedSold,
+    total: totalTickets,
+    pct,
+    tiers,
+    vendors: FALLBACK_VENDORS,
+    hasEnded: isArchived,
+  }
 }
 
 export const STATUS_TONE: Record<EventStatus, string> = {
