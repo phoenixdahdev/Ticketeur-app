@@ -44,14 +44,20 @@ export function CheckoutView({
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
   )
-  const total = subtotal + (subtotal > 0 ? SERVICE_FEE : 0)
+  const isFree = subtotal === 0 && selected.length > 0
+  const total = isFree ? 0 : subtotal + SERVICE_FEE
 
   const start = useMutation(
     trpc.public.checkout.start.mutationOptions({
-      onSuccess: ({ paymentUrl }) => {
+      onSuccess: ({ paymentUrl, orderId, free }) => {
+        if (free) {
+          // No payment needed — order is already fulfilled, go to tickets.
+          window.location.href = `/tickets/${orderId}`
+          return
+        }
         // Redirect off-domain to Flutterwave's hosted checkout. Customer
         // returns to /checkout/return after paying.
-        window.location.href = paymentUrl
+        if (paymentUrl) window.location.href = paymentUrl
       },
       onError: (err) => {
         toast.error('Could not start checkout', {
@@ -177,24 +183,45 @@ export function CheckoutView({
             </Field>
           </motion.section>
 
-          <div className="flex items-start gap-3 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-4 dark:border-[#1e40af]/40 dark:bg-[#1e40af]/15">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-[#135bec] text-white">
-              <HugeiconsIcon
-                icon={Shield01Icon}
-                className="size-4"
-                strokeWidth={2}
-              />
+          {isFree ? (
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/40 dark:bg-emerald-500/15">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                <HugeiconsIcon
+                  icon={Shield01Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                  This ticket is free
+                </span>
+                <span className="text-xs text-emerald-900/80 dark:text-emerald-200/80">
+                  No payment needed. Click the button below and we&apos;ll
+                  email your ticket immediately.
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-[#1e3a8a] dark:text-[#93c5fd]">
-                Secure payment by Flutterwave
-              </span>
-              <span className="text-xs text-[#1e3a8a]/80 dark:text-[#93c5fd]/80">
-                You&apos;ll be redirected to Flutterwave to enter your card,
-                bank or USSD details. We never see them.
-              </span>
+          ) : (
+            <div className="flex items-start gap-3 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-4 dark:border-[#1e40af]/40 dark:bg-[#1e40af]/15">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-[#135bec] text-white">
+                <HugeiconsIcon
+                  icon={Shield01Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-[#1e3a8a] dark:text-[#93c5fd]">
+                  Secure payment by Flutterwave
+                </span>
+                <span className="text-xs text-[#1e3a8a]/80 dark:text-[#93c5fd]/80">
+                  You&apos;ll be redirected to Flutterwave to enter your card,
+                  bank or USSD details. We never see them.
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-start gap-3 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4 dark:border-[#b45309]/40 dark:bg-[#b45309]/10">
             <HugeiconsIcon
@@ -257,10 +284,12 @@ export function CheckoutView({
 
           <div className="border-border flex flex-col gap-2 border-t pt-4">
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
-            <Row
-              label="Service Fee"
-              value={`₦${subtotal > 0 ? SERVICE_FEE.toLocaleString() : 0}.00`}
-            />
+            {!isFree ? (
+              <Row
+                label="Service Fee"
+                value={`₦${subtotal > 0 ? SERVICE_FEE.toLocaleString() : 0}.00`}
+              />
+            ) : null}
           </div>
 
           <div className="border-border flex items-baseline justify-between gap-4 border-t pt-4">
@@ -268,7 +297,7 @@ export function CheckoutView({
               Total Amount
             </span>
             <span className="font-heading text-primary text-2xl font-bold md:text-3xl">
-              ₦{total.toLocaleString()}
+              {isFree ? 'Free' : `₦${total.toLocaleString()}`}
             </span>
           </div>
 
@@ -279,7 +308,13 @@ export function CheckoutView({
               disabled={selected.length === 0 || submitting}
               className="w-full"
             >
-              {submitting ? 'Redirecting…' : 'Pay Now'}
+              {submitting
+                ? isFree
+                  ? 'Reserving…'
+                  : 'Redirecting…'
+                : isFree
+                  ? 'Get free ticket'
+                  : 'Pay Now'}
             </Button>
             <p className="text-muted-foreground text-center text-xs">
               By completing your purchase, you agree to our{' '}
