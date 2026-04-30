@@ -211,7 +211,7 @@ export const eventsRouter = createTRPCRouter({
           'http://localhost:3000'
 
         for (const inv of input.externalInvites) {
-          const signupUrl = `${baseUrl}/sign-up?invite=vendor&email=${encodeURIComponent(inv.email)}`
+          const signupUrl = `${baseUrl}/signup?role=vendor&invite=vendor&email=${encodeURIComponent(inv.email)}`
           void tasks.trigger('send-vendor-invite', {
             email: inv.email,
             businessName: inv.businessName,
