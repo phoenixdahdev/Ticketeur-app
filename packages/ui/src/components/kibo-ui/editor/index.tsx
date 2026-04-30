@@ -15,6 +15,7 @@ import {
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import { CharacterCount, Placeholder } from "@tiptap/extensions";
+import { Markdown } from "tiptap-markdown";
 import type { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import {
@@ -29,31 +30,31 @@ import {
   FloatingMenu,
   type FloatingMenuProps,
 } from "@tiptap/react/menus";
-import { Button } from "@ticketur/components/ui/button";
+import { Button } from "@ticketur/ui/components/button";
 import {
   Command,
   CommandEmpty,
   CommandItem,
   CommandList,
-} from "@ticketur/components/ui/command";
+} from "@ticketur/ui/components/command";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@ticketur/components/ui/dropdown-menu";
+} from "@ticketur/ui/components/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@ticketur/components/ui/popover";
-import { Separator } from "@ticketur/components/ui/separator";
+} from "@ticketur/ui/components/popover";
+import { Separator } from "@ticketur/ui/components/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@ticketur/components/ui/tooltip";
+} from "@ticketur/ui/components/tooltip";
 import { cn } from "@ticketur/ui/lib/utils";
 
 export type { Editor, JSONContent } from "@tiptap/react";
@@ -317,6 +318,7 @@ const Slash = Node.create<SlashOptions>({
         allow: ({ state, range }) => {
           const $from = state.doc.resolve(range.from);
           const type = state.schema.nodes[this.name];
+          if (!type) return false;
           const allow = !!$from.parent.type.contentMatch.matchType(type);
 
           return allow;
@@ -463,7 +465,7 @@ const EditorSlashMenu = ({ items, editor, range }: EditorSlashMenuProps) => (
   <Command
     className="border shadow"
     id="slash-command"
-    onKeyDown={(e) => {
+    onKeyDown={(e: React.KeyboardEvent) => {
       e.stopPropagation();
     }}
   >
@@ -708,6 +710,12 @@ export const EditorProvider = ({
       HTMLAttributes: {
         class: "flex items-start gap-1",
       },
+    }),
+    // Markdown round-trip — input parses MD into the doc, output via
+    // `editor.storage.markdown.getMarkdown()` returns MD on save.
+    Markdown.configure({
+      transformPastedText: true,
+      transformCopiedText: true,
     }),
   ];
 

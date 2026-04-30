@@ -19,6 +19,7 @@ import {
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
 import {
   type VendorEvent,
@@ -156,9 +157,9 @@ export function VendorEventDetail({ event }: { event: VendorEvent }) {
 
       <section className="border-border/60 bg-background flex flex-col gap-5 rounded-2xl border p-5 md:p-6">
         <DetailGroup title="Description">
-          <p className="text-muted-foreground text-sm leading-7 md:text-base">
+          <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
             {event.description}
-          </p>
+          </MarkdownView>
         </DetailGroup>
 
         <DetailGroup title="Event Details">
