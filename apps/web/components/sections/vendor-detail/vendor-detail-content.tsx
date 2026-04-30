@@ -1,0 +1,81 @@
+'use client'
+
+import { notFound } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+
+import { useTRPC } from '@/lib/trpc'
+import type { VendorRecord } from '@/lib/vendors'
+
+import { VendorAbout } from '@/components/sections/vendor-detail/vendor-about'
+import { VendorHero } from '@/components/sections/vendor-detail/vendor-hero'
+import { VendorParticipatingEvents } from '@/components/sections/vendor-detail/vendor-participating-events'
+
+const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
+const BANNER_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1600&q=80'
+
+export function VendorDetailContent({ id }: { id: string }) {
+  const trpc = useTRPC()
+  const { data, isLoading } = useQuery(
+    trpc.public.vendors.byId.queryOptions({ id })
+  )
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex max-w-[1440px] items-center justify-center px-5 py-20 md:px-10 md:py-28">
+        <p className="text-muted-foreground text-sm">Loading vendor…</p>
+      </div>
+    )
+  }
+
+  if (!data) {
+    notFound()
+  }
+
+  // Pass the description as a single markdown string — VendorAbout renders
+  // it through MarkdownView, so headings, lists, and paragraph breaks all
+  // round-trip from the editor.
+  const description = data.businessDescription ?? ''
+  // Cast: VendorRecord.category is a closed literal union, but vendors can
+  // self-select any category string in the profile form. Treating it as a
+  // free string here is intentional.
+  const vendor = {
+    id: data.id,
+    name: data.businessName ?? 'Vendor',
+    category: data.businessCategory ?? 'Vendor',
+    shortDescription: data.tagline ?? '',
+    fullDescription: description ? [description] : [],
+    imageUrl: data.image ?? VENDOR_PLACEHOLDER,
+    location: data.location ?? 'Location not set',
+    partnerSince: data.partnerSince,
+    hostedEvents: data.hostedEvents,
+    expertise: data.expertise ?? '—',
+    focus: data.focus ?? '—',
+    experience: data.experience ?? '—',
+    certified: false,
+    premium: false,
+  } as unknown as VendorRecord
+
+  const participatingEvents = data.participatingEvents.map((ev) => ({
+    id: ev.id,
+    tag: 'Event',
+    date: new Date(`${ev.eventDate}T00:00:00`).toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    }),
+    title: ev.title,
+    description: '',
+    location: ev.location,
+    attendees: '',
+    imageUrl: ev.bannerUrl ?? '/hero-bg.png',
+  }))
+
+  return (
+    <>
+      <VendorHero vendor={vendor} bannerUrl={data.bannerUrl ?? BANNER_PLACEHOLDER} />
+      <VendorAbout vendor={vendor} />
+      <VendorParticipatingEvents events={participatingEvents} />
+    </>
+  )
+}

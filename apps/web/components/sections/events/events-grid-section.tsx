@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   parseAsArrayOf,
@@ -9,6 +9,7 @@ import {
   parseAsStringLiteral,
   useQueryStates,
 } from 'nuqs'
+import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowLeft01Icon,
@@ -17,157 +18,23 @@ import {
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
-import {
-  SmallEventCard,
-  type SmallEventCardProps,
-} from '@/components/cards/small-event-card'
+import { SmallEventCard } from '@/components/cards/small-event-card'
 import {
   EventFilters,
   type FiltersValue,
   PRICE_MAX_DEFAULT,
   PRICE_MIN_DEFAULT,
-  emptyFilters,
 } from '@/components/sections/events/event-filters'
-import {
-  EventsToolbar,
-  type EventSort,
-  type EventTab,
-} from '@/components/sections/events/events-toolbar'
+import { EventsToolbar } from '@/components/sections/events/events-toolbar'
 import { MobileFilterDrawer } from '@/components/sections/events/mobile-filter-drawer'
-import { toIsoDate } from '@/lib/date'
+import { useTRPC } from '@/lib/trpc'
+import { formatNaira } from '@/lib/event-display'
 
 const PAGE_SIZE = 6
-
-const EVENTS: (SmallEventCardProps & {
-  id: string
-  priceNum: number
-  tab: EventTab
-  category: string
-  createdAt: string
-})[] = [
-  {
-    id: 'lagos-fest-2026',
-    title: 'Lagos Fest 2026',
-    category: 'Music',
-    status: 'upcoming',
-    price: '₦10,000',
-    priceNum: 25,
-    date: '2026-10-20',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=800&q=80',
-    href: '/events/lagos-fest-2026',
-    tab: 'upcoming',
-    createdAt: '2026-02-01',
-  },
-  {
-    id: 'all-stars-charity-sport',
-    title: 'All Stars Charity Sport',
-    category: 'Sports',
-    status: 'upcoming',
-    price: 'Free',
-    priceNum: 0,
-    date: '2026-10-21',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
-    href: '/events/all-stars-charity-sport',
-    tab: 'upcoming',
-    createdAt: '2026-02-05',
-  },
-  {
-    id: 'future-tech-summit',
-    title: 'Future Tech Summit',
-    category: 'Tech',
-    status: 'upcoming',
-    price: '₦3,000',
-    priceNum: 8,
-    date: '2026-10-20',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
-    href: '/events/future-tech-summit',
-    tab: 'upcoming',
-    createdAt: '2026-02-08',
-  },
-  {
-    id: 'gtco-fashion-week',
-    title: 'GTCO Fashion Week',
-    category: 'Fashion',
-    status: 'upcoming',
-    price: 'Free',
-    priceNum: 0,
-    date: '2026-10-20',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80',
-    href: '/events/gtco-fashion-week',
-    tab: 'upcoming',
-    createdAt: '2026-02-11',
-  },
-  {
-    id: 'lagos-fest-2026-rerun',
-    title: 'Lagos Fest 2026',
-    category: 'Music',
-    status: 'upcoming',
-    price: '₦10,000',
-    priceNum: 25,
-    date: '2026-10-20',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=800&q=80',
-    href: '/events/lagos-fest-2026-rerun',
-    tab: 'upcoming',
-    createdAt: '2026-02-14',
-  },
-  {
-    id: 'lagos-fest-2026-encore',
-    title: 'Lagos Fest 2026',
-    category: 'Music',
-    status: 'upcoming',
-    price: '₦10,000',
-    priceNum: 25,
-    date: '2026-10-20',
-    location: 'Gbagada, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?auto=format&fit=crop&w=800&q=80',
-    href: '/events/lagos-fest-2026-encore',
-    tab: 'upcoming',
-    createdAt: '2026-02-17',
-  },
-  {
-    id: 'modern-art-expo',
-    title: 'Modern Art Expo',
-    category: 'Art',
-    status: 'upcoming',
-    price: 'Free',
-    priceNum: 0,
-    date: '2026-09-04',
-    location: 'Mawuri, Abuja',
-    imageUrl:
-      'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=800&q=80',
-    href: '/events/modern-art-expo',
-    tab: 'upcoming',
-    createdAt: '2026-02-20',
-  },
-  {
-    id: 'past-concert-2025',
-    title: 'Afrobeats Classics',
-    category: 'Music',
-    status: 'past',
-    price: '₦8,000',
-    priceNum: 20,
-    date: '2025-11-12',
-    location: 'Eko Convention Centre',
-    imageUrl:
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=800&q=80',
-    href: '/events/past-concert-2025',
-    tab: 'past',
-    createdAt: '2025-09-01',
-  },
-]
+const EVENT_PLACEHOLDER = '/hero-bg.png'
 
 export function EventsGridSection() {
+  const trpc = useTRPC()
   const [state, setState] = useQueryStates(
     {
       tab: parseAsStringLiteral(['upcoming', 'past']).withDefault('upcoming'),
@@ -221,57 +88,32 @@ export function EventsGridSection() {
       ? 1
       : 0)
 
-  const filtered = useMemo(() => {
-    const q = state.q.trim().toLowerCase()
-    let list = EVENTS.filter((e) => e.tab === state.tab)
-    if (q) {
-      list = list.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.location.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q)
-      )
-    }
-    if (state.categories.length > 0) {
-      list = list.filter((e) => state.categories.includes(e.category))
-    }
-    if (state.date) {
-      list = list.filter((e) => {
-        const d = typeof e.date === 'string' ? e.date : toIsoDate(e.date)
-        return d === state.date
-      })
-    }
-    if (state.location) {
-      const loc = state.location.trim().toLowerCase()
-      list = list.filter((e) => e.location.toLowerCase().includes(loc))
-    }
-    list = list.filter(
-      (e) => e.priceNum >= state.priceMin && e.priceNum <= state.priceMax
-    )
-
-    const sorted = [...list]
-    switch (state.sort) {
-      case 'price-asc':
-        sorted.sort((a, b) => a.priceNum - b.priceNum)
-        break
-      case 'price-desc':
-        sorted.sort((a, b) => b.priceNum - a.priceNum)
-        break
-      case 'newest':
-        sorted.sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))
-        break
-      case 'popular':
-        break
-    }
-    return sorted
-  }, [state])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(state.page, totalPages)
-  const pageItems = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+  // Server-side filter/search/page. Sort, category and location filters are
+  // not yet supported by the public.events.list router and are kept client-
+  // visible for now; they'll re-engage once the router gains those fields.
+  const listQuery = useQuery(
+    trpc.public.events.list.queryOptions({
+      q: state.q,
+      page: state.page,
+      pageSize: PAGE_SIZE,
+    })
   )
+
+  const total = listQuery.data?.total ?? 0
+  const rows = listQuery.data?.rows ?? []
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const currentPage = Math.min(state.page, totalPages)
+  const pageItems = rows.map((ev) => ({
+    id: ev.id,
+    title: ev.title,
+    category: '',
+    status: 'upcoming' as const,
+    price: ev.minPrice > 0 ? formatNaira(ev.minPrice) : 'Free',
+    date: ev.eventDate,
+    location: ev.location,
+    imageUrl: ev.bannerUrl ?? EVENT_PLACEHOLDER,
+    href: `/events/${ev.id}`,
+  }))
 
   return (
     <section aria-label="All events" className="relative w-full px-5 md:px-10">
@@ -330,7 +172,16 @@ export function EventsGridSection() {
             onSortChange={(s) => setState({ sort: s, page: 1 })}
           />
 
-          {pageItems.length === 0 ? (
+          {listQuery.isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-muted h-72 animate-pulse rounded-2xl"
+                />
+              ))}
+            </div>
+          ) : pageItems.length === 0 ? (
             <EmptyState />
           ) : (
             <motion.div

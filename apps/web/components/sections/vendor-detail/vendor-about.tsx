@@ -8,6 +8,8 @@ import {
   InformationCircleIcon,
 } from '@hugeicons/core-free-icons'
 
+import { MarkdownView } from '@ticketur/ui/components/markdown-view'
+
 import type { VendorRecord } from '@/lib/vendors'
 
 export function VendorAbout({ vendor }: { vendor: VendorRecord }) {
@@ -37,11 +39,15 @@ export function VendorAbout({ vendor }: { vendor: VendorRecord }) {
               About the Vendor
             </h2>
           </div>
-          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground md:text-base">
-            {vendor.fullDescription.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          {vendor.fullDescription.length > 0 ? (
+            <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
+              {vendor.fullDescription.join('\n\n')}
+            </MarkdownView>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+              No description provided.
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-3 sm:gap-4">
             <Stat label="Expertise" value={vendor.expertise} />
             <Stat label="Focus" value={vendor.focus} />

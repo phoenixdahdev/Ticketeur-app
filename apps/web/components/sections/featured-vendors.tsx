@@ -1,55 +1,22 @@
 'use client'
 
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
-import {
-  VendorCard,
-  type VendorCardProps,
-} from '@/components/cards/vendor-card'
+import { VendorCard } from '@/components/cards/vendor-card'
+import { useTRPC } from '@/lib/trpc'
 
-const VENDORS: (VendorCardProps & { id: string })[] = [
-  {
-    id: 'gourmet-delights',
-    name: 'Gourmet Delights',
-    description:
-      'Premium catering services specializing in international fusion cuisine.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
-    href: '/vendors/gourmet-delights',
-  },
-  {
-    id: 'liquid-dreams',
-    name: 'Liquid Dreams',
-    description:
-      'Experience our signature "Neon Mule" and other molecular mixology delights.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=400&q=80',
-    href: '/vendors/liquid-dreams',
-  },
-  {
-    id: 'glow-threads',
-    name: 'Glow Threads',
-    description:
-      'Exclusive LED-integrated apparel and limited edition artist collaborations.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=400&q=80',
-    href: '/vendors/glow-threads',
-  },
-  {
-    id: 'prism-arts',
-    name: 'Prism Arts',
-    description:
-      'Browse and purchase unique digital collectibles and interactive physical pieces.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=400&q=80',
-    href: '/vendors/prism-arts',
-  },
-]
+const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
 
 export function FeaturedVendors() {
+  const trpc = useTRPC()
+  const { data: vendors = [], isLoading } = useQuery(
+    trpc.public.vendors.featured.queryOptions()
+  )
+
   return (
     <section
       aria-label="Featured Vendors"
@@ -84,23 +51,46 @@ export function FeaturedVendors() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {VENDORS.map((vendor, i) => (
-            <motion.div
-              key={vendor.id}
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{
-                delay: i * 0.08,
-                duration: 0.5,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              <VendorCard {...vendor} />
-            </motion.div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-muted h-64 animate-pulse rounded-2xl" />
+            ))}
+          </div>
+        ) : vendors.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            Featured vendors will appear here once approved.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {vendors.map((vendor, i) => (
+              <motion.div
+                key={vendor.id}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{
+                  delay: i * 0.08,
+                  duration: 0.5,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <VendorCard
+                  id={vendor.id}
+                  name={vendor.businessName ?? 'Vendor'}
+                  description={
+                    vendor.tagline ??
+                    vendor.businessDescription ??
+                    vendor.businessCategory ??
+                    ''
+                  }
+                  imageUrl={vendor.image ?? VENDOR_PLACEHOLDER}
+                  href={`/vendors/${vendor.id}`}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
