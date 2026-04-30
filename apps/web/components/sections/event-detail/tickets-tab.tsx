@@ -1,79 +1,107 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { parseAsInteger, parseAsStringLiteral, useQueryStates } from 'nuqs'
+import { useQuery } from '@tanstack/react-query'
+import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs'
 
+import { useTRPC } from '@/lib/trpc'
+import { formatNaira } from '@/lib/event-display'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 import { TicketSelector } from '@/components/sections/event-detail/ticket-selector'
 import { CheckoutView } from '@/components/sections/event-detail/checkout-view'
 
-export type TicketTierId = 'early' | 'general' | 'vip'
+export type TicketTierStatus = 'sold-out' | 'available' | 'limited'
 
 export type TicketTier = {
-  id: TicketTierId
+  id: string
   name: string
-  status: 'sold-out' | 'available' | 'limited'
+  status: TicketTierStatus
   description: string
+  // Major-unit price (NGN) for display + checkout math.
   price: number
   priceDisplay: string
-  remaining?: number
+  remaining: number
+  total: number
 }
 
-export const TICKET_TIERS: TicketTier[] = [
-  {
-    id: 'early',
-    name: 'Early Bird',
-    status: 'sold-out',
-    description: 'Includes standard entry and exclusive event digital poster.',
-    price: 5000,
-    priceDisplay: '₦5,000',
-  },
-  {
-    id: 'general',
-    name: 'General Admission',
-    status: 'available',
-    description: 'Access to all main stages, food court, and festival grounds.',
-    price: 7000,
-    priceDisplay: '₦7,000',
-  },
-  {
-    id: 'vip',
-    name: 'VIP Experience',
-    status: 'limited',
-    description:
-      'Backstage access, VIP lounge, premium bars, and fast-track entry.',
-    price: 15000,
-    priceDisplay: '₦15,000',
-    remaining: 12,
-  },
-]
-
-export const TICKET_STATE_KEYS = {
+const STATE_KEYS = {
   step: parseAsStringLiteral(['select', 'checkout']).withDefault('select'),
-  qty_early: parseAsInteger.withDefault(0),
-  qty_general: parseAsInteger.withDefault(0),
-  qty_vip: parseAsInteger.withDefault(0),
+  tier: parseAsString.withDefault(''),
+  qty: parseAsInteger.withDefault(0),
+}
+
+function deriveTierStatus(remaining: number, total: number): TicketTierStatus {
+  if (remaining <= 0) return 'sold-out'
+  // "Limited" when ≤25% remain (or fewer than 20 tickets) — tweak as needed.
+  if (remaining <= Math.max(20, Math.floor(total * 0.25))) return 'limited'
+  return 'available'
 }
 
 export function TicketsTab({ event }: { event: EventDetailData }) {
-  const [state, setState] = useQueryStates(TICKET_STATE_KEYS, {
-    shallow: true,
+  const trpc = useTRPC()
+  const [state, setState] = useQueryStates(STATE_KEYS, { shallow: true })
+
+  const { data, isLoading } = useQuery(
+    trpc.public.events.byId.queryOptions({ id: event.id })
+  )
+
+  const tiers: TicketTier[] = (data?.tiers ?? []).map((t) => {
+    const remaining = Math.max(0, t.quantity - t.sold)
+    return {
+      id: t.id,
+      name: t.name,
+      status: deriveTierStatus(remaining, t.quantity),
+      description: '',
+      price: t.priceMinor / 100,
+      priceDisplay: formatNaira(t.priceMinor),
+      remaining,
+      total: t.quantity,
+    }
   })
 
-  const quantities: Record<TicketTierId, number> = {
-    early: state.qty_early,
-    general: state.qty_general,
-    vip: state.qty_vip,
+  // Single-tier checkout: only one tier can have qty > 0 at a time. Picking
+  // a tier zeros any previous selection.
+  const setTierQty = (tierId: string, qty: number) => {
+    const tier = tiers.find((t) => t.id === tierId)
+    if (!tier || tier.status === 'sold-out') return
+    const cap = tier.remaining
+    const clamped = Math.min(Math.max(0, qty), cap)
+    if (clamped === 0 && state.tier === tierId) {
+      void setState({ tier: null, qty: null })
+      return
+    }
+    void setState({ tier: tierId, qty: clamped || null })
   }
 
-  const setQty = (id: TicketTierId, qty: number) => {
-    const clamped = Math.max(0, qty)
-    if (id === 'early') setState({ qty_early: clamped || null })
-    if (id === 'general') setState({ qty_general: clamped || null })
-    if (id === 'vip') setState({ qty_vip: clamped || null })
+  const quantities: Record<string, number> = {}
+  if (state.tier && state.qty > 0) {
+    quantities[state.tier] = state.qty
   }
 
   const goTo = (step: 'select' | 'checkout') => setState({ step })
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-muted h-32 animate-pulse rounded-2xl" />
+        ))}
+      </div>
+    )
+  }
+
+  if (tiers.length === 0) {
+    return (
+      <div className="border-border bg-muted/20 flex min-h-60 flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+        <p className="font-heading text-foreground text-lg font-semibold">
+          Tickets aren&apos;t on sale yet
+        </p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Check back soon — the organiser will publish tiers when ready.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="relative">
@@ -88,9 +116,9 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
           >
             <TicketSelector
               event={event}
-              tiers={TICKET_TIERS}
+              tiers={tiers}
               quantities={quantities}
-              onQuantityChange={setQty}
+              onQuantityChange={setTierQty}
               onCheckout={() => goTo('checkout')}
             />
           </motion.div>
@@ -104,7 +132,7 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
           >
             <CheckoutView
               event={event}
-              tiers={TICKET_TIERS}
+              tiers={tiers}
               quantities={quantities}
               onBack={() => goTo('select')}
             />

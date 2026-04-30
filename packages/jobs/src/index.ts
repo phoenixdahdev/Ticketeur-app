@@ -5,6 +5,7 @@ export {
   welcomeEmailSchema,
   vendorInviteSchema,
   eventApprovedSchema,
+  ticketConfirmationSchema,
 } from './schema'
 export type {
   VerificationOtpPayload,
@@ -13,4 +14,5 @@ export type {
   WelcomeEmailPayload,
   VendorInvitePayload,
   EventApprovedPayload,
+  TicketConfirmationPayload,
 } from './schema'

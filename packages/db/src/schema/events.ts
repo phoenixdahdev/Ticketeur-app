@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   index,
+  boolean,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
@@ -151,7 +152,7 @@ export const externalVendorInvitesRelations = relations(
 
 // ─── Orders ───────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'pending' | 'paid' | 'refunded' | 'cancelled'
+export type OrderStatus = 'pending' | 'paid' | 'refunded' | 'cancelled' | 'failed'
 
 export const orders = pgTable(
   'orders',
@@ -170,18 +171,31 @@ export const orders = pgTable(
       onDelete: 'set null',
       onUpdate: 'cascade',
     }),
+    // Guest checkout — captured even when buyerId is set so we have a record
+    // of what was entered at purchase time.
+    buyerEmail: text('buyer_email').notNull().default(''),
+    buyerName: text('buyer_name').notNull().default(''),
+    buyerPhone: text('buyer_phone').notNull().default(''),
     quantity: integer('quantity').notNull(),
     totalMinor: integer('total_minor').notNull(),
-    status: text('status').$type<OrderStatus>().notNull().default('paid'),
+    status: text('status').$type<OrderStatus>().notNull().default('pending'),
+    // Flutterwave correlation — tx_ref is what we send, transaction_id is
+    // what FW returns once the customer pays.
+    flwTxRef: text('flw_tx_ref'),
+    flwTransactionId: text('flw_transaction_id'),
+    ticketsPdfUrl: text('tickets_pdf_url'),
+    paidAt: timestamp('paid_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (t) => [
     index('orders_event_idx').on(t.eventId),
     index('orders_buyer_idx').on(t.buyerId),
+    index('orders_flw_tx_ref_idx').on(t.flwTxRef),
+    index('orders_buyer_email_idx').on(t.buyerEmail),
   ]
 )
 
-export const ordersRelations = relations(orders, ({ one }) => ({
+export const ordersRelations = relations(orders, ({ one, many }) => ({
   event: one(events, {
     fields: [orders.eventId],
     references: [events.id],
@@ -193,6 +207,54 @@ export const ordersRelations = relations(orders, ({ one }) => ({
   buyer: one(user, {
     fields: [orders.buyerId],
     references: [user.id],
+  }),
+  tickets: many(tickets),
+}))
+
+// ─── Tickets ──────────────────────────────────────────────────────────────
+
+export const tickets = pgTable(
+  'tickets',
+  {
+    id: text('id').primaryKey(),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    eventId: text('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    tierId: text('tier_id')
+      .notNull()
+      .references(() => ticketTiers.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
+    // Opaque token used for QR + check-in. Distinct from the row id so we
+    // can rotate it (e.g. on reissue) without breaking foreign keys.
+    code: text('code').notNull().unique(),
+    checkedIn: boolean('checked_in').notNull().default(false),
+    checkedInAt: timestamp('checked_in_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('tickets_order_idx').on(t.orderId),
+    index('tickets_event_idx').on(t.eventId),
+    index('tickets_code_idx').on(t.code),
+  ]
+)
+
+export const ticketsRelations = relations(tickets, ({ one }) => ({
+  order: one(orders, {
+    fields: [tickets.orderId],
+    references: [orders.id],
+  }),
+  event: one(events, {
+    fields: [tickets.eventId],
+    references: [events.id],
+  }),
+  tier: one(ticketTiers, {
+    fields: [tickets.tierId],
+    references: [ticketTiers.id],
   }),
 }))
 

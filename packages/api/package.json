@@ -9,7 +9,8 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./routers": "./src/routers/_app.ts"
+    "./routers": "./src/routers/_app.ts",
+    "./lib/*": "./src/lib/*.ts"
   },
   "dependencies": {
     "@ticketur/auth": "workspace:*",
@@ -17,7 +18,10 @@
     "@ticketur/env": "workspace:*",
     "@trigger.dev/sdk": "4.4.4",
     "@trpc/server": "^11.17.0",
+    "@vercel/blob": "^2.3.3",
     "drizzle-orm": "^0.45.2",
+    "pdfkit": "^0.17.0",
+    "qrcode": "^1.5.4",
     "superjson": "^2.2.6",
     "zod": "^4.4.1"
   },
@@ -25,6 +29,8 @@
     "@ticketur/eslint-config": "workspace:*",
     "@ticketur/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
+    "@types/pdfkit": "^0.17.5",
+    "@types/qrcode": "^1.5.5",
     "typescript": "^6.0.3"
   }
 }

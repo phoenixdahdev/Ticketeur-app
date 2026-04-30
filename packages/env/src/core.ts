@@ -18,6 +18,9 @@ export const env = createEnv({
     TRIGGER_PROJECT_ID: z.string().min(1),
     TRIGGER_SECRET_KEY: z.string().optional(),
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
+    FLW_PUBLIC_KEY: z.string().optional(),
+    FLW_SECRET_KEY: z.string().optional(),
+    FLW_SECRET_HASH: z.string().optional(),
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),

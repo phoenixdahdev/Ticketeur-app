@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { motion } from 'motion/react'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowRight01Icon,
-  CreditCardIcon,
   InformationCircleIcon,
   Shield01Icon,
   UserIcon,
@@ -15,13 +16,12 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
 
-import type {
-  TicketTier,
-  TicketTierId,
-} from '@/components/sections/event-detail/tickets-tab'
+import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
+import { useTRPC } from '@/lib/trpc'
 
 const SERVICE_FEE = 1000
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function CheckoutView({
   event,
@@ -31,28 +31,73 @@ export function CheckoutView({
 }: {
   event: EventDetailData
   tiers: TicketTier[]
-  quantities: Record<TicketTierId, number>
+  quantities: Record<string, number>
   onBack: () => void
 }) {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    card: '',
-    expiry: '',
-    cvv: '',
-  })
+  const trpc = useTRPC()
+  const [form, setForm] = useState({ name: '', email: '', phone: '' })
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({})
+  const [, startTransition] = useTransition()
 
   const selected = tiers.filter((t) => (quantities[t.id] ?? 0) > 0)
   const subtotal = selected.reduce(
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
   )
-  const total = subtotal + (subtotal > 0 ? SERVICE_FEE : 0)
+  const isFree = subtotal === 0 && selected.length > 0
+  const total = isFree ? 0 : subtotal + SERVICE_FEE
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const start = useMutation(
+    trpc.public.checkout.start.mutationOptions({
+      onSuccess: ({ paymentUrl, orderId, free }) => {
+        if (free) {
+          // No payment needed — order is already fulfilled, go to tickets.
+          window.location.href = `/tickets/${orderId}`
+          return
+        }
+        // Redirect off-domain to Flutterwave's hosted checkout. Customer
+        // returns to /checkout/return after paying.
+        if (paymentUrl) window.location.href = paymentUrl
+      },
+      onError: (err) => {
+        toast.error('Could not start checkout', {
+          description: err.message,
+        })
+      },
+    })
+  )
+
+  function validate() {
+    const e: typeof errors = {}
+    if (!form.name.trim()) e.name = 'Required'
+    if (!EMAIL_RE.test(form.email.trim())) e.email = 'Enter a valid email'
+    if (form.phone.trim().length < 7) e.phone = 'Enter a valid phone'
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
+
+  function onSubmit(ev: React.FormEvent) {
+    ev.preventDefault()
+    if (!validate()) return
+    if (selected.length === 0) {
+      toast.error('Pick a ticket tier first.')
+      return
+    }
+    const tier = selected[0]!
+    const qty = quantities[tier.id] ?? 0
+    startTransition(() => {
+      start.mutate({
+        eventId: event.id,
+        tierId: tier.id,
+        quantity: qty,
+        buyerName: form.name.trim(),
+        buyerEmail: form.email.trim(),
+        buyerPhone: form.phone.trim(),
+      })
+    })
+  }
+
+  const submitting = start.isPending
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -94,13 +139,15 @@ export function CheckoutView({
               </h2>
             </div>
 
-            <Field label="Full Name" htmlFor="ck-name">
+            <Field label="Full Name" htmlFor="ck-name" error={errors.name}>
               <Input
                 id="ck-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Alex Johnson"
                 autoComplete="name"
+                aria-invalid={!!errors.name}
+                disabled={submitting}
               />
             </Field>
 
@@ -108,6 +155,7 @@ export function CheckoutView({
               label="Purchaser Email"
               htmlFor="ck-email"
               helper="Tickets will be sent to this email address."
+              error={errors.email}
             >
               <Input
                 id="ck-email"
@@ -116,10 +164,12 @@ export function CheckoutView({
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="alex@example.com"
                 autoComplete="email"
+                aria-invalid={!!errors.email}
+                disabled={submitting}
               />
             </Field>
 
-            <Field label="Phone Number" htmlFor="ck-phone">
+            <Field label="Phone Number" htmlFor="ck-phone" error={errors.phone}>
               <Input
                 id="ck-phone"
                 type="tel"
@@ -127,32 +177,33 @@ export function CheckoutView({
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="+234 000 000 0000"
                 autoComplete="tel"
+                aria-invalid={!!errors.phone}
+                disabled={submitting}
               />
             </Field>
           </motion.section>
 
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.08,
-              duration: 0.35,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-5 md:p-6"
-          >
-            <div className="flex items-center gap-2">
-              <HugeiconsIcon
-                icon={CreditCardIcon}
-                className="text-primary size-5"
-                strokeWidth={1.8}
-              />
-              <h2 className="font-heading text-foreground text-lg font-semibold">
-                Payment Method
-              </h2>
+          {isFree ? (
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/40 dark:bg-emerald-500/15">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                <HugeiconsIcon
+                  icon={Shield01Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                  This ticket is free
+                </span>
+                <span className="text-xs text-emerald-900/80 dark:text-emerald-200/80">
+                  No payment needed. Click the button below and we&apos;ll
+                  email your ticket immediately.
+                </span>
+              </div>
             </div>
-
-            <div className="flex items-center gap-3 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-3 dark:border-[#1e40af]/40 dark:bg-[#1e40af]/15">
+          ) : (
+            <div className="flex items-start gap-3 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-4 dark:border-[#1e40af]/40 dark:bg-[#1e40af]/15">
               <div className="flex size-9 items-center justify-center rounded-lg bg-[#135bec] text-white">
                 <HugeiconsIcon
                   icon={Shield01Icon}
@@ -162,55 +213,15 @@ export function CheckoutView({
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-semibold text-[#1e3a8a] dark:text-[#93c5fd]">
-                  Secure Payment Gateway
+                  Secure payment by Flutterwave
                 </span>
                 <span className="text-xs text-[#1e3a8a]/80 dark:text-[#93c5fd]/80">
-                  Your transaction is encrypted and secured.
+                  You&apos;ll be redirected to Flutterwave to enter your card,
+                  bank or USSD details. We never see them.
                 </span>
               </div>
             </div>
-
-            <Field label="Card Number" htmlFor="ck-card">
-              <div className="relative">
-                <Input
-                  id="ck-card"
-                  inputMode="numeric"
-                  value={form.card}
-                  onChange={(e) => setForm({ ...form, card: e.target.value })}
-                  placeholder="0000 0000 0000 0000"
-                  autoComplete="cc-number"
-                  className="pr-12"
-                />
-                <HugeiconsIcon
-                  icon={CreditCardIcon}
-                  className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2"
-                  strokeWidth={1.6}
-                />
-              </div>
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Expiry (MM/YY)" htmlFor="ck-exp">
-                <Input
-                  id="ck-exp"
-                  value={form.expiry}
-                  onChange={(e) => setForm({ ...form, expiry: e.target.value })}
-                  placeholder="MM/YY"
-                  autoComplete="cc-exp"
-                />
-              </Field>
-              <Field label="CVV" htmlFor="ck-cvv">
-                <Input
-                  id="ck-cvv"
-                  inputMode="numeric"
-                  value={form.cvv}
-                  onChange={(e) => setForm({ ...form, cvv: e.target.value })}
-                  placeholder="1234"
-                  autoComplete="cc-csc"
-                />
-              </Field>
-            </div>
-          </motion.section>
+          )}
 
           <div className="flex items-start gap-3 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4 dark:border-[#b45309]/40 dark:bg-[#b45309]/10">
             <HugeiconsIcon
@@ -273,10 +284,12 @@ export function CheckoutView({
 
           <div className="border-border flex flex-col gap-2 border-t pt-4">
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
-            <Row
-              label="Service Fee"
-              value={`₦${subtotal > 0 ? SERVICE_FEE.toLocaleString() : 0}.00`}
-            />
+            {!isFree ? (
+              <Row
+                label="Service Fee"
+                value={`₦${subtotal > 0 ? SERVICE_FEE.toLocaleString() : 0}.00`}
+              />
+            ) : null}
           </div>
 
           <div className="border-border flex items-baseline justify-between gap-4 border-t pt-4">
@@ -284,7 +297,7 @@ export function CheckoutView({
               Total Amount
             </span>
             <span className="font-heading text-primary text-2xl font-bold md:text-3xl">
-              ₦{total.toLocaleString()}
+              {isFree ? 'Free' : `₦${total.toLocaleString()}`}
             </span>
           </div>
 
@@ -292,10 +305,16 @@ export function CheckoutView({
             <Button
               type="submit"
               size="xl"
-              disabled={selected.length === 0}
+              disabled={selected.length === 0 || submitting}
               className="w-full"
             >
-              Pay Now
+              {submitting
+                ? isFree
+                  ? 'Reserving…'
+                  : 'Redirecting…'
+                : isFree
+                  ? 'Get free ticket'
+                  : 'Pay Now'}
             </Button>
             <p className="text-muted-foreground text-center text-xs">
               By completing your purchase, you agree to our{' '}
@@ -314,11 +333,13 @@ function Field({
   label,
   htmlFor,
   helper,
+  error,
   children,
 }: {
   label: string
   htmlFor: string
   helper?: string
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -330,7 +351,9 @@ function Field({
         {label}
       </label>
       {children}
-      {helper ? (
+      {error ? (
+        <p className="text-destructive text-xs">{error}</p>
+      ) : helper ? (
         <p className="text-muted-foreground text-xs">{helper}</p>
       ) : null}
     </div>

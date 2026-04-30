@@ -5,12 +5,14 @@ export {
   eventVendors,
   externalVendorInvites,
   orders,
+  tickets,
   activityLog,
   eventsRelations,
   ticketTiersRelations,
   eventVendorsRelations,
   externalVendorInvitesRelations,
   ordersRelations,
+  ticketsRelations,
   activityLogRelations,
 } from './events'
 export type {
