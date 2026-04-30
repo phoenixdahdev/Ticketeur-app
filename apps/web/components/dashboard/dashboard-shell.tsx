@@ -6,13 +6,20 @@ import { AnimatePresence, motion } from 'motion/react'
 
 import { LogoIcon } from '@ticketur/ui/icons/logo-icon'
 
-import { Sidebar, type SidebarUser } from '@/components/dashboard/sidebar'
+import {
+  ORG_SIDEBAR_CONFIG,
+  Sidebar,
+  type SidebarConfig,
+  type SidebarUser,
+} from '@/components/dashboard/sidebar'
 
 export function DashboardShell({
   user,
+  config = ORG_SIDEBAR_CONFIG,
   children,
 }: {
   user: SidebarUser
+  config?: SidebarConfig
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -42,7 +49,7 @@ export function DashboardShell({
         aria-label="Primary"
         className="border-border/60 bg-background hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-[255px] md:flex-col md:border-r"
       >
-        <Sidebar user={user} />
+        <Sidebar user={user} config={config} />
       </aside>
 
       <header className="bg-background sticky top-0 z-30 flex h-18 items-center justify-between px-5 shadow-sm shadow-black/[0.04] md:hidden">
@@ -105,7 +112,11 @@ export function DashboardShell({
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 360, damping: 38 }}
             >
-              <Sidebar user={user} onNavigate={() => setMobileOpen(false)} />
+              <Sidebar
+                user={user}
+                config={config}
+                onNavigate={() => setMobileOpen(false)}
+              />
             </motion.aside>
           </motion.div>
         ) : null}
