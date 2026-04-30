@@ -50,16 +50,26 @@ type SignupFormValues = {
   agree: boolean
 }
 
-export function SignupForm({ config }: { config: SignupRoleConfig }) {
+export function SignupForm({
+  config,
+  initialEmail = '',
+  lockEmail = false,
+}: {
+  config: SignupRoleConfig
+  initialEmail?: string
+  lockEmail?: boolean
+}) {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const schema = SIGNUP_SCHEMAS[config.role]
+  const defaults = getSignupDefaultValues(config) as SignupFormValues
+  if (initialEmail) defaults.email = initialEmail
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(schema) as unknown as Resolver<SignupFormValues>,
-    defaultValues: getSignupDefaultValues(config) as SignupFormValues,
+    defaultValues: defaults,
     mode: 'onTouched',
   })
 
@@ -173,6 +183,12 @@ export function SignupForm({ config }: { config: SignupRoleConfig }) {
                     placeholder={field.placeholder}
                     autoComplete={field.autoComplete}
                     aria-invalid={fieldState.invalid}
+                    readOnly={field.name === 'email' && lockEmail}
+                    className={
+                      field.name === 'email' && lockEmail
+                        ? 'bg-muted/40 cursor-not-allowed'
+                        : undefined
+                    }
                   />
                 )}
                 <FieldError errors={[fieldState.error]} />
