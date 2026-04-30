@@ -20,7 +20,7 @@ import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 import { useTRPC } from '@/lib/trpc'
 
-const SERVICE_FEE = 1000
+const SERVICE_FEE = 200
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function CheckoutView({
@@ -36,7 +36,11 @@ export function CheckoutView({
 }) {
   const trpc = useTRPC()
   const [form, setForm] = useState({ name: '', email: '', phone: '' })
-  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({})
+  const [errors, setErrors] = useState<{
+    name?: string
+    email?: string
+    phone?: string
+  }>({})
   const [, startTransition] = useTransition()
 
   const selected = tiers.filter((t) => (quantities[t.id] ?? 0) > 0)
@@ -197,8 +201,8 @@ export function CheckoutView({
                   This ticket is free
                 </span>
                 <span className="text-xs text-emerald-900/80 dark:text-emerald-200/80">
-                  No payment needed. Click the button below and we&apos;ll
-                  email your ticket immediately.
+                  No payment needed. Click the button below and we&apos;ll email
+                  your ticket immediately.
                 </span>
               </div>
             </div>
