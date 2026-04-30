@@ -1,7 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
+import {
+  useForm,
+  Controller,
+  type SubmitHandler,
+  type UseFormReturn,
+} from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -73,6 +78,7 @@ export function VendorProfileContent({
       </header>
 
       <BusinessIdentityCard form={form} />
+      <PublicProfileCard form={form} />
       <ProductsShowcaseCard form={form} />
 
       <div className="flex shrink-0 items-center justify-end gap-3 pb-2">
@@ -93,7 +99,8 @@ function BusinessIdentityCard({
   form,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: ReturnType<typeof useForm<VendorProfileValues>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<VendorProfileValues, any, any>
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const logoUrl = form.watch('logoUrl')
@@ -116,6 +123,8 @@ function BusinessIdentityCard({
       <h2 className="font-heading text-foreground text-base font-bold tracking-tight md:text-lg">
         Business Identity
       </h2>
+
+      <BannerUploader form={form} />
 
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
         <div className="flex flex-col items-center gap-2 md:items-start">
@@ -228,6 +237,28 @@ function BusinessIdentityCard({
             )}
           />
           <Controller
+            name="tagline"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field
+                data-invalid={fieldState.invalid || undefined}
+                className="md:col-span-2"
+              >
+                <FieldLabel className="text-xs font-semibold">
+                  Tagline
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="One-line summary shown on your public page"
+                  maxLength={160}
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
             name="businessDescription"
             control={form.control}
             render={({ field, fieldState }) => (
@@ -241,8 +272,8 @@ function BusinessIdentityCard({
                 <Textarea
                   {...field}
                   value={field.value ?? ''}
-                  placeholder="Give a short about your business"
-                  rows={3}
+                  placeholder="Tell event attendees about your business — supports markdown"
+                  rows={5}
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldError errors={[fieldState.error]} />
@@ -291,11 +322,163 @@ function BusinessIdentityCard({
   )
 }
 
+function BannerUploader({
+  form,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<VendorProfileValues, any, any>
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const bannerUrl = form.watch('bannerUrl')
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result === 'string') {
+        form.setValue('bannerUrl', result, { shouldDirty: true })
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-foreground text-xs font-semibold">
+        Cover Banner
+      </span>
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        aria-label={bannerUrl ? 'Replace banner' : 'Upload banner'}
+        className="border-border/60 bg-muted hover:border-primary/40 group relative flex aspect-[1360/300] w-full overflow-hidden rounded-xl border-2 border-dashed transition-colors"
+      >
+        {bannerUrl ? (
+          <Image
+            src={bannerUrl}
+            alt="Vendor banner"
+            fill
+            sizes="(min-width: 768px) 800px, 100vw"
+            className="object-cover"
+            unoptimized={bannerUrl.startsWith('data:')}
+          />
+        ) : (
+          <span className="text-muted-foreground absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider uppercase">
+            <HugeiconsIcon
+              icon={Image01Icon}
+              className="mr-2 size-5"
+              strokeWidth={1.6}
+            />
+            Click to upload banner — recommended 1360 × 300
+          </span>
+        )}
+        {bannerUrl ? (
+          <span className="bg-background/95 text-foreground absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold tracking-wider opacity-0 shadow transition-opacity group-hover:opacity-100">
+            <HugeiconsIcon
+              icon={Edit02Icon}
+              className="size-3.5"
+              strokeWidth={2}
+            />
+            Replace
+          </span>
+        ) : null}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+      />
+    </div>
+  )
+}
+
+function PublicProfileCard({
+  form,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<VendorProfileValues, any, any>
+}) {
+  return (
+    <section className="border-border/60 bg-background flex shrink-0 flex-col gap-4 rounded-2xl border p-5 md:p-6">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-heading text-foreground text-base font-bold tracking-tight md:text-lg">
+          Public Profile Highlights
+        </h2>
+        <p className="text-muted-foreground text-xs md:text-sm">
+          Shown as the three stat tiles on your public vendor page.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Controller
+          name="expertise"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel className="text-xs font-semibold">
+                Expertise
+              </FieldLabel>
+              <Input
+                {...field}
+                value={field.value ?? ''}
+                placeholder="e.g. Food, Stage Design"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          name="focus"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel className="text-xs font-semibold">Focus</FieldLabel>
+              <Input
+                {...field}
+                value={field.value ?? ''}
+                placeholder="e.g. Tech conferences"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          name="experience"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel className="text-xs font-semibold">
+                Experience
+              </FieldLabel>
+              <Input
+                {...field}
+                value={field.value ?? ''}
+                placeholder="e.g. 12+ Years"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+      </div>
+    </section>
+  )
+}
+
 function ProductsShowcaseCard({
   form,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: ReturnType<typeof useForm<VendorProfileValues>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<VendorProfileValues, any, any>
 }) {
   const showcase = form.watch('showcaseImages') ?? []
   const fileRef = useRef<HTMLInputElement>(null)
