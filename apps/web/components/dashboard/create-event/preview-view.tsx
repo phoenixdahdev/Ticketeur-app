@@ -5,6 +5,7 @@ import { Edit02Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
+import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
 import {
   REGISTERED_VENDORS,
@@ -83,11 +84,16 @@ export function PreviewView({
             )}
           </div>
           <FieldRow label="Event Title" value={values.title || '—'} />
-          <FieldRow
-            label="Event Description"
-            value={values.description || '—'}
-            multiline
-          />
+          <div className="flex flex-col gap-1">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              Event Description
+            </p>
+            {values.description ? (
+              <MarkdownView>{values.description}</MarkdownView>
+            ) : (
+              <p className="text-foreground text-sm">—</p>
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <FieldRow label="Date" value={formatDate(values.date)} />
             <FieldRow label="Time" value={formatTime(values.time)} />

@@ -33,6 +33,7 @@ import {
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
+import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
 import { useTRPC } from '@/lib/trpc'
 import {
@@ -243,9 +244,15 @@ export function EventDetail({ id }: { id: string }) {
       />
 
       <Section title="Description">
-        <p className="text-muted-foreground text-sm leading-7 md:text-base">
-          {event.description || 'No description provided.'}
-        </p>
+        {event.description ? (
+          <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
+            {event.description}
+          </MarkdownView>
+        ) : (
+          <p className="text-muted-foreground text-sm leading-7 md:text-base">
+            No description provided.
+          </p>
+        )}
       </Section>
 
       <Section title="Event Details">

@@ -25,7 +25,7 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
-import { Textarea } from '@ticketur/ui/components/textarea'
+import { MarkdownEditor } from '@ticketur/ui/components/markdown-editor'
 import { Calendar } from '@ticketur/ui/components/calendar'
 import {
   Popover,
@@ -134,20 +134,15 @@ export function FormView({
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel
-                htmlFor="description"
-                className="text-sm font-semibold"
-              >
+              <FieldLabel className="text-sm font-semibold">
                 Event Description
               </FieldLabel>
-              <Textarea
-                {...field}
-                id="description"
+              <MarkdownEditor
                 value={field.value ?? ''}
-                placeholder="Tell your audience what to expect"
-                rows={4}
-                className="min-h-24 resize-none rounded-[8px]"
-                aria-invalid={fieldState.invalid}
+                onChange={(md) => field.onChange(md)}
+                placeholder="Tell your audience what to expect — type / for headings, lists and more."
+                ariaInvalid={fieldState.invalid}
+                ariaLabel="Event description"
               />
               <FieldError errors={[fieldState.error]} />
             </Field>
