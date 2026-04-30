@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import type { IconSvgElement } from '@hugeicons/react'
 import {
@@ -21,10 +24,8 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
-import {
-  type VendorEvent,
-  type VendorEventStatus,
-} from '@/lib/vendor-events'
+import { useTRPC } from '@/lib/trpc'
+import { formatEventDate, formatWeekday } from '@/lib/event-display'
 
 const FEATURE_ICONS: Record<string, IconSvgElement> = {
   'Live DJ Sets': MusicNote03Icon,
@@ -44,64 +45,48 @@ function iconForFeature(label: string): IconSvgElement {
   return FEATURE_ICONS[label] ?? StarIcon
 }
 
-const STATUS_HERO_BADGE: Record<VendorEventStatus, string> = {
+type DerivedStatus = 'live' | 'upcoming' | 'past'
+
+const STATUS_HERO_BADGE: Record<DerivedStatus, string> = {
   live: 'bg-emerald-500 text-white',
   upcoming: 'bg-emerald-500 text-white',
   past: 'bg-zinc-700 text-white',
 }
 
-const STATUS_HERO_LABEL: Record<VendorEventStatus, string> = {
+const STATUS_HERO_LABEL: Record<DerivedStatus, string> = {
   live: 'LIVE EVENT',
   upcoming: 'UPCOMING EVENT',
   past: 'PAST EVENT',
 }
 
-type AssignedVendor = {
-  id: string
-  name: string
-  category: string
-  description: string
-  image: string
-  isYou?: boolean
+function deriveStatus(eventDate: string, serverStatus: string): DerivedStatus {
+  const today = new Date().toISOString().slice(0, 10)
+  if (eventDate === today) return 'live'
+  if (eventDate < today) return 'past'
+  if (serverStatus === 'upcoming') return 'upcoming'
+  return 'upcoming'
 }
 
-const ASSIGNED_VENDORS: AssignedVendor[] = [
-  {
-    id: 'tasty-bites',
-    name: 'Tasty Bites',
-    category: 'FOOD',
-    description:
-      'Serving award-winning wagyu sliders and truffle fries throughout the event.',
-    image: '/event-detail/tasty-bites.jpg',
-    isYou: true,
-  },
-  {
-    id: 'glow-threads',
-    name: 'Glow Threads',
-    category: 'MERCH',
-    description:
-      'Exclusive LED-integrated apparel and limited edition artist collaborations.',
-    image: '/event-detail/glow-threads.jpg',
-  },
-  {
-    id: 'liquid-dreams',
-    name: 'Liquid Dreams',
-    category: 'DRINKS',
-    description:
-      'Experience our signature "Neon Mule" & other molecular delights.',
-    image: '/event-detail/liquid-dreams.jpg',
-  },
-  {
-    id: 'prism-arts',
-    name: 'Prism Arts',
-    category: 'ART',
-    description:
-      'Browse and purchase unique digital collectibles and interactive physical pieces.',
-    image: '/event-detail/prism-arts.jpg',
-  },
-]
+export function VendorEventDetail({ id }: { id: string }) {
+  const trpc = useTRPC()
+  const { data, isLoading } = useQuery(
+    trpc.vendor.events.byId.queryOptions({ id })
+  )
 
-export function VendorEventDetail({ event }: { event: VendorEvent }) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading event…</p>
+      </div>
+    )
+  }
+  if (!data) {
+    return null
+  }
+
+  const { event, vendors, externalInvites, currentVendorId } = data
+  const status = deriveStatus(event.eventDate, event.status)
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <header className="flex shrink-0 flex-col gap-1.5">
@@ -129,12 +114,13 @@ export function VendorEventDetail({ event }: { event: VendorEvent }) {
 
       <div className="relative isolate flex h-[180px] shrink-0 items-end overflow-hidden rounded-2xl md:h-[260px]">
         <Image
-          src={event.image}
+          src={event.bannerUrl ?? '/hero-bg.png'}
           alt=""
           fill
           priority
           sizes="(min-width: 768px) 900px, 100vw"
           className="object-cover"
+          unoptimized={Boolean(event.bannerUrl?.startsWith('data:'))}
         />
         <div
           aria-hidden
@@ -144,10 +130,10 @@ export function VendorEventDetail({ event }: { event: VendorEvent }) {
           <span
             className={cn(
               'inline-flex w-fit items-center rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase',
-              STATUS_HERO_BADGE[event.status]
+              STATUS_HERO_BADGE[status]
             )}
           >
-            {STATUS_HERO_LABEL[event.status]}
+            {STATUS_HERO_LABEL[status]}
           </span>
           <h2 className="font-heading text-2xl font-bold tracking-tight text-white md:text-3xl">
             {event.title}
@@ -157,48 +143,72 @@ export function VendorEventDetail({ event }: { event: VendorEvent }) {
 
       <section className="border-border/60 bg-background flex flex-col gap-5 rounded-2xl border p-5 md:p-6">
         <DetailGroup title="Description">
-          <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
-            {event.description}
-          </MarkdownView>
+          {event.description ? (
+            <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
+              {event.description}
+            </MarkdownView>
+          ) : (
+            <p className="text-muted-foreground text-sm leading-7 md:text-base">
+              No description provided.
+            </p>
+          )}
         </DetailGroup>
 
         <DetailGroup title="Event Details">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <DetailItem
               icon={Calendar03Icon}
-              primary={`${event.weekday}, ${event.date}`}
+              primary={`${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`}
             />
-            <DetailItem icon={Clock01Icon} primary={event.time} />
-            <DetailItem
-              icon={Location01Icon}
-              primary={event.venue || event.location}
-            />
+            <DetailItem icon={Clock01Icon} primary={event.eventTime} />
+            <DetailItem icon={Location01Icon} primary={event.location} />
           </div>
         </DetailGroup>
 
-        <DetailGroup title="Features">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            {event.features.map((label) => (
-              <FeatureCard
-                key={label}
-                icon={iconForFeature(label)}
-                label={label}
+        {event.features.length > 0 ? (
+          <DetailGroup title="Features">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {event.features.map((label) => (
+                <FeatureCard
+                  key={label}
+                  icon={iconForFeature(label)}
+                  label={label}
+                />
+              ))}
+            </div>
+          </DetailGroup>
+        ) : null}
+      </section>
+
+      {(vendors.length > 0 || externalInvites.length > 0) && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-heading text-foreground text-base font-bold tracking-tight md:text-lg">
+            Assigned Vendors
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {vendors.map((v) => (
+              <AssignedVendorCard
+                key={v.id}
+                name={v.businessName ?? 'Vendor'}
+                category={v.businessCategory ?? '—'}
+                description={v.vendorTagline ?? v.businessDescription ?? ''}
+                image={v.image}
+                isYou={v.vendorId === currentVendorId}
+              />
+            ))}
+            {externalInvites.map((inv) => (
+              <AssignedVendorCard
+                key={inv.id}
+                name={inv.businessName}
+                category="INVITED"
+                description="Pending invite acceptance."
+                image={null}
+                isYou={false}
               />
             ))}
           </div>
-        </DetailGroup>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="font-heading text-foreground text-base font-bold tracking-tight md:text-lg">
-          Assigned Vendors
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {ASSIGNED_VENDORS.map((v) => (
-            <AssignedVendorCard key={v.id} vendor={v} />
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   )
 }
@@ -260,19 +270,38 @@ function FeatureCard({
   )
 }
 
-function AssignedVendorCard({ vendor }: { vendor: AssignedVendor }) {
-  const initial = vendor.name.charAt(0).toUpperCase()
+function AssignedVendorCard({
+  name,
+  category,
+  description,
+  image,
+  isYou,
+}: {
+  name: string
+  category: string
+  description: string
+  image: string | null
+  isYou: boolean
+}) {
+  const initial = name.charAt(0).toUpperCase()
   return (
     <div className="border-border/60 bg-background flex flex-col gap-3 overflow-hidden rounded-2xl border p-3">
       <div className="bg-primary/10 relative flex h-28 items-center justify-center overflow-hidden rounded-xl">
-        <Image
-          src={vendor.image}
-          alt=""
-          fill
-          sizes="(min-width: 1024px) 220px, 50vw"
-          className="object-cover"
-        />
-        {vendor.isYou ? (
+        {image ? (
+          <Image
+            src={image}
+            alt={name}
+            fill
+            sizes="(min-width: 1024px) 220px, 50vw"
+            className="object-cover"
+            unoptimized={image.startsWith('data:')}
+          />
+        ) : (
+          <span className="font-heading text-primary text-3xl font-bold opacity-60">
+            {initial}
+          </span>
+        )}
+        {isYou ? (
           <span className="bg-primary absolute top-2 left-2 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
             YOU
           </span>
@@ -283,13 +312,13 @@ function AssignedVendorCard({ vendor }: { vendor: AssignedVendor }) {
       </div>
       <div className="flex flex-col gap-1.5 px-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-foreground text-sm font-bold">{vendor.name}</p>
+          <p className="text-foreground text-sm font-bold">{name}</p>
           <span className="bg-muted text-muted-foreground inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-            {vendor.category}
+            {category}
           </span>
         </div>
         <p className="text-muted-foreground line-clamp-2 text-xs leading-5">
-          {vendor.description}
+          {description}
         </p>
       </div>
     </div>

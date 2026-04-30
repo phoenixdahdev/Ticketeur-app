@@ -1,50 +1,23 @@
 'use client'
 
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
-import { EventCard, type EventCardProps } from '@/components/cards/event-card'
+import { EventCard } from '@/components/cards/event-card'
+import { useTRPC } from '@/lib/trpc'
+import { formatNaira } from '@/lib/event-display'
 
-const EVENTS: (EventCardProps & { id: string })[] = [
-  {
-    id: 'lagos-fest-2026',
-    title: 'Lagos Fest 2026',
-    category: 'Music',
-    price: '₦10,000',
-    date: '2026-07-15',
-    location: 'Victoria Island, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80',
-    href: '/events/lagos-fest-2026',
-  },
-  {
-    id: 'gtco-2026',
-    title: 'GTCO 2026',
-    category: 'Fashion',
-    price: '₦20,000',
-    date: '2026-08-15',
-    location: 'Victoria Island, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=1200&q=80',
-    href: '/events/gtco-2026',
-  },
-  {
-    id: 'jobberman-tech-event',
-    title: 'Jobberman tech event',
-    category: 'Tech',
-    price: '₦10,000',
-    date: '2026-07-15',
-    location: 'Victoria Island, Lagos',
-    imageUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
-    overlayBadge: 'Tech Event',
-    href: '/events/jobberman-tech-event',
-  },
-]
+const EVENT_PLACEHOLDER = '/hero-bg.png'
 
 export function DiscoverEvents() {
+  const trpc = useTRPC()
+  const { data: events = [], isLoading } = useQuery(
+    trpc.public.events.featured.queryOptions()
+  )
+
   return (
     <section
       aria-label="Discover Events"
@@ -79,23 +52,48 @@ export function DiscoverEvents() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-12">
-          {EVENTS.map((event, i) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{
-                delay: i * 0.1,
-                duration: 0.55,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              <EventCard {...event} />
-            </motion.div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-12">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-muted h-72 animate-pulse rounded-2xl" />
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            New events will appear here once organisers publish them.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-12">
+            {events.map((event, i) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{
+                  delay: i * 0.1,
+                  duration: 0.55,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <EventCard
+                  id={event.id}
+                  title={event.title}
+                  category=""
+                  price={
+                    event.minPrice > 0
+                      ? `From ${formatNaira(event.minPrice)}`
+                      : 'Free'
+                  }
+                  date={event.eventDate}
+                  location={event.location}
+                  imageUrl={event.bannerUrl ?? EVENT_PLACEHOLDER}
+                  href={`/events/${event.id}`}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

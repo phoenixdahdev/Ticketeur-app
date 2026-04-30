@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core'
 
 // ─── Core Better Auth Tables ───────────────────────────────────────────────
 
@@ -27,6 +27,19 @@ export const user = pgTable('user', {
   businessName: text('business_name'),
   businessCategory: text('business_category'),
   businessDescription: text('business_description'),
+  // Public profile extras shown on /vendors/[id]
+  vendorTagline: text('vendor_tagline'),
+  vendorLocation: text('vendor_location'),
+  vendorBannerUrl: text('vendor_banner_url'),
+  vendorInstagramUrl: text('vendor_instagram_url'),
+  vendorWebsiteUrl: text('vendor_website_url'),
+  vendorExpertise: text('vendor_expertise'),
+  vendorFocus: text('vendor_focus'),
+  vendorExperience: text('vendor_experience'),
+  vendorShowcaseImages: jsonb('vendor_showcase_images')
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   // vendor approval gate — null when not a vendor; 'pending' until admin approves
   vendorApprovalStatus: text('vendor_approval_status').$type<
     'pending' | 'approved' | 'rejected'

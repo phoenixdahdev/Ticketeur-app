@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useTransition } from 'react'
 import {
   useForm,
   Controller,
@@ -8,6 +8,7 @@ import {
   type UseFormReturn,
 } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -21,6 +22,9 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
 import { Textarea } from '@ticketur/ui/components/textarea'
+
+import { useTRPC } from '@/lib/trpc'
+import { uploadFile, type UploadKind } from '@/lib/upload'
 import {
   Select,
   SelectContent,
@@ -48,18 +52,60 @@ export function VendorProfileContent({
 }: {
   initialValues?: VendorProfileValues
 }) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
   const form = useForm<VendorProfileValues>({
     resolver: zodResolver(vendorProfileSchema),
     defaultValues: initialValues,
     mode: 'onTouched',
   })
 
-  const onSubmit: SubmitHandler<VendorProfileValues> = (values) => {
-    // UI-only for now — wire to mutation later.
-    void values
-    toast.success('Profile saved', {
-      description: 'Your vendor profile has been updated.',
+  const profileQuery = useQuery(trpc.vendor.profile.get.queryOptions())
+
+  // Reset form once the server returns the persisted profile so we don't
+  // overwrite freshly typed input.
+  useEffect(() => {
+    const data = profileQuery.data
+    if (!data) return
+    form.reset({
+      businessName: data.businessName ?? '',
+      businessLocation: data.businessLocation ?? '',
+      businessCategory: data.businessCategory ?? '',
+      tagline: data.tagline ?? '',
+      businessDescription: data.businessDescription ?? '',
+      instagramUrl: data.instagramUrl ?? '',
+      websiteUrl: data.websiteUrl ?? '',
+      logoUrl: data.image ?? null,
+      bannerUrl: data.bannerUrl ?? null,
+      expertise: data.expertise ?? '',
+      focus: data.focus ?? '',
+      experience: data.experience ?? '',
+      showcaseImages: data.showcaseImages ?? [],
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileQuery.data])
+
+  const update = useMutation(
+    trpc.vendor.profile.update.mutationOptions({
+      onSuccess: () => {
+        toast.success('Profile saved', {
+          description: 'Your vendor profile has been updated.',
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.vendor.profile.get.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.vendor.dashboard.stats.queryKey(),
+        })
+      },
+      onError: (e) =>
+        toast.error('Could not save profile', { description: e.message }),
+    })
+  )
+
+  const onSubmit: SubmitHandler<VendorProfileValues> = (values) => {
+    update.mutate(values)
   }
 
   return (
@@ -86,9 +132,9 @@ export function VendorProfileContent({
           type="submit"
           size="xl"
           className="w-full sm:w-auto sm:min-w-48"
-          disabled={form.formState.isSubmitting}
+          disabled={update.isPending}
         >
-          Save
+          {update.isPending ? 'Saving…' : 'Save'}
         </Button>
       </div>
     </form>
@@ -104,18 +150,23 @@ function BusinessIdentityCard({
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const logoUrl = form.watch('logoUrl')
+  const [uploading, startUpload] = useTransition()
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result === 'string') {
-        form.setValue('logoUrl', result, { shouldDirty: true })
+    startUpload(async () => {
+      try {
+        const blob = await uploadFile({ kind: 'vendor-logo', file })
+        form.setValue('logoUrl', blob.url, { shouldDirty: true })
+      } catch (err) {
+        toast.error('Could not upload logo', {
+          description: (err as Error).message,
+        })
+      } finally {
+        if (fileRef.current) fileRef.current.value = ''
       }
-    }
-    reader.readAsDataURL(file)
+    })
   }
 
   return (
@@ -132,8 +183,10 @@ function BusinessIdentityCard({
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="bg-zinc-900 relative flex size-30 items-center justify-center overflow-hidden rounded-2xl text-white"
+              disabled={uploading}
+              className="bg-zinc-900 relative flex size-30 items-center justify-center overflow-hidden rounded-2xl text-white disabled:opacity-70"
               aria-label="Update logo"
+              aria-busy={uploading}
             >
               {logoUrl ? (
                 <Image
@@ -148,6 +201,14 @@ function BusinessIdentityCard({
                   B·RAND
                 </span>
               )}
+              {uploading ? (
+                <span
+                  aria-live="polite"
+                  className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] font-bold tracking-wider uppercase"
+                >
+                  Uploading…
+                </span>
+              ) : null}
             </button>
             <span className="bg-primary text-primary-foreground absolute -right-1 -bottom-1 inline-flex size-7 items-center justify-center rounded-full shadow-md">
               <HugeiconsIcon
@@ -326,23 +387,27 @@ function BannerUploader({
   form,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturn<VendorProfileValues, any, any>
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const bannerUrl = form.watch('bannerUrl')
+  const [uploading, startUpload] = useTransition()
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result === 'string') {
-        form.setValue('bannerUrl', result, { shouldDirty: true })
+    startUpload(async () => {
+      try {
+        const blob = await uploadFile({ kind: 'vendor-banner', file })
+        form.setValue('bannerUrl', blob.url, { shouldDirty: true })
+      } catch (err) {
+        toast.error('Could not upload banner', {
+          description: (err as Error).message,
+        })
+      } finally {
+        if (fileRef.current) fileRef.current.value = ''
       }
-    }
-    reader.readAsDataURL(file)
+    })
   }
 
   return (
@@ -353,8 +418,10 @@ function BannerUploader({
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
+        disabled={uploading}
         aria-label={bannerUrl ? 'Replace banner' : 'Upload banner'}
-        className="border-border/60 bg-muted hover:border-primary/40 group relative flex aspect-[1360/300] w-full overflow-hidden rounded-xl border-2 border-dashed transition-colors"
+        aria-busy={uploading}
+        className="border-border/60 bg-muted hover:border-primary/40 group relative flex aspect-[1360/300] w-full overflow-hidden rounded-xl border-2 border-dashed transition-colors disabled:opacity-70"
       >
         {bannerUrl ? (
           <Image
@@ -375,7 +442,7 @@ function BannerUploader({
             Click to upload banner — recommended 1360 × 300
           </span>
         )}
-        {bannerUrl ? (
+        {bannerUrl && !uploading ? (
           <span className="bg-background/95 text-foreground absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold tracking-wider opacity-0 shadow transition-opacity group-hover:opacity-100">
             <HugeiconsIcon
               icon={Edit02Icon}
@@ -383,6 +450,14 @@ function BannerUploader({
               strokeWidth={2}
             />
             Replace
+          </span>
+        ) : null}
+        {uploading ? (
+          <span
+            aria-live="polite"
+            className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-bold tracking-wider text-white uppercase"
+          >
+            Uploading…
           </span>
         ) : null}
       </button>
@@ -482,34 +557,33 @@ function ProductsShowcaseCard({
 }) {
   const showcase = form.watch('showcaseImages') ?? []
   const fileRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
+  const [uploading, startUpload] = useTransition()
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
-    setUploading(true)
     const remaining = MAX_SHOWCASE - showcase.length
     const accepted = files.slice(0, remaining)
-    const dataUrls = await Promise.all(
-      accepted.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => {
-              const result = reader.result
-              if (typeof result === 'string') resolve(result)
-              else reject(new Error('Read failed'))
-            }
-            reader.onerror = () => reject(reader.error)
-            reader.readAsDataURL(file)
-          })
-      )
-    )
-    form.setValue('showcaseImages', [...showcase, ...dataUrls], {
-      shouldDirty: true,
+    if (accepted.length === 0) return
+
+    startUpload(async () => {
+      try {
+        const blobs = await Promise.all(
+          accepted.map((file) => uploadFile({ kind: 'vendor-showcase', file }))
+        )
+        form.setValue(
+          'showcaseImages',
+          [...showcase, ...blobs.map((b) => b.url)],
+          { shouldDirty: true }
+        )
+      } catch (err) {
+        toast.error('Could not upload images', {
+          description: (err as Error).message,
+        })
+      } finally {
+        if (fileRef.current) fileRef.current.value = ''
+      }
     })
-    if (fileRef.current) fileRef.current.value = ''
-    setUploading(false)
   }
 
   function removeImage(idx: number) {

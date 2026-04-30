@@ -5,6 +5,7 @@ export {
   publicProcedure,
   protectedProcedure,
   organizerProcedure,
+  vendorProcedure,
   createCallerFactory,
   createTRPCContext,
 } from './trpc'

@@ -8,13 +8,14 @@ export const metadata: Metadata = {
   description: 'Manage your event assignments and profile.',
 }
 
+type VendorUserExtras = {
+  businessName?: string | null
+}
+
 export default async function VendorDashboardPage() {
   const session = await getSession()
-  const name =
-    (session?.user as unknown as { businessName?: string | null } | undefined)
-      ?.businessName ??
-    session?.user.name ??
-    'Vendor'
+  const u = (session?.user ?? {}) as unknown as VendorUserExtras
+  const name = u.businessName ?? session?.user.name ?? 'Vendor'
 
   return <VendorOverviewContent vendorName={name} />
 }

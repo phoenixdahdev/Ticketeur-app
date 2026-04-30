@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   parseAsInteger,
@@ -8,6 +7,7 @@ import {
   useQueryStates,
 } from 'nuqs'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowLeft01Icon,
@@ -18,64 +18,47 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { VendorCard } from '@/components/cards/vendor-card'
-import { VENDORS } from '@/lib/vendors'
+import { useTRPC } from '@/lib/trpc'
 
 const CATEGORY_CHIPS = [
-  'All Services',
-  'Catering',
-  'Audio/Visual',
-  'Security',
-  'Lighting',
-  'Entertainment',
-  'Stage Design',
+  { label: 'All Services', value: 'all' },
+  { label: 'Food & Drink', value: 'Food & Drink' },
+  { label: 'Beverages', value: 'Beverages' },
+  { label: 'Apparel', value: 'Apparel' },
+  { label: 'Decor', value: 'Decor' },
+  { label: 'Entertainment', value: 'Entertainment' },
+  { label: 'Merchandise', value: 'Merchandise' },
 ] as const
 
 const PAGE_SIZE = 8
-
-function mapChipToCategory(chip: string): string | null {
-  if (chip === 'All Services') return null
-  if (chip === 'Catering') return 'Food'
-  return chip
-}
-
-function matchesCategory(vendorCategory: string, filter: string): boolean {
-  if (!filter || filter === 'All Services') return true
-  const mapped = mapChipToCategory(filter)
-  if (!mapped) return true
-  return vendorCategory === mapped
-}
+const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
 
 export function VendorListSection() {
+  const trpc = useTRPC()
   const router = useRouter()
   const [state, setState] = useQueryStates(
     {
       q: parseAsString.withDefault(''),
-      category: parseAsString.withDefault('All Services'),
+      category: parseAsString.withDefault('all'),
       page: parseAsInteger.withDefault(1),
     },
-    { shallow: true }
+    { shallow: true, clearOnDefault: true }
   )
 
-  const filtered = useMemo(() => {
-    const q = state.q.trim().toLowerCase()
-    return VENDORS.filter((v) => {
-      if (!matchesCategory(v.category, state.category)) return false
-      if (!q) return true
-      return (
-        v.name.toLowerCase().includes(q) ||
-        v.shortDescription.toLowerCase().includes(q) ||
-        v.category.toLowerCase().includes(q) ||
-        v.expertise.toLowerCase().includes(q)
-      )
+  const listQuery = useQuery(
+    trpc.public.vendors.list.queryOptions({
+      q: state.q,
+      category: state.category,
+      page: state.page,
+      pageSize: PAGE_SIZE,
     })
-  }, [state.q, state.category])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(state.page, totalPages)
-  const pageItems = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
   )
+
+  const data = listQuery.data
+  const total = data?.total ?? 0
+  const pageItems = data?.rows ?? []
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const currentPage = Math.min(state.page, totalPages)
 
   return (
     <section
@@ -139,14 +122,14 @@ export function VendorListSection() {
           className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
         >
           {CATEGORY_CHIPS.map((chip) => {
-            const active = state.category === chip
+            const active = state.category === chip.value
             return (
               <button
-                key={chip}
+                key={chip.value}
                 type="button"
                 onClick={() =>
                   setState({
-                    category: chip === 'All Services' ? null : chip,
+                    category: chip.value === 'all' ? null : chip.value,
                     page: 1,
                   })
                 }
@@ -157,13 +140,19 @@ export function VendorListSection() {
                     : 'border-border bg-background text-muted-foreground hover:border-primary hover:text-primary'
                 )}
               >
-                {chip}
+                {chip.label}
               </button>
             )
           })}
         </motion.div>
 
-        {pageItems.length === 0 ? (
+        {listQuery.isLoading ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-muted h-64 animate-pulse rounded-2xl" />
+            ))}
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
             <p className="font-heading text-lg font-semibold text-foreground">
               No vendors match your search
@@ -193,12 +182,15 @@ export function VendorListSection() {
                 >
                   <VendorCard
                     id={vendor.id}
-                    name={vendor.name}
-                    description={vendor.shortDescription}
-                    imageUrl={vendor.imageUrl}
-                    onClick={() =>
-                      router.push(`/vendors/${vendor.id}`)
+                    name={vendor.businessName ?? 'Vendor'}
+                    description={
+                      vendor.tagline ??
+                      vendor.businessDescription ??
+                      vendor.businessCategory ??
+                      ''
                     }
+                    imageUrl={vendor.image ?? VENDOR_PLACEHOLDER}
+                    onClick={() => router.push(`/vendors/${vendor.id}`)}
                   />
                 </motion.div>
               ))}

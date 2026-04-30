@@ -17,6 +17,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().min(1),
     TRIGGER_PROJECT_ID: z.string().min(1),
     TRIGGER_SECRET_KEY: z.string().optional(),
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),

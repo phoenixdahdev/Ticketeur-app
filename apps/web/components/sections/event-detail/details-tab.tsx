@@ -3,6 +3,8 @@
 import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 
+import { MarkdownView } from '@ticketur/ui/components/markdown-view'
+
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 
 export function DetailsTab({ event }: { event: EventDetailData }) {
@@ -15,11 +17,15 @@ export function DetailsTab({ event }: { event: EventDetailData }) {
         >
           About the Event
         </h2>
-        <div className="dark:text-muted-foreground flex flex-col gap-4 text-sm leading-relaxed text-[#484848] md:text-base">
-          {event.description.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
+        {event.description.length > 0 ? (
+          <MarkdownView className="dark:text-muted-foreground prose-p:text-[#484848] dark:prose-p:text-muted-foreground text-[#484848]">
+            {event.description.join('\n\n')}
+          </MarkdownView>
+        ) : (
+          <p className="text-muted-foreground text-sm leading-relaxed md:text-base">
+            No description provided.
+          </p>
+        )}
       </section>
 
       <section

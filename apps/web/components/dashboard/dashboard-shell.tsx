@@ -47,12 +47,12 @@ export function DashboardShell({
     <div className="bg-muted/40 dark:bg-background flex h-svh flex-col overflow-hidden">
       <aside
         aria-label="Primary"
-        className="border-border/60 bg-background hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-[255px] md:flex-col md:border-r"
+        className="border-border/60 bg-background hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-63.75 md:flex-col md:border-r"
       >
         <Sidebar user={user} config={config} />
       </aside>
 
-      <header className="bg-background sticky top-0 z-30 flex h-18 items-center justify-between px-5 shadow-sm shadow-black/[0.04] md:hidden">
+      <header className="bg-background sticky top-0 z-30 flex h-18 items-center justify-between px-5 shadow-sm shadow-black/4 md:hidden">
         <div className="flex items-center gap-2">
           <LogoIcon className="h-9 w-auto" />
           <span className="font-heading text-foreground text-xl font-semibold tracking-tight">
