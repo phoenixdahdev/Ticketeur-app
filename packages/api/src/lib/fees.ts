@@ -5,7 +5,7 @@
 // All values are in MINOR units (kobo). 100 kobo = ₦1.
 
 // ₦1,000 flat fee per order.
-export const SERVICE_FEE_MINOR = 200_00
+export const SERVICE_FEE_MINOR = 500_00
 
 /**
  * Free tickets pass through without a fee. Otherwise we apply the flat

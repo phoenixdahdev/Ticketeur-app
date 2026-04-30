@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
-import { tasks } from '@trigger.dev/sdk'
 
-import { db, orders, events, ticketTiers } from '@ticketur/db'
+import { db, orders } from '@ticketur/db'
 import {
   isWebhookSignatureValid,
   verifyTransaction,
 } from '@ticketur/api/lib/flutterwave'
 
-import { fulfillOrder, generateAndStoreTicketsPdf, ticketUrl } from '@/lib/orders'
-import { formatEventDate } from '@/lib/event-display'
+import { fulfillOrder, notifyOrderFulfilled } from '@/lib/orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,7 +59,7 @@ export async function POST(req: Request) {
 
   // Find the matching order by tx_ref (we set this when starting checkout).
   const [order] = await db
-    .select()
+    .select({ id: orders.id })
     .from(orders)
     .where(eq(orders.flwTxRef, tx.tx_ref))
     .limit(1)
@@ -70,72 +68,25 @@ export async function POST(req: Request) {
   }
 
   try {
-    const updated = await fulfillOrder({
+    const result = await fulfillOrder({
       orderId: order.id,
       flwTransactionId: String(tx.id),
     })
-    if (!updated) {
+    if (!result) {
       return NextResponse.json({ ok: false, reason: 'order missing' }, { status: 404 })
     }
 
-    // Skip side-effects if we hit an idempotent re-fire and the order was
-    // already paid before this call (paidAt was set previously).
-    if (order.status === 'paid') {
-      return NextResponse.json({ ok: true, alreadyPaid: true })
+    // Email + PDF only when this call did the pending→paid transition.
+    // The /checkout/return page may have already fulfilled the order if the
+    // customer beat the webhook back to our domain.
+    if (result.justFulfilled) {
+      await notifyOrderFulfilled({ orderId: order.id, baseUrl: getBaseUrl() })
     }
 
-    const baseUrl = getBaseUrl()
-
-    // Generate the PDF, upload to Blob, store URL on the order. This is
-    // best-effort — the email still includes a web link so the buyer can
-    // recover even if the PDF fails.
-    let pdfUrl: string | null = null
-    try {
-      pdfUrl = await generateAndStoreTicketsPdf({
-        orderId: order.id,
-        baseUrl,
-      })
-    } catch (err) {
-      console.error('PDF generation failed', err)
-    }
-
-    // Pull display fields for the email.
-    const [head] = await db
-      .select({
-        eventTitle: events.title,
-        eventDate: events.eventDate,
-        eventTime: events.eventTime,
-        eventLocation: events.location,
-        tierName: ticketTiers.name,
-      })
-      .from(orders)
-      .innerJoin(events, eq(events.id, orders.eventId))
-      .innerJoin(ticketTiers, eq(ticketTiers.id, orders.tierId))
-      .where(eq(orders.id, order.id))
-      .limit(1)
-
-    if (head) {
-      const firstName = (order.buyerName || tx.customer.email).split(' ')[0]
-      void tasks.trigger('send-ticket-confirmation', {
-        email: order.buyerEmail || tx.customer.email,
-        firstName,
-        eventTitle: head.eventTitle,
-        eventDate: formatEventDate(head.eventDate),
-        eventTime: head.eventTime,
-        eventLocation: head.eventLocation,
-        ticketTier: head.tierName,
-        quantity: order.quantity,
-        ticketsUrl: `${baseUrl}/tickets/${order.id}`,
-        pdfUrl: pdfUrl ?? undefined,
-        pdfFilename: pdfUrl ? `${head.eventTitle}-tickets.pdf` : undefined,
-      })
-    }
-
-    // Touch ticketUrl import so unused-import lint is quiet — actual url
-    // building happens inside generateAndStoreTicketsPdf via the helper.
-    void ticketUrl
-
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({
+      ok: true,
+      alreadyFulfilled: !result.justFulfilled,
+    })
   } catch (err) {
     console.error('webhook fulfillment failed', err)
     return NextResponse.json(

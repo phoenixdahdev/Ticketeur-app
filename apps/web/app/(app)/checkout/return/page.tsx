@@ -7,7 +7,7 @@ import { Button } from '@ticketur/ui/components/button'
 import { db, orders } from '@ticketur/db'
 import { verifyTransaction } from '@ticketur/api/lib/flutterwave'
 
-import { fulfillOrder } from '@/lib/orders'
+import { fulfillOrder, notifyOrderFulfilled } from '@/lib/orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,15 +53,23 @@ export default async function CheckoutReturnPage({
 
   // Belt-and-braces: the webhook should have already fulfilled this order,
   // but in case the user beat the webhook back to our domain we re-verify
-  // and fulfill ourselves. Idempotent inside the helper.
+  // and fulfill ourselves. Idempotent inside the helper — only the path
+  // that did the pending→paid transition fires the email + PDF.
   if (order.status !== 'paid' && transactionId) {
     const tx = await verifyTransaction(transactionId)
     if (tx && tx.status === 'successful' && tx.tx_ref === txRef) {
       try {
-        await fulfillOrder({
+        const result = await fulfillOrder({
           orderId: order.id,
           flwTransactionId: String(tx.id),
         })
+        if (result?.justFulfilled) {
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL ??
+            process.env.BETTER_AUTH_URL ??
+            'http://localhost:3000'
+          await notifyOrderFulfilled({ orderId: order.id, baseUrl })
+        }
       } catch {
         // fall through — show pending screen
       }
