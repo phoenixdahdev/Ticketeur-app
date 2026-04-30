@@ -18,6 +18,7 @@ import { createTRPCRouter, publicProcedure } from '../../trpc'
 import { newId } from '../../lib/ids'
 import { createPayment } from '../../lib/flutterwave'
 import { generateAndStoreTicketsPdf } from '../../lib/tickets-pdf'
+import { calculateFeeMinor } from '../../lib/fees'
 
 const startInput = z.object({
   eventId: z.string(),
@@ -113,7 +114,9 @@ export const publicCheckoutRouter = createTRPCRouter({
           .where(eq(user.email, input.buyerEmail))
           .limit(1)
 
-        const totalMinor = tier.priceMinor * input.quantity
+        const subtotalMinor = tier.priceMinor * input.quantity
+        const feeMinor = calculateFeeMinor(subtotalMinor)
+        const totalMinor = subtotalMinor + feeMinor
         const isFree = totalMinor === 0
 
         await tx.insert(orders).values({
@@ -125,6 +128,8 @@ export const publicCheckoutRouter = createTRPCRouter({
           buyerName: input.buyerName,
           buyerPhone: input.buyerPhone,
           quantity: input.quantity,
+          subtotalMinor,
+          feeMinor,
           totalMinor,
           status: isFree ? 'paid' : 'pending',
           flwTxRef: isFree ? null : txRef,

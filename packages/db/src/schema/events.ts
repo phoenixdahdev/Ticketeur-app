@@ -177,6 +177,11 @@ export const orders = pgTable(
     buyerName: text('buyer_name').notNull().default(''),
     buyerPhone: text('buyer_phone').notNull().default(''),
     quantity: integer('quantity').notNull(),
+    // subtotalMinor = priceMinor × quantity (tickets only)
+    // feeMinor      = platform service fee applied at checkout
+    // totalMinor    = subtotalMinor + feeMinor (this is what the buyer pays)
+    subtotalMinor: integer('subtotal_minor').notNull().default(0),
+    feeMinor: integer('fee_minor').notNull().default(0),
     totalMinor: integer('total_minor').notNull(),
     status: text('status').$type<OrderStatus>().notNull().default('pending'),
     // Flutterwave correlation — tx_ref is what we send, transaction_id is
