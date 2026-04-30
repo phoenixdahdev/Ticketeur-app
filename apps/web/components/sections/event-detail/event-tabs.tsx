@@ -9,7 +9,10 @@ import { Button } from '@ticketur/ui/components/button'
 
 import { DetailsTab } from '@/components/sections/event-detail/details-tab'
 import { TicketsTab } from '@/components/sections/event-detail/tickets-tab'
-import { VendorsTab } from '@/components/sections/event-detail/vendors-tab'
+import {
+  VendorsTab,
+  type EventVendor,
+} from '@/components/sections/event-detail/vendors-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 
 const TABS = ['details', 'tickets', 'vendors'] as const
@@ -21,7 +24,13 @@ const TAB_LABELS: Record<TabKey, string> = {
   vendors: 'Vendors',
 }
 
-export function EventTabs({ event }: { event: EventDetailData }) {
+export function EventTabs({
+  event,
+  vendors,
+}: {
+  event: EventDetailData
+  vendors: EventVendor[]
+}) {
   const [tab, setTab] = useQueryState(
     'tab',
     parseAsStringLiteral(TABS).withDefault('details')
@@ -95,7 +104,7 @@ export function EventTabs({ event }: { event: EventDetailData }) {
             >
               {tab === 'details' && <DetailsTab event={event} />}
               {tab === 'tickets' && <TicketsTab event={event} />}
-              {tab === 'vendors' && <VendorsTab event={event} />}
+              {tab === 'vendors' && <VendorsTab vendors={vendors} />}
             </motion.div>
           </AnimatePresence>
         </div>
