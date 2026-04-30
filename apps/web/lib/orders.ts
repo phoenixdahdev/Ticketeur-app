@@ -1,6 +1,9 @@
 import { and, eq, sql } from 'drizzle-orm'
+import { tasks } from '@trigger.dev/sdk'
 
 import { db, events, orders, ticketTiers, tickets } from '@ticketur/db'
+
+import { formatEventDate } from '@/lib/event-display'
 
 // PDF generation lives in the api package so both the FW webhook (paid) and
 // the public.checkout.start mutation (free) can reach it.
@@ -8,6 +11,8 @@ export {
   generateAndStoreTicketsPdf,
   ticketUrl,
 } from '@ticketur/api/lib/tickets-pdf'
+
+import { generateAndStoreTicketsPdf as _genPdf } from '@ticketur/api/lib/tickets-pdf'
 
 export type OrderWithDetails = NonNullable<
   Awaited<ReturnType<typeof loadOrderById>>
@@ -38,13 +43,21 @@ export async function loadTicketsForOrder(orderId: string) {
 
 // Idempotent: if tickets already exist for this order it's a no-op.
 // Increments tier.sold by quantity in the same call.
+//
+// Returns `justFulfilled: true` only when this call did the pending→paid
+// transition. Side-effect callers (email, PDF) should gate on that flag so
+// the work runs exactly once even when the FW webhook + return page both
+// race in to fulfill.
 export async function fulfillOrder({
   orderId,
   flwTransactionId,
 }: {
   orderId: string
   flwTransactionId?: string | null
-}) {
+}): Promise<{
+  order: typeof orders.$inferSelect
+  justFulfilled: boolean
+} | null> {
   return db.transaction(async (tx) => {
     const [order] = await tx
       .select()
@@ -55,7 +68,7 @@ export async function fulfillOrder({
 
     if (order.status === 'paid') {
       // Already fulfilled — no-op (webhook + return page can both arrive)
-      return order
+      return { order, justFulfilled: false }
     }
 
     // Bump tier.sold and confirm we still have stock.
@@ -91,15 +104,66 @@ export async function fulfillOrder({
       await tx.insert(tickets).values(ticketRows)
     }
 
+    const paidAt = new Date()
     await tx
       .update(orders)
       .set({
         status: 'paid',
-        paidAt: new Date(),
+        paidAt,
         flwTransactionId: flwTransactionId ?? order.flwTransactionId ?? null,
       })
       .where(eq(orders.id, order.id))
 
-    return { ...order, status: 'paid' as const }
+    return {
+      order: {
+        ...order,
+        status: 'paid' as const,
+        paidAt,
+        flwTransactionId:
+          flwTransactionId ?? order.flwTransactionId ?? null,
+      },
+      justFulfilled: true,
+    }
+  })
+}
+
+/**
+ * Generate the PDF + dispatch the confirmation email for a paid order.
+ * Both the FW webhook and the /checkout/return page call this — guarded
+ * by `justFulfilled` from `fulfillOrder` so it runs exactly once.
+ */
+export async function notifyOrderFulfilled({
+  orderId,
+  baseUrl,
+}: {
+  orderId: string
+  baseUrl: string
+}) {
+  const head = await loadOrderById(orderId)
+  if (!head) return
+
+  let pdfUrl: string | null = null
+  try {
+    pdfUrl = await _genPdf({ orderId, baseUrl })
+  } catch (err) {
+    console.error('PDF generation failed', err)
+  }
+
+  const firstName =
+    (head.order.buyerName || head.order.buyerEmail || 'there').split(' ')[0] ??
+    'there'
+
+  void tasks.trigger('send-ticket-confirmation', {
+    email: head.order.buyerEmail,
+    firstName,
+    eventTitle: head.event.title,
+    eventDate: formatEventDate(head.event.eventDate),
+    eventTime: head.event.eventTime,
+    eventLocation: head.event.location,
+    ticketTier: head.tier.name,
+    quantity: head.order.quantity,
+    ticketsUrl: `${baseUrl}/tickets/${head.order.id}`,
+    pdfUrl: pdfUrl ?? undefined,
+    pdfFilename: pdfUrl ? `${head.event.title}-tickets.pdf` : undefined,
   })
 }
