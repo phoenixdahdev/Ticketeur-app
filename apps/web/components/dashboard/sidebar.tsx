@@ -29,10 +29,38 @@ export type SidebarUser = {
   image?: string | null
 }
 
-const NAV_LINKS: { href: string; label: string; icon: IconSvgElement }[] = [
-  { href: '/org/dashboard', label: 'Overview', icon: DashboardSquare02Icon },
-  { href: '/org/events', label: 'My Events', icon: Calendar03Icon },
-]
+export type SidebarNavLink = {
+  href: string
+  label: string
+  icon: IconSvgElement
+}
+
+export type SidebarConfig = {
+  homeHref: string
+  navLinks: SidebarNavLink[]
+  profileHref: string
+  profileLabel: string
+}
+
+export const ORG_SIDEBAR_CONFIG: SidebarConfig = {
+  homeHref: '/org/dashboard',
+  navLinks: [
+    { href: '/org/dashboard', label: 'Overview', icon: DashboardSquare02Icon },
+    { href: '/org/events', label: 'My Events', icon: Calendar03Icon },
+  ],
+  profileHref: '/account',
+  profileLabel: 'Account Settings',
+}
+
+export const VENDOR_SIDEBAR_CONFIG: SidebarConfig = {
+  homeHref: '/vendor/dashboard',
+  navLinks: [
+    { href: '/vendor/dashboard', label: 'Overview', icon: DashboardSquare02Icon },
+    { href: '/vendor/events', label: 'Events', icon: Calendar03Icon },
+  ],
+  profileHref: '/vendor/profile',
+  profileLabel: 'Profile',
+}
 
 function getInitials(name: string) {
   return (
@@ -51,9 +79,11 @@ function isActivePath(pathname: string, href: string) {
 
 export function Sidebar({
   user,
+  config = ORG_SIDEBAR_CONFIG,
   onNavigate,
 }: {
   user: SidebarUser
+  config?: SidebarConfig
   onNavigate?: () => void
 }) {
   const router = useRouter()
@@ -80,7 +110,7 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col">
       <Link
-        href="/org/dashboard"
+        href={config.homeHref}
         aria-label="Ticketeur home"
         onClick={onNavigate}
         className="border-border/60 flex items-center gap-2 border-b px-6 py-6"
@@ -93,7 +123,7 @@ export function Sidebar({
 
       <nav aria-label="Dashboard" className="flex-1 px-4 py-6">
         <ul className="flex flex-col gap-1">
-          {NAV_LINKS.map((link) => {
+          {config.navLinks.map((link) => {
             const active = isActivePath(pathname, link.href)
             return (
               <li key={link.href}>
@@ -132,7 +162,7 @@ export function Sidebar({
 
       <div className="border-border/60 flex flex-col gap-3 border-t px-4 py-4">
         <Link
-          href="/account"
+          href={config.profileHref}
           onClick={onNavigate}
           className="hover:bg-muted -mx-1 flex items-center gap-3 rounded-xl px-3 py-2 transition-colors"
         >
@@ -149,7 +179,7 @@ export function Sidebar({
               {user.name}
             </span>
             <span className="text-muted-foreground truncate text-xs">
-              Account Settings
+              {config.profileLabel}
             </span>
           </div>
         </Link>
