@@ -4,6 +4,7 @@ export {
   twoFactorOtpSchema,
   welcomeEmailSchema,
   vendorInviteSchema,
+  eventApprovedSchema,
 } from './schema'
 export type {
   VerificationOtpPayload,
@@ -11,4 +12,5 @@ export type {
   TwoFactorOtpPayload,
   WelcomeEmailPayload,
   VendorInvitePayload,
+  EventApprovedPayload,
 } from './schema'
