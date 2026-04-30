@@ -48,3 +48,13 @@ const requireOrganizer = requireSession.unstable_pipe(({ ctx, next }) => {
 })
 
 export const organizerProcedure = t.procedure.use(requireOrganizer)
+
+const requireVendor = requireSession.unstable_pipe(({ ctx, next }) => {
+  const role = ctx.session.user.role ?? 'attendee'
+  if (role !== 'vendor' && role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Vendor role required' })
+  }
+  return next({ ctx })
+})
+
+export const vendorProcedure = t.procedure.use(requireVendor)

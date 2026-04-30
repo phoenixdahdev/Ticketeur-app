@@ -36,6 +36,13 @@
       "when": 1777548704014,
       "tag": "0004_youthful_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777552139474,
+      "tag": "0005_perfect_starbolt",
+      "breakpoints": true
     }
   ]
 }

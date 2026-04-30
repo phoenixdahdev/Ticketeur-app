@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import {
   Controller,
   useFieldArray,
@@ -49,6 +49,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 
 import { useTRPC } from '@/lib/trpc'
+import { uploadFile } from '@/lib/upload'
 import {
   VENDOR_CATEGORIES,
   createEventSchema,
@@ -447,22 +448,31 @@ function BannerUploader({
   value: string | null
   onChange: (next: string | null) => void
 }) {
+  const [uploading, startUpload] = useTransition()
+
   function handleFile(file: File | null) {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') onChange(reader.result)
-    }
-    reader.readAsDataURL(file)
+    startUpload(async () => {
+      try {
+        const blob = await uploadFile({ kind: 'event-banner', file })
+        onChange(blob.url)
+      } catch (err) {
+        toast.error('Could not upload banner', {
+          description: (err as Error).message,
+        })
+      }
+    })
   }
 
   return (
     <Field>
       <FieldLabel className="text-sm font-semibold">Event Banner</FieldLabel>
       <label
+        aria-busy={uploading}
         className={cn(
           'border-border/60 bg-muted/40 hover:border-primary/60 hover:bg-primary/5 group relative flex min-h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 border-dashed transition-colors md:min-h-40',
-          value && 'border-solid'
+          value && 'border-solid',
+          uploading && 'pointer-events-none opacity-70'
         )}
       >
         {value ? (
@@ -473,21 +483,23 @@ function BannerUploader({
               alt="Event banner preview"
               className="h-full max-h-56 w-full object-cover"
             />
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault()
-                onChange(null)
-              }}
-              aria-label="Remove banner"
-              className="bg-background text-foreground hover:bg-destructive hover:text-destructive-foreground absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-full shadow-sm transition-colors"
-            >
-              <HugeiconsIcon
-                icon={Cancel01Icon}
-                className="size-4"
-                strokeWidth={2}
-              />
-            </button>
+            {!uploading ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onChange(null)
+                }}
+                aria-label="Remove banner"
+                className="bg-background text-foreground hover:bg-destructive hover:text-destructive-foreground absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-full shadow-sm transition-colors"
+              >
+                <HugeiconsIcon
+                  icon={Cancel01Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+              </button>
+            ) : null}
           </>
         ) : (
           <div className="flex flex-col items-center gap-1 px-6 py-8 text-center">
@@ -506,9 +518,18 @@ function BannerUploader({
             </p>
           </div>
         )}
+        {uploading ? (
+          <span
+            aria-live="polite"
+            className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-bold tracking-wider text-white uppercase"
+          >
+            Uploading…
+          </span>
+        ) : null}
         <input
           type="file"
           accept="image/*"
+          disabled={uploading}
           onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
           className="sr-only"
         />

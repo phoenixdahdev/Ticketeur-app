@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import {
   parseAsInteger,
@@ -23,35 +24,58 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { Input } from '@ticketur/ui/components/input'
 
-import {
-  VENDOR_EVENTS,
-  VENDOR_EVENTS_PAGE_SIZE,
-  type VendorEvent,
-  type VendorEventStatus,
-} from '@/lib/vendor-events'
+import { useTRPC } from '@/lib/trpc'
+import { formatEventDate } from '@/lib/event-display'
 
 const TAB_VALUES = ['all', 'upcoming', 'past'] as const
 type TabValue = (typeof TAB_VALUES)[number]
 
-const TABS: { value: TabValue; label: string; matches: (s: VendorEventStatus) => boolean }[] = [
-  { value: 'all', label: 'All Events', matches: () => true },
-  { value: 'upcoming', label: 'Upcoming', matches: (s) => s === 'upcoming' || s === 'live' },
-  { value: 'past', label: 'Past', matches: (s) => s === 'past' },
+const TABS: { value: TabValue; label: string }[] = [
+  { value: 'all', label: 'All Events' },
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'past', label: 'Past' },
 ]
 
-const STATUS_LABEL: Record<VendorEventStatus, string> = {
+const PAGE_SIZE = 4
+
+type ServerEvent = {
+  id: string
+  title: string
+  eventDate: string
+  eventTime: string
+  location: string
+  bannerUrl: string | null
+  status: string
+}
+
+type DerivedStatus = 'live' | 'upcoming' | 'past'
+
+const STATUS_LABEL: Record<DerivedStatus, string> = {
   live: '• LIVE',
   upcoming: 'Upcoming',
   past: 'Past',
 }
 
-const STATUS_TONE: Record<VendorEventStatus, string> = {
+const STATUS_TONE: Record<DerivedStatus, string> = {
   live: 'text-emerald-700 dark:text-emerald-400',
   upcoming: 'text-primary',
   past: 'text-muted-foreground',
 }
 
+function deriveStatus(
+  eventDate: string,
+  serverStatus: string
+): DerivedStatus {
+  const today = new Date().toISOString().slice(0, 10)
+  if (eventDate === today) return 'live'
+  if (eventDate < today) return 'past'
+  if (serverStatus === 'upcoming') return 'upcoming'
+  return 'upcoming'
+}
+
 export function VendorEventsContent() {
+  const trpc = useTRPC()
+
   const [params, setParams] = useQueryStates(
     {
       tab: parseAsStringLiteral(TAB_VALUES).withDefault('all'),
@@ -61,31 +85,21 @@ export function VendorEventsContent() {
     { history: 'replace', clearOnDefault: true }
   )
 
-  const totalCount = VENDOR_EVENTS.length
+  const listQuery = useQuery(
+    trpc.vendor.events.list.queryOptions({
+      tab: params.tab,
+      q: params.q,
+      page: params.page,
+      pageSize: PAGE_SIZE,
+    })
+  )
 
-  const { rows, total, totalPages, current } = useMemo(() => {
-    const tabDef = TABS.find((t) => t.value === params.tab) ?? TABS[0]!
-    const needle = params.q.trim().toLowerCase()
-    let list = VENDOR_EVENTS.filter((ev) => tabDef.matches(ev.status))
-    if (needle) {
-      list = list.filter(
-        (ev) =>
-          ev.title.toLowerCase().includes(needle) ||
-          ev.location.toLowerCase().includes(needle) ||
-          ev.category.toLowerCase().includes(needle)
-      )
-    }
-    const totalCount = list.length
-    const pages = Math.max(1, Math.ceil(totalCount / VENDOR_EVENTS_PAGE_SIZE))
-    const safePage = Math.min(Math.max(params.page, 1), pages)
-    const start = (safePage - 1) * VENDOR_EVENTS_PAGE_SIZE
-    return {
-      rows: list.slice(start, start + VENDOR_EVENTS_PAGE_SIZE),
-      total: totalCount,
-      totalPages: pages,
-      current: safePage,
-    }
-  }, [params.tab, params.q, params.page])
+  const data = listQuery.data
+  const rows = data?.rows ?? []
+  const total = data?.total ?? 0
+  const allCount = data?.allCount ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const current = Math.min(Math.max(params.page, 1), totalPages)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
@@ -132,7 +146,7 @@ export function VendorEventsContent() {
                           : 'bg-muted text-muted-foreground'
                       )}
                     >
-                      {totalCount}
+                      {allCount}
                     </span>
                   ) : null}
                   {active ? (
@@ -167,10 +181,16 @@ export function VendorEventsContent() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {rows.length === 0 ? (
+          {listQuery.isLoading ? (
+            <div className="border-border/60 bg-background flex flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
+              <p className="text-muted-foreground text-sm">Loading events…</p>
+            </div>
+          ) : rows.length === 0 ? (
             <div className="border-border/60 bg-background flex flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
               <p className="text-muted-foreground text-sm">
-                No events match your filters.
+                {params.q || params.tab !== 'all'
+                  ? 'No events match your filters.'
+                  : 'No events assigned to you yet.'}
               </p>
             </div>
           ) : (
@@ -190,33 +210,30 @@ export function VendorEventsContent() {
   )
 }
 
-function VendorEventRow({ ev }: { ev: VendorEvent }) {
+function VendorEventRow({ ev }: { ev: ServerEvent }) {
+  const status = deriveStatus(ev.eventDate, ev.status)
   return (
     <article className="border-border/60 bg-background flex flex-col gap-0 overflow-hidden rounded-2xl border shadow-sm shadow-black/[0.02] sm:flex-row sm:items-stretch">
       <div className="bg-muted relative h-32 shrink-0 sm:h-auto sm:w-36">
         <Image
-          src={ev.image}
+          src={ev.bannerUrl ?? '/hero-bg.png'}
           alt={ev.title}
           fill
           sizes="(min-width: 640px) 144px, 100vw"
           className="object-cover"
+          unoptimized={Boolean(ev.bannerUrl?.startsWith('data:'))}
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span
-              className={cn('text-xs font-bold uppercase', STATUS_TONE[ev.status])}
-            >
-              {STATUS_LABEL[ev.status]}
+            <span className={cn('text-xs font-bold uppercase', STATUS_TONE[status])}>
+              {STATUS_LABEL[status]}
             </span>
             <h3 className="text-foreground text-base font-bold tracking-tight md:text-lg">
               {ev.title}
             </h3>
           </div>
-          <span className="bg-muted text-muted-foreground inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-            {ev.category}
-          </span>
         </div>
         <div className="text-muted-foreground flex flex-col gap-1 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:text-sm">
           <span className="inline-flex items-center gap-1.5">
@@ -225,7 +242,7 @@ function VendorEventRow({ ev }: { ev: VendorEvent }) {
               className="size-3.5"
               strokeWidth={1.8}
             />
-            {ev.date}
+            {formatEventDate(ev.eventDate)}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <HugeiconsIcon
@@ -233,7 +250,7 @@ function VendorEventRow({ ev }: { ev: VendorEvent }) {
               className="size-3.5"
               strokeWidth={1.8}
             />
-            {ev.time}
+            {ev.eventTime}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <HugeiconsIcon
