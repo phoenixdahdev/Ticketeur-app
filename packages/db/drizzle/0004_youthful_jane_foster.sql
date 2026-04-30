@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "vendor_approval_status" text;

@@ -19,11 +19,13 @@ export function StatCard({
   value,
   icon,
   tone,
+  loading,
 }: {
   label: string
   value: string
   icon: IconSvgElement
   tone: StatTone
+  loading?: boolean
 }) {
   return (
     <div className="border-border/60 bg-background flex flex-col gap-4 rounded-2xl border p-5 shadow-sm shadow-black/[0.02]">
@@ -37,9 +39,13 @@ export function StatCard({
       </div>
       <div className="flex flex-col gap-1">
         <p className="text-muted-foreground text-sm font-medium">{label}</p>
-        <p className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-[32px]">
-          {value}
-        </p>
+        {loading ? (
+          <div className="bg-muted h-8 w-24 animate-pulse rounded-md" />
+        ) : (
+          <p className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-[32px]">
+            {value}
+          </p>
+        )}
       </div>
     </div>
   )

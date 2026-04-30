@@ -24,7 +24,17 @@ export const welcomeEmailSchema = z.object({
   name: z.string(),
 })
 
+export const vendorInviteSchema = z.object({
+  email: z.email(),
+  businessName: z.string(),
+  contactName: z.string(),
+  organizerName: z.string(),
+  eventTitle: z.string(),
+  signupUrl: z.url(),
+})
+
 export type VerificationOtpPayload = z.infer<typeof verificationOtpSchema>
 export type PasswordResetPayload = z.infer<typeof passwordResetSchema>
 export type TwoFactorOtpPayload = z.infer<typeof twoFactorOtpSchema>
 export type WelcomeEmailPayload = z.infer<typeof welcomeEmailSchema>
+export type VendorInvitePayload = z.infer<typeof vendorInviteSchema>

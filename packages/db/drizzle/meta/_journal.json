@@ -22,6 +22,20 @@
       "when": 1776967226477,
       "tag": "0002_living_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777547743459,
+      "tag": "0003_cute_namorita",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777548704014,
+      "tag": "0004_youthful_jane_foster",
+      "breakpoints": true
     }
   ]
 }

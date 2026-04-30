@@ -1,12 +1,17 @@
-import { appRouter } from '@ticketur/api'
+import { appRouter, createTRPCContext } from '@ticketur/api'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 
-const handler = (req: Request) =>
-  fetchRequestHandler({
+import { auth } from '@/lib/auth'
+
+const handler = async (req: Request) => {
+  const session = await auth.api.getSession({ headers: req.headers })
+
+  return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => ({}),
+    createContext: () => createTRPCContext({ session }),
   })
+}
 
 export { handler as GET, handler as POST }

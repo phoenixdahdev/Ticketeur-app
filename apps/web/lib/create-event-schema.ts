@@ -38,6 +38,7 @@ export const createEventSchema = z.object({
   features: z.array(z.string().trim()),
   tiers: z.array(ticketTierSchema).min(1, 'At least one ticket tier'),
   assignedVendorIds: z.array(z.string()),
+  externalInvites: z.array(externalVendorSchema),
 })
 
 export type TicketTierValues = z.infer<typeof ticketTierSchema>
@@ -52,7 +53,8 @@ export const CREATE_EVENT_DEFAULTS: CreateEventValues = {
   location: '',
   features: [],
   tiers: [{ name: 'Early Bird', quantity: 100, price: 5000 }],
-  assignedVendorIds: ['neon-bites', 'glow-threads', 'liquid-dreams', 'prism-arts'],
+  assignedVendorIds: [],
+  externalInvites: [],
 }
 
 export type RegisteredVendor = {

@@ -1,9 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import { useTRPC } from '@/lib/trpc'
 import {
   CREATE_EVENT_DEFAULTS,
   type CreateEventValues,
@@ -15,7 +18,36 @@ import { SubmitModal } from '@/components/dashboard/create-event/submit-modal'
 
 const STEP_VALUES = ['form', 'preview'] as const
 
+function buildPayload(
+  values: CreateEventValues,
+  banner: string | null,
+  status: 'draft' | 'in-review'
+) {
+  return {
+    title: values.title,
+    description: values.description,
+    date: values.date,
+    time: values.time,
+    location: values.location,
+    bannerUrl: banner,
+    features: values.features,
+    tiers: values.tiers.map((t) => ({
+      name: t.name,
+      quantity: t.quantity,
+      // Form prices are in major units (₦); convert to minor (kobo)
+      priceMinor: Math.round(t.price * 100),
+    })),
+    assignedVendorIds: values.assignedVendorIds,
+    externalInvites: values.externalInvites,
+    status,
+  }
+}
+
 export function CreateEventContent() {
+  const router = useRouter()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
   const [step, setStep] = useQueryState(
     'step',
     parseAsStringLiteral(STEP_VALUES).withDefault('form')
@@ -23,20 +55,38 @@ export function CreateEventContent() {
   const [values, setValues] = useState<CreateEventValues>(CREATE_EVENT_DEFAULTS)
   const [banner, setBanner] = useState<string | null>(null)
   const [submitOpen, setSubmitOpen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+
+  const create = useMutation(
+    trpc.org.events.create.mutationOptions({
+      onSuccess: ({ id }, variables) => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.recentActivity.queryKey(),
+        })
+
+        if (variables.status === 'draft') {
+          toast.success('Draft saved')
+          router.push(`/org/events/${id}`)
+        } else {
+          setSubmitOpen(true)
+        }
+      },
+      onError: (e) =>
+        toast.error('Could not save event', { description: e.message }),
+    })
+  )
 
   function handleSaveDraft() {
-    toast.success('Draft saved', {
-      description: 'Your event has been saved as a draft.',
-    })
+    create.mutate(buildPayload(values, banner, 'draft'))
   }
 
   function handleSubmit() {
-    setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
-      setSubmitOpen(true)
-    }, 500)
+    create.mutate(buildPayload(values, banner, 'in-review'))
   }
 
   return (
@@ -48,7 +98,7 @@ export function CreateEventContent() {
           onEdit={() => void setStep('form')}
           onCancel={() => void setStep('form')}
           onSubmit={handleSubmit}
-          submitting={submitting}
+          submitting={create.isPending}
         />
       ) : (
         <FormView

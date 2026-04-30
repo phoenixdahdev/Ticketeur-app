@@ -12,9 +12,14 @@
     "./routers": "./src/routers/_app.ts"
   },
   "dependencies": {
-    "@trpc/server": "^11.16.0",
+    "@ticketur/auth": "workspace:*",
+    "@ticketur/db": "workspace:*",
+    "@ticketur/env": "workspace:*",
+    "@trigger.dev/sdk": "4.4.4",
+    "@trpc/server": "^11.17.0",
+    "drizzle-orm": "^0.45.2",
     "superjson": "^2.2.6",
-    "zod": "^4.3.6"
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@ticketur/eslint-config": "workspace:*",

@@ -1,5 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import type { IconSvgElement } from '@hugeicons/react'
 import {
@@ -12,34 +17,53 @@ import {
   Money01Icon,
   Ticket01Icon,
   CheckmarkCircle02Icon,
+  ArchiveIcon,
+  Delete02Icon,
   MusicNote03Icon,
   Idea01Icon,
   DrinkIcon,
   UserGroupIcon,
   GameController01Icon,
+  CameraVideoIcon,
+  Briefcase01Icon,
+  PaintBoardIcon,
+  Sparkles,
+  StarIcon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 
+import { useTRPC } from '@/lib/trpc'
 import {
-  buildEventDetail,
   STATUS_LABEL,
+  STATUS_TONE,
   type EventStatus,
-  type OrgEvent,
-  type TicketTier,
-  type VendorEntry,
 } from '@/lib/org-events'
+import {
+  eventCode,
+  formatEventDate,
+  formatNaira,
+  formatWeekday,
+} from '@/lib/event-display'
 
-type FeatureItem = { icon: IconSvgElement; label: string }
+const FEATURE_ICONS: Record<string, IconSvgElement> = {
+  'Live DJ Sets': MusicNote03Icon,
+  'Laser Show': Idea01Icon,
+  'Open VIP Bar': DrinkIcon,
+  Mascots: UserGroupIcon,
+  Games: GameController01Icon,
+  'Food & Drink': DrinkIcon,
+  Workshops: Briefcase01Icon,
+  Networking: UserGroupIcon,
+  'Live Music': MusicNote03Icon,
+  'Photo Booth': CameraVideoIcon,
+  'Art Showcase': PaintBoardIcon,
+}
 
-const FEATURES: FeatureItem[] = [
-  { icon: MusicNote03Icon, label: 'Live DJ Sets' },
-  { icon: Idea01Icon, label: 'Laser Show' },
-  { icon: DrinkIcon, label: 'Open VIP Bar' },
-  { icon: UserGroupIcon, label: 'Mascots' },
-  { icon: GameController01Icon, label: 'Games' },
-]
+function iconForFeature(label: string): IconSvgElement {
+  return FEATURE_ICONS[label] ?? StarIcon ?? Sparkles
+}
 
 const STATUS_HERO_BADGE: Record<EventStatus, string> = {
   upcoming: 'bg-emerald-500 text-white',
@@ -55,12 +79,69 @@ const STATUS_HERO_LABEL: Record<EventStatus, string> = {
   archived: 'ARCHIVED',
 }
 
-export function EventDetail({ event }: { event: OrgEvent }) {
-  const detail = buildEventDetail(event)
-  const showStats =
-    event.status === 'upcoming' || event.status === 'archived'
-  const showStepper = event.status === 'in-review'
-  const showEdit = event.status === 'draft'
+export function EventDetail({ id }: { id: string }) {
+  const trpc = useTRPC()
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { data, isLoading } = useQuery(
+    trpc.org.events.byId.queryOptions({ id })
+  )
+
+  const archive = useMutation(
+    trpc.org.events.archive.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event archived')
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.byId.queryKey({ id }),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+      },
+      onError: (e) => toast.error('Could not archive', { description: e.message }),
+    })
+  )
+
+  const remove = useMutation(
+    trpc.org.events.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event deleted')
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+        router.push('/org/events')
+      },
+      onError: (e) => toast.error('Could not delete', { description: e.message }),
+    })
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading event…</p>
+      </div>
+    )
+  }
+  if (!data) {
+    // Server returned null — let server-side notFound handle it via the page.
+    return null
+  }
+
+  const { event, tiers, vendors, externalInvites, sold, total, revenueMinor } =
+    data
+  const status = event.status as EventStatus
+  const showStats = status === 'upcoming' || status === 'archived'
+  const showStepper = status === 'in-review'
+  const showEdit = status === 'draft'
+  const pct = total > 0 ? Math.min(100, Math.round((sold / total) * 100)) : 0
+  const code = eventCode(event.id)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -85,7 +166,7 @@ export function EventDetail({ event }: { event: OrgEvent }) {
         </Button>
       </header>
 
-      <div className="flex shrink-0 items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <Link
           href="/org/events"
           className="text-foreground hover:text-primary inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
@@ -97,28 +178,73 @@ export function EventDetail({ event }: { event: OrgEvent }) {
           />
           Back
         </Link>
-        {showEdit ? (
-          <Link
-            href={`/org/events/${event.id}/edit`}
-            className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
-          >
-            <HugeiconsIcon
-              icon={Edit02Icon}
-              className="size-4"
-              strokeWidth={2}
-            />
-            Edit Event
-          </Link>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {showEdit ? (
+            <Link
+              href={`/org/events/${event.id}/edit`}
+              className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+            >
+              <HugeiconsIcon
+                icon={Edit02Icon}
+                className="size-4"
+                strokeWidth={2}
+              />
+              Edit Event
+            </Link>
+          ) : null}
+          {status === 'upcoming' ? (
+            <button
+              type="button"
+              disabled={archive.isPending}
+              onClick={() => archive.mutate({ id: event.id })}
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              <HugeiconsIcon
+                icon={ArchiveIcon}
+                className="size-4"
+                strokeWidth={2}
+              />
+              Archive
+            </button>
+          ) : null}
+          {status === 'archived' || status === 'draft' ? (
+            <button
+              type="button"
+              disabled={remove.isPending}
+              onClick={() => {
+                if (
+                  confirm(
+                    `Delete "${event.title}"? This cannot be undone.`
+                  )
+                ) {
+                  remove.mutate({ id: event.id })
+                }
+              }}
+              className="text-destructive hover:text-destructive/80 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              <HugeiconsIcon
+                icon={Delete02Icon}
+                className="size-4"
+                strokeWidth={2}
+              />
+              Delete
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {showStepper ? <ReviewStepper /> : null}
 
-      <HeroCard event={event} title={detail.title} code={detail.code} />
+      <HeroCard
+        status={status}
+        title={event.title}
+        code={code}
+        bannerUrl={event.bannerUrl}
+      />
 
       <Section title="Description">
         <p className="text-muted-foreground text-sm leading-7 md:text-base">
-          {detail.description}
+          {event.description || 'No description provided.'}
         </p>
       </Section>
 
@@ -126,55 +252,102 @@ export function EventDetail({ event }: { event: OrgEvent }) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <DetailItem
             icon={Calendar03Icon}
-            primary={`${detail.weekday}, ${detail.date}`}
+            primary={`${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`}
           />
-          <DetailItem icon={Clock01Icon} primary={detail.time} />
-          <DetailItem icon={Location01Icon} primary={detail.location} />
+          <DetailItem icon={Clock01Icon} primary={event.eventTime} />
+          <DetailItem icon={Location01Icon} primary={event.location} />
         </div>
       </Section>
 
-      <Section title="Features">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-          {FEATURES.map((f) => (
-            <FeatureCard key={f.label} icon={f.icon} label={f.label} />
-          ))}
-        </div>
-      </Section>
+      {event.features.length > 0 ? (
+        <Section title="Features">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+            {event.features.map((label) => (
+              <FeatureCard
+                key={label}
+                icon={iconForFeature(label)}
+                label={label}
+              />
+            ))}
+          </div>
+        </Section>
+      ) : null}
 
       {showStats ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatBlock
             icon={Money01Icon}
             label="Total Revenue"
-            value={detail.revenue}
+            value={formatNaira(revenueMinor)}
             tone="emerald"
           />
-          <SoldStatBlock detail={detail} />
+          <SoldStatBlock sold={sold} total={total} pct={pct} />
           <DateStatBlock
-            date={detail.date}
-            ended={detail.hasEnded}
-            tone="primary"
+            date={formatEventDate(event.eventDate)}
+            ended={status === 'archived'}
           />
         </div>
       ) : null}
 
       <Section title="Ticket Tier Sales">
-        <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-          <ul className="divide-border/60 divide-y">
-            {detail.tiers.map((t) => (
-              <TicketTierRow key={t.name} tier={t} status={event.status} />
-            ))}
-          </ul>
-        </div>
+        {tiers.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            No ticket tiers configured.
+          </p>
+        ) : (
+          <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
+            <ul className="divide-border/60 divide-y">
+              {tiers.map((t, idx) => (
+                <TicketTierRow
+                  key={t.id}
+                  name={t.name}
+                  tierLabel={`Tier ${idx + 1}`}
+                  sold={t.sold}
+                  total={t.quantity}
+                  price={formatNaira(t.priceMinor)}
+                  status={status}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
       </Section>
 
-      <Section title="Assigned Vendors">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {detail.vendors.map((v) => (
-            <VendorCard key={v.name} vendor={v} />
-          ))}
-        </div>
-      </Section>
+      {(vendors.length > 0 || externalInvites.length > 0) && (
+        <Section title="Assigned Vendors">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {vendors.map((v) => (
+              <VendorCard
+                key={v.id}
+                name={v.vendor.businessName ?? 'Vendor'}
+                description={v.vendor.businessDescription ?? ''}
+                image={v.vendor.image}
+                status={v.status === 'accepted' ? 'verified' : 'pending'}
+              />
+            ))}
+            {externalInvites.map((inv) => (
+              <VendorCard
+                key={inv.id}
+                name={inv.businessName}
+                description={`Invited via email — ${inv.email}`}
+                image={null}
+                status={inv.status === 'accepted' ? 'verified' : 'pending'}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <div className="flex shrink-0 items-center justify-between md:hidden">
+        <span
+          className={cn(
+            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium',
+            STATUS_TONE[status]
+          )}
+        >
+          {STATUS_LABEL[status]}
+        </span>
+      </div>
     </div>
   )
 }
@@ -197,23 +370,26 @@ function Section({
 }
 
 function HeroCard({
-  event,
+  status,
   title,
   code,
+  bannerUrl,
 }: {
-  event: OrgEvent
+  status: EventStatus
   title: string
   code: string
+  bannerUrl: string | null
 }) {
   return (
     <div className="relative isolate flex h-[200px] shrink-0 items-end overflow-hidden rounded-2xl md:h-[280px]">
       <Image
-        src="/hero-bg.png"
+        src={bannerUrl ?? '/hero-bg.png'}
         alt=""
         fill
         priority
         sizes="(min-width: 768px) 900px, 100vw"
         className="object-cover"
+        unoptimized={Boolean(bannerUrl?.startsWith('data:'))}
       />
       <div
         aria-hidden
@@ -223,10 +399,10 @@ function HeroCard({
         <span
           className={cn(
             'inline-flex w-fit items-center rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase',
-            STATUS_HERO_BADGE[event.status]
+            STATUS_HERO_BADGE[status]
           )}
         >
-          {STATUS_HERO_LABEL[event.status]}
+          {STATUS_HERO_LABEL[status]}
         </span>
         <h2 className="font-heading text-2xl font-bold tracking-tight text-white md:text-3xl">
           {title}
@@ -390,9 +566,13 @@ function StatBlock({
 }
 
 function SoldStatBlock({
-  detail,
+  sold,
+  total,
+  pct,
 }: {
-  detail: ReturnType<typeof buildEventDetail>
+  sold: number
+  total: number
+  pct: number
 }) {
   return (
     <div className="border-border/60 bg-background flex flex-col gap-3 rounded-2xl border p-5 shadow-sm shadow-black/[0.02]">
@@ -409,34 +589,27 @@ function SoldStatBlock({
         </span>
       </div>
       <p className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
-        {detail.sold.toLocaleString()}{' '}
+        {sold.toLocaleString()}{' '}
         <span className="text-muted-foreground text-sm font-medium">
-          / {detail.total.toLocaleString()}
+          / {total.toLocaleString()}
         </span>
       </p>
       <div className="flex items-center gap-2">
         <div className="bg-muted relative h-1.5 flex-1 overflow-hidden rounded-full">
           <div
             className="bg-primary absolute inset-y-0 left-0 rounded-full"
-            style={{ width: `${detail.pct}%` }}
+            style={{ width: `${pct}%` }}
           />
         </div>
         <span className="text-muted-foreground text-xs font-semibold">
-          {detail.pct}%
+          {pct}%
         </span>
       </div>
     </div>
   )
 }
 
-function DateStatBlock({
-  date,
-  ended,
-}: {
-  date: string
-  ended: boolean
-  tone: 'primary'
-}) {
+function DateStatBlock({ date, ended }: { date: string; ended: boolean }) {
   return (
     <div className="border-border/60 bg-background flex flex-col gap-3 rounded-2xl border p-5 shadow-sm shadow-black/[0.02]">
       <div className="flex items-center gap-2">
@@ -462,18 +635,25 @@ function DateStatBlock({
 }
 
 function TicketTierRow({
-  tier,
+  name,
+  tierLabel,
+  sold,
+  total,
+  price,
   status,
 }: {
-  tier: TicketTier
+  name: string
+  tierLabel: string
+  sold: number
+  total: number
+  price: string
   status: EventStatus
 }) {
   const isInReviewOrDraft = status === 'in-review' || status === 'draft'
-  const pct =
-    tier.total > 0 ? Math.min(100, Math.round((tier.sold / tier.total) * 100)) : 0
-  const soldOut = tier.sold >= tier.total && tier.total > 0
+  const pct = total > 0 ? Math.min(100, Math.round((sold / total) * 100)) : 0
+  const soldOut = sold >= total && total > 0
   const almostDone = !soldOut && pct >= 90
-  const active = !soldOut && !almostDone && tier.sold > 0
+  const active = !soldOut && !almostDone && sold > 0
 
   let badge: { label: string; className: string } | null = null
   if (status === 'archived' || soldOut) {
@@ -509,20 +689,20 @@ function TicketTierRow({
           />
         </span>
         <div className="flex min-w-0 flex-col">
-          <p className="text-foreground text-sm font-semibold">{tier.name}</p>
-          <p className="text-muted-foreground text-xs">{tier.tier}</p>
+          <p className="text-foreground text-sm font-semibold">{name}</p>
+          <p className="text-muted-foreground text-xs">{tierLabel}</p>
         </div>
       </div>
 
       <div className="flex flex-1 items-center gap-3 md:max-w-xs">
         {isInReviewOrDraft ? (
           <span className="text-muted-foreground text-sm">
-            {tier.total} available
+            {total} available
           </span>
         ) : (
           <>
             <span className="text-muted-foreground text-xs whitespace-nowrap">
-              {tier.sold}/{tier.total}
+              {sold}/{total}
             </span>
             <div className="bg-muted relative h-1.5 flex-1 overflow-hidden rounded-full">
               <div
@@ -548,40 +728,52 @@ function TicketTierRow({
           <span className="md:hidden" />
         )}
         <span className="text-foreground text-sm font-bold whitespace-nowrap">
-          {tier.price}
+          {price}
         </span>
       </div>
     </li>
   )
 }
 
-function VendorCard({ vendor }: { vendor: VendorEntry }) {
-  const initial = vendor.name.charAt(0)
+function VendorCard({
+  name,
+  description,
+  image,
+  status,
+}: {
+  name: string
+  description: string
+  image: string | null
+  status: 'verified' | 'pending'
+}) {
+  const initial = name.charAt(0).toUpperCase()
   return (
     <div className="border-border/60 bg-background flex flex-col gap-3 overflow-hidden rounded-2xl border p-3">
       <div className="bg-primary/10 relative flex h-28 items-center justify-center overflow-hidden rounded-xl">
-        <span className="font-heading text-primary text-3xl font-bold opacity-60">
-          {initial}
-        </span>
+        {image ? (
+          <Image src={image} alt={name} fill className="object-cover" />
+        ) : (
+          <span className="font-heading text-primary text-3xl font-bold opacity-60">
+            {initial}
+          </span>
+        )}
         <span
           className={cn(
             'absolute top-2 right-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase',
-            vendor.status === 'verified'
+            status === 'verified'
               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
               : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
           )}
         >
-          {vendor.status}
+          {status}
         </span>
       </div>
       <div className="flex flex-col gap-1 px-1">
-        <p className="text-foreground text-sm font-semibold">{vendor.name}</p>
+        <p className="text-foreground text-sm font-semibold">{name}</p>
         <p className="text-muted-foreground line-clamp-2 text-xs leading-5">
-          {vendor.description}
+          {description}
         </p>
       </div>
     </div>
   )
 }
-
-export const _STATUS_LABEL = STATUS_LABEL
