@@ -27,6 +27,10 @@ export const user = pgTable('user', {
   businessName: text('business_name'),
   businessCategory: text('business_category'),
   businessDescription: text('business_description'),
+  // vendor approval gate — null when not a vendor; 'pending' until admin approves
+  vendorApprovalStatus: text('vendor_approval_status').$type<
+    'pending' | 'approved' | 'rejected'
+  >(),
 })
 
 export const session = pgTable('session', {

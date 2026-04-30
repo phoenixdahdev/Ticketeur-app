@@ -46,8 +46,10 @@ import {
   FieldLabel,
 } from '@ticketur/ui/components/field'
 
+import { useQuery } from '@tanstack/react-query'
+
+import { useTRPC } from '@/lib/trpc'
 import {
-  REGISTERED_VENDORS,
   VENDOR_CATEGORIES,
   createEventSchema,
   externalVendorSchema,
@@ -613,7 +615,13 @@ function VendorsEditor({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturn<CreateEventValues, any, any>
 }) {
+  const trpc = useTRPC()
+  const { data: registered = [] } = useQuery(
+    trpc.org.vendors.listRegistered.queryOptions()
+  )
+
   const assigned = form.watch('assignedVendorIds') ?? []
+  const externalInvites = form.watch('externalInvites') ?? []
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All Categories')
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -629,13 +637,26 @@ function VendorsEditor({
     },
   })
 
+  const registeredVendors = useMemo<RegisteredVendor[]>(
+    () =>
+      registered.map((v) => ({
+        id: v.id,
+        name: v.name,
+        category: v.category,
+        description: v.description,
+        status: 'verified' as const,
+      })),
+    [registered]
+  )
+
   const assignedVendors = useMemo(
-    () => REGISTERED_VENDORS.filter((v) => assigned.includes(v.id)),
-    [assigned]
+    () => registeredVendors.filter((v) => assigned.includes(v.id)),
+    [assigned, registeredVendors]
   )
   const browseable = useMemo(() => {
     const needle = search.trim().toLowerCase()
-    return REGISTERED_VENDORS.filter((v) => !assigned.includes(v.id))
+    return registeredVendors
+      .filter((v) => !assigned.includes(v.id))
       .filter(
         (v) => category === 'All Categories' || v.category === category
       )
@@ -646,7 +667,7 @@ function VendorsEditor({
           v.description.toLowerCase().includes(needle) ||
           v.category.toLowerCase().includes(needle)
       )
-  }, [assigned, search, category])
+  }, [assigned, search, category, registeredVendors])
 
   function unassign(id: string) {
     form.setValue(
@@ -661,9 +682,26 @@ function VendorsEditor({
     form.setValue('assignedVendorIds', [...assigned, id], { shouldDirty: true })
   }
 
+  function removeInvite(email: string) {
+    form.setValue(
+      'externalInvites',
+      externalInvites.filter((inv) => inv.email !== email),
+      { shouldDirty: true }
+    )
+  }
+
   function sendInvite(values: ExternalVendorValues) {
-    toast.success('Invitation sent', {
-      description: `An invitation has been sent to ${values.email}.`,
+    if (externalInvites.some((inv) => inv.email === values.email)) {
+      toast.error('Already invited', {
+        description: `${values.email} is already on the invite list.`,
+      })
+      return
+    }
+    form.setValue('externalInvites', [...externalInvites, values], {
+      shouldDirty: true,
+    })
+    toast.success('Invite added', {
+      description: `${values.email} will be emailed when the event is submitted.`,
     })
     inviteForm.reset()
     setInviteOpen(false)
@@ -749,6 +787,39 @@ function VendorsEditor({
           </div>
         )}
       </div>
+
+      {externalInvites.length > 0 ? (
+        <div className="border-border/60 mt-2 flex flex-col gap-2 border-t pt-4">
+          <p className="text-muted-foreground text-sm font-medium">
+            Pending invites
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {externalInvites.map((inv) => (
+              <li
+                key={inv.email}
+                className="bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium"
+              >
+                <span className="font-semibold">{inv.businessName}</span>
+                <span className="text-amber-800/80 dark:text-amber-200/70">
+                  {inv.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeInvite(inv.email)}
+                  aria-label={`Remove invite for ${inv.email}`}
+                  className="hover:bg-amber-500/20 inline-flex size-4 items-center justify-center rounded-full transition-colors"
+                >
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    className="size-3"
+                    strokeWidth={2}
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="border-border/60 -mx-5 mt-2 border-t md:-mx-6">
         <button

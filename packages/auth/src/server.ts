@@ -135,7 +135,10 @@ export function createAuth(cookiePrefix: string) {
               .requestedRole
             const candidate = typeof requested === 'string' ? requested : ''
             const role = allowed.includes(candidate) ? candidate : 'attendee'
-            return { data: { ...user, role } }
+            // Vendors must be approved by an admin before they can be assigned
+            // to events. Other roles bypass this gate.
+            const vendorApprovalStatus = role === 'vendor' ? 'pending' : null
+            return { data: { ...user, role, vendorApprovalStatus } }
           },
           after: async (user) => {
             // Fire and forget — a failing welcome email must not block signup.

@@ -1,17 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  Calendar03Icon,
-  CheckmarkCircle02Icon,
-  Ticket01Icon,
-  Money01Icon,
-  PlusSignIcon,
-} from '@hugeicons/core-free-icons'
+import { PlusSignIcon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@ticketur/ui/components/button'
 
-import { StatCard } from '@/components/dashboard/stat-card'
+import { OverviewStats } from '@/components/dashboard/overview-stats'
 import { TopEventsTable } from '@/components/dashboard/top-events-table'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 
@@ -44,32 +38,7 @@ export default function OrgDashboardPage() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total Events"
-          value="42"
-          icon={Calendar03Icon}
-          tone="purple"
-        />
-        <StatCard
-          label="Published Events"
-          value="12"
-          icon={CheckmarkCircle02Icon}
-          tone="green"
-        />
-        <StatCard
-          label="Total Tickets Sold"
-          value="2,845"
-          icon={Ticket01Icon}
-          tone="blue"
-        />
-        <StatCard
-          label="Total Revenue"
-          value="₦998,845"
-          icon={Money01Icon}
-          tone="orange"
-        />
-      </div>
+      <OverviewStats />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

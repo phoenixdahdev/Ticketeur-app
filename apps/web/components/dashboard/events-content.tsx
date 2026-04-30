@@ -2,7 +2,9 @@
 
 import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
+import { toast } from 'sonner'
 import {
   parseAsInteger,
   parseAsString,
@@ -26,16 +28,16 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
 
+import { useTRPC } from '@/lib/trpc'
 import {
-  ORG_EVENTS,
   EVENTS_PAGE_SIZE,
   STATUS_LABEL,
   STATUS_TONE,
-  type OrgEvent,
   type EventStatus,
 } from '@/lib/org-events'
+import { initialsFromTitle, formatEventDate } from '@/lib/event-display'
 
-const TAB_VALUES = ['all', 'upcoming', 'in-review', 'drafts', 'archived'] as const
+const TAB_VALUES = ['all', 'upcoming', 'in-review', 'draft', 'archived'] as const
 type TabValue = (typeof TAB_VALUES)[number]
 
 const SORT_FIELDS = ['name', 'date', 'location', 'status', 'sales'] as const
@@ -48,43 +50,18 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'upcoming', label: 'Upcoming' },
   { value: 'in-review', label: 'In Review' },
-  { value: 'drafts', label: 'Drafts' },
+  { value: 'draft', label: 'Drafts' },
   { value: 'archived', label: 'Archived' },
 ]
-
-const STATUS_ORDER: Record<EventStatus, number> = {
-  upcoming: 0,
-  'in-review': 1,
-  draft: 2,
-  archived: 3,
-}
-
-function tabMatches(tab: TabValue, status: EventStatus): boolean {
-  if (tab === 'all') return true
-  if (tab === 'drafts') return status === 'draft'
-  return tab === status
-}
-
-function compareEvents(a: OrgEvent, b: OrgEvent, field: SortField): number {
-  switch (field) {
-    case 'name':
-      return a.name.localeCompare(b.name)
-    case 'date':
-      return a.dateMs - b.dateMs
-    case 'location':
-      return a.location.localeCompare(b.location)
-    case 'status':
-      return STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-    case 'sales':
-      return a.sold - b.sold
-  }
-}
 
 function formatNumber(n: number) {
   return n.toLocaleString('en-US')
 }
 
 export function EventsContent() {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
   const [params, setParams] = useQueryStates(
     {
       tab: parseAsStringLiteral(TAB_VALUES).withDefault('all'),
@@ -94,6 +71,47 @@ export function EventsContent() {
       page: parseAsInteger.withDefault(1),
     },
     { history: 'replace', clearOnDefault: true }
+  )
+
+  const listQuery = useQuery(
+    trpc.org.events.list.queryOptions({
+      tab: params.tab,
+      q: params.q,
+      sort: params.sort,
+      dir: params.dir,
+      page: params.page,
+      pageSize: EVENTS_PAGE_SIZE,
+    })
+  )
+
+  const archiveMutation = useMutation(
+    trpc.org.events.archive.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event archived')
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+      },
+      onError: (e) => toast.error('Could not archive', { description: e.message }),
+    })
+  )
+
+  const deleteMutation = useMutation(
+    trpc.org.events.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event deleted')
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+      },
+      onError: (e) => toast.error('Could not delete', { description: e.message }),
+    })
   )
 
   const handleSort = useCallback(
@@ -110,29 +128,11 @@ export function EventsContent() {
     [setParams]
   )
 
-  const { rows, total, totalPages, current } = useMemo(() => {
-    const needle = params.q.trim().toLowerCase()
-    let list = ORG_EVENTS.filter((ev) => tabMatches(params.tab, ev.status))
-    if (needle) {
-      list = list.filter(
-        (ev) =>
-          ev.name.toLowerCase().includes(needle) ||
-          ev.location.toLowerCase().includes(needle)
-      )
-    }
-    const dirMul = params.dir === 'asc' ? 1 : -1
-    list = [...list].sort((a, b) => compareEvents(a, b, params.sort) * dirMul)
-    const totalCount = list.length
-    const pages = Math.max(1, Math.ceil(totalCount / EVENTS_PAGE_SIZE))
-    const safePage = Math.min(Math.max(params.page, 1), pages)
-    const start = (safePage - 1) * EVENTS_PAGE_SIZE
-    return {
-      rows: list.slice(start, start + EVENTS_PAGE_SIZE),
-      total: totalCount,
-      totalPages: pages,
-      current: safePage,
-    }
-  }, [params.tab, params.q, params.sort, params.dir, params.page])
+  const data = listQuery.data
+  const rows = data?.rows ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / EVENTS_PAGE_SIZE))
+  const current = Math.min(Math.max(params.page, 1), totalPages)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
@@ -263,16 +263,43 @@ export function EventsContent() {
                 </tr>
               </thead>
               <tbody className="divide-border/60 divide-y">
-                {rows.length === 0 ? (
+                {listQuery.isLoading ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
                       <p className="text-muted-foreground text-sm">
-                        No events match your filters.
+                        Loading events…
+                      </p>
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-16 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        {params.q || params.tab !== 'all'
+                          ? 'No events match your filters.'
+                          : 'No events yet — create your first one.'}
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  rows.map((ev) => <EventRow key={ev.id} ev={ev} />)
+                  rows.map((ev) => (
+                    <EventRow
+                      key={ev.id}
+                      ev={ev}
+                      onArchive={() =>
+                        archiveMutation.mutate({ id: ev.id })
+                      }
+                      onDelete={() => {
+                        if (
+                          confirm(
+                            `Delete "${ev.title}"? This cannot be undone.`
+                          )
+                        ) {
+                          deleteMutation.mutate({ id: ev.id })
+                        }
+                      }}
+                    />
+                  ))
                 )}
               </tbody>
             </table>
@@ -328,7 +355,25 @@ function SortableHeader({
   )
 }
 
-function EventRow({ ev }: { ev: OrgEvent }) {
+type EventRowData = {
+  id: string
+  title: string
+  eventDate: string
+  location: string
+  status: EventStatus
+  sold: number
+  total: number
+}
+
+function EventRow({
+  ev,
+  onArchive,
+  onDelete,
+}: {
+  ev: EventRowData
+  onArchive: () => void
+  onDelete: () => void
+}) {
   const detailHref = `/org/events/${ev.id}`
   const pct =
     ev.total > 0 ? Math.min(100, Math.round((ev.sold / ev.total) * 100)) : 0
@@ -338,13 +383,13 @@ function EventRow({ ev }: { ev: OrgEvent }) {
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-            {ev.initials}
+            {initialsFromTitle(ev.title)}
           </div>
-          <span className="text-foreground font-semibold">{ev.name}</span>
+          <span className="text-foreground font-semibold">{ev.title}</span>
         </div>
       </td>
       <td className="text-foreground px-5 py-4 whitespace-nowrap">
-        {ev.date}
+        {formatEventDate(ev.eventDate)}
       </td>
       <td className="text-foreground px-5 py-4 whitespace-nowrap">
         {ev.location}
@@ -376,7 +421,12 @@ function EventRow({ ev }: { ev: OrgEvent }) {
         </div>
       </td>
       <td className="px-5 py-4">
-        <RowActions status={ev.status} detailHref={detailHref} />
+        <RowActions
+          status={ev.status}
+          detailHref={detailHref}
+          onArchive={onArchive}
+          onDelete={onDelete}
+        />
       </td>
     </tr>
   )
@@ -385,9 +435,13 @@ function EventRow({ ev }: { ev: OrgEvent }) {
 function RowActions({
   status,
   detailHref,
+  onArchive,
+  onDelete,
 }: {
   status: EventStatus
   detailHref: string
+  onArchive: () => void
+  onDelete: () => void
 }) {
   if (status === 'draft') {
     return (
@@ -398,7 +452,12 @@ function RowActions({
           icon={Edit02Icon}
           tone="primary"
         />
-        <IconAction label="Delete draft" icon={Delete02Icon} tone="danger" />
+        <IconAction
+          label="Delete draft"
+          icon={Delete02Icon}
+          tone="danger"
+          onClick={onDelete}
+        />
       </div>
     )
   }
@@ -411,17 +470,32 @@ function RowActions({
           icon={ViewIcon}
           tone="primary"
         />
-        <IconAction label="Delete event" icon={Delete02Icon} tone="danger" />
+        <IconAction
+          label="Delete event"
+          icon={Delete02Icon}
+          tone="danger"
+          onClick={onDelete}
+        />
       </div>
     )
   }
   return (
-    <IconAction
-      href={detailHref}
-      label="View event"
-      icon={ViewIcon}
-      tone="primary"
-    />
+    <div className="flex items-center gap-1">
+      <IconAction
+        href={detailHref}
+        label="View event"
+        icon={ViewIcon}
+        tone="primary"
+      />
+      {status === 'upcoming' ? (
+        <IconAction
+          label="Archive event"
+          icon={Delete02Icon}
+          tone="danger"
+          onClick={onArchive}
+        />
+      ) : null}
+    </div>
   )
 }
 
@@ -430,11 +504,13 @@ function IconAction({
   label,
   tone,
   href,
+  onClick,
 }: {
   icon: Parameters<typeof HugeiconsIcon>[0]['icon']
   label: string
   tone: 'primary' | 'danger'
   href?: string
+  onClick?: () => void
 }) {
   const className = cn(
     'focus-visible:ring-primary/40 inline-flex size-8 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2',
@@ -450,7 +526,12 @@ function IconAction({
     )
   }
   return (
-    <button type="button" aria-label={label} className={className}>
+    <button
+      type="button"
+      aria-label={label}
+      className={className}
+      onClick={onClick}
+    >
       <HugeiconsIcon icon={icon} className="size-4" strokeWidth={1.8} />
     </button>
   )
