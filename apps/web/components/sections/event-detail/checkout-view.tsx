@@ -16,11 +16,13 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
 
+import { calculateFeeMinor } from '@ticketur/api/lib/fees'
+
 import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 import { useTRPC } from '@/lib/trpc'
+import { useSession } from '@/lib/auth-client'
 
-const SERVICE_FEE = 200
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function CheckoutView({
@@ -35,6 +37,8 @@ export function CheckoutView({
   onBack: () => void
 }) {
   const trpc = useTRPC()
+  const session = useSession()
+  const sessionUser = session.data?.user ?? null
   const [form, setForm] = useState({ name: '', email: '', phone: '' })
   const [errors, setErrors] = useState<{
     name?: string
@@ -48,8 +52,12 @@ export function CheckoutView({
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
   )
+  // Compute the fee through the same helper the server uses, so the shown
+  // total always matches what's charged. Helper works in minor units, so
+  // bridge in/out by multiplying/dividing by 100.
+  const serviceFee = calculateFeeMinor(subtotal * 100) / 100
   const isFree = subtotal === 0 && selected.length > 0
-  const total = isFree ? 0 : subtotal + SERVICE_FEE
+  const total = subtotal + serviceFee
 
   const start = useMutation(
     trpc.public.checkout.start.mutationOptions({
@@ -70,6 +78,16 @@ export function CheckoutView({
       },
     })
   )
+
+  function fillFromSession() {
+    if (!sessionUser) return
+    setForm((f) => ({
+      ...f,
+      name: sessionUser.name ?? f.name,
+      email: sessionUser.email ?? f.email,
+    }))
+    setErrors({})
+  }
 
   function validate() {
     const e: typeof errors = {}
@@ -132,15 +150,26 @@ export function CheckoutView({
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-5 md:p-6"
           >
-            <div className="flex items-center gap-2">
-              <HugeiconsIcon
-                icon={UserIcon}
-                className="text-primary size-5"
-                strokeWidth={1.8}
-              />
-              <h2 className="font-heading text-foreground text-lg font-semibold">
-                Purchaser Information
-              </h2>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={UserIcon}
+                  className="text-primary size-5"
+                  strokeWidth={1.8}
+                />
+                <h2 className="font-heading text-foreground text-lg font-semibold">
+                  Purchaser Information
+                </h2>
+              </div>
+              {sessionUser ? (
+                <button
+                  type="button"
+                  onClick={fillFromSession}
+                  className="text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/15 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+                >
+                  Use my details
+                </button>
+              ) : null}
             </div>
 
             <Field label="Full Name" htmlFor="ck-name" error={errors.name}>
@@ -288,10 +317,10 @@ export function CheckoutView({
 
           <div className="border-border flex flex-col gap-2 border-t pt-4">
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
-            {!isFree ? (
+            {serviceFee > 0 ? (
               <Row
                 label="Service Fee"
-                value={`₦${subtotal > 0 ? SERVICE_FEE.toLocaleString() : 0}.00`}
+                value={`₦${serviceFee.toLocaleString()}.00`}
               />
             ) : null}
           </div>
