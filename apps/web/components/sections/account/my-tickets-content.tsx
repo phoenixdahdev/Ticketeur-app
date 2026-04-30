@@ -122,13 +122,7 @@ function Group({
   )
 }
 
-type OrderRow = NonNullable<
-  Awaited<
-    ReturnType<
-      ReturnType<typeof useTRPC>['account']['tickets']['list']['queryOptions']
-    >['queryFn']
-  >
->[number]
+type OrderRow = RouterOutputs['account']['tickets']['list'][number]
 
 function TicketRow({ order }: { order: OrderRow }) {
   const standing = eventStanding(order.event.eventDate)
