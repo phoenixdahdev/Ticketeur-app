@@ -21,6 +21,8 @@ import { formatNaira, formatEventDate } from '@/lib/event-display'
 import { EventHero } from '@/components/sections/event-detail/event-hero'
 import { EventTabs } from '@/components/sections/event-detail/event-tabs'
 import { SimilarEvents } from '@/components/sections/event-detail/similar-events'
+import { EventDetailSkeleton } from '@/components/sections/event-detail/event-detail-skeleton'
+import type { EventVendor } from '@/components/sections/event-detail/vendors-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 
 const FEATURE_ICONS: Record<string, IconSvgElement> = {
@@ -50,11 +52,7 @@ export function EventDetailContent({ id }: { id: string }) {
   )
 
   if (isLoading) {
-    return (
-      <div className="mx-auto flex max-w-[1440px] items-center justify-center px-5 py-20 md:px-10 md:py-28">
-        <p className="text-muted-foreground text-sm">Loading event…</p>
-      </div>
-    )
+    return <EventDetailSkeleton />
   }
   if (!data) {
     notFound()
@@ -79,11 +77,21 @@ export function EventDetailContent({ id }: { id: string }) {
     buyHref: `/events/${event.id}?tab=tickets`,
   }
 
+  const vendors: EventVendor[] = data.vendors.map((v) => ({
+    id: v.id,
+    vendorId: v.vendorId,
+    businessName: v.businessName,
+    businessCategory: v.businessCategory,
+    businessDescription: v.businessDescription,
+    tagline: v.tagline,
+    image: v.image,
+  }))
+
   return (
     <>
       <EventHero event={detail} />
-      <EventTabs event={detail} />
-      <SimilarEvents />
+      <EventTabs event={detail} vendors={vendors} />
+      <SimilarEvents eventId={event.id} />
     </>
   )
 }

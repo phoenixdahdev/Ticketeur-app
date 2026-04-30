@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ilike, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, ilike, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
@@ -89,6 +89,41 @@ export const publicEventsRouter = createTRPCRouter({
 
     return rows
   }),
+
+  // Other upcoming events to surface on the detail page. Excludes the
+  // current event; future iteration could match on category / location.
+  similar: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const today = new Date().toISOString().slice(0, 10)
+      const minPriceExpr = sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
+        'minPrice'
+      )
+
+      const rows = await ctx.db
+        .select({
+          id: events.id,
+          title: events.title,
+          eventDate: events.eventDate,
+          location: events.location,
+          bannerUrl: events.bannerUrl,
+          minPrice: minPriceExpr,
+        })
+        .from(events)
+        .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
+        .where(
+          and(
+            ne(events.id, input.id),
+            eq(events.status, 'upcoming'),
+            gte(events.eventDate, today)
+          )
+        )
+        .groupBy(events.id)
+        .orderBy(asc(events.eventDate))
+        .limit(3)
+
+      return rows
+    }),
 
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
