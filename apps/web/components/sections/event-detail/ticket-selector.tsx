@@ -16,10 +16,7 @@ import type { IconSvgElement } from '@hugeicons/react'
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 
-import type {
-  TicketTier,
-  TicketTierId,
-} from '@/components/sections/event-detail/tickets-tab'
+import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 
 const STATUS_STYLES: Record<TicketTier['status'], string> = {
@@ -37,17 +34,20 @@ const STATUS_LABEL: Record<TicketTier['status'], string> = {
   limited: 'Limited',
 }
 
-const TIER_ICON: Record<TicketTierId, IconSvgElement> = {
-  early: Ticket01Icon,
-  general: Ticket01Icon,
-  vip: StarIcon,
+function tierIconFor(name: string): IconSvgElement {
+  const lower = name.toLowerCase()
+  if (lower.includes('vip') || lower.includes('premium')) return StarIcon
+  return Ticket01Icon
 }
 
-const TIER_ICON_BG: Record<TicketTierId, string> = {
-  early:
-    'bg-[#f1f1f1] text-[#9a9a9a] dark:bg-white/10 dark:text-muted-foreground',
-  general: 'bg-[#f1ebff] text-primary dark:bg-primary/15',
-  vip: 'bg-[#fef3c7] text-[#b45309] dark:bg-[#b45309]/20',
+function tierIconBgFor(status: TicketTier['status']): string {
+  if (status === 'limited') {
+    return 'bg-[#fef3c7] text-[#b45309] dark:bg-[#b45309]/20'
+  }
+  if (status === 'sold-out') {
+    return 'bg-[#f1f1f1] text-[#9a9a9a] dark:bg-white/10 dark:text-muted-foreground'
+  }
+  return 'bg-[#f1ebff] text-primary dark:bg-primary/15'
 }
 
 export function TicketSelector({
@@ -59,8 +59,8 @@ export function TicketSelector({
 }: {
   event: EventDetailData
   tiers: TicketTier[]
-  quantities: Record<TicketTierId, number>
-  onQuantityChange: (id: TicketTierId, qty: number) => void
+  quantities: Record<string, number>
+  onQuantityChange: (id: string, qty: number) => void
   onCheckout: () => void
 }) {
   const totalQty = tiers.reduce((sum, t) => sum + (quantities[t.id] ?? 0), 0)
@@ -104,11 +104,11 @@ export function TicketSelector({
               <div
                 className={cn(
                   'flex size-14 shrink-0 items-center justify-center rounded-lg',
-                  TIER_ICON_BG[tier.id]
+                  tierIconBgFor(tier.status)
                 )}
               >
                 <HugeiconsIcon
-                  icon={TIER_ICON[tier.id]}
+                  icon={tierIconFor(tier.name)}
                   className="size-6"
                   strokeWidth={1.8}
                 />
@@ -128,7 +128,7 @@ export function TicketSelector({
                   <span className="font-heading text-primary text-lg font-bold md:text-xl">
                     {tier.priceDisplay}
                   </span>
-                  {tier.remaining ? (
+                  {tier.status === 'limited' && tier.remaining > 0 ? (
                     <span className="text-muted-foreground text-xs">
                       Only {tier.remaining} left
                     </span>
@@ -140,6 +140,7 @@ export function TicketSelector({
                 value={qty}
                 onChange={(v) => onQuantityChange(tier.id, v)}
                 disabled={isSoldOut}
+                max={tier.remaining}
               />
             </motion.div>
           )
@@ -230,11 +231,14 @@ function QuantityStepper({
   value,
   onChange,
   disabled,
+  max,
 }: {
   value: number
   onChange: (v: number) => void
   disabled?: boolean
+  max?: number
 }) {
+  const atMax = typeof max === 'number' && value >= max
   return (
     <div className="flex items-center gap-3 self-end md:self-center">
       <StepButton
@@ -253,8 +257,8 @@ function QuantityStepper({
         {value}
       </span>
       <StepButton
-        ariaLabel="Increase quantity"
-        disabled={disabled}
+        ariaLabel={atMax ? 'Maximum reached' : 'Increase quantity'}
+        disabled={disabled || atMax}
         onClick={() => onChange(value + 1)}
       >
         <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
