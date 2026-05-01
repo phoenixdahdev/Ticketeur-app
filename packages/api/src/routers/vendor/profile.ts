@@ -61,6 +61,24 @@ export const vendorProfileRouter = createTRPCRouter({
   update: vendorProcedure
     .input(profileInput)
     .mutation(async ({ ctx, input }) => {
+      // Read current approval state so we don't bump approved vendors back
+      // to pending on minor edits.
+      const [current] = await ctx.db
+        .select({ approvalStatus: user.vendorApprovalStatus })
+        .from(user)
+        .where(eq(user.id, ctx.session.user.id))
+        .limit(1)
+
+      // Saving the profile is the explicit "submit for review" step.
+      // - null  → first save, mark pending and surface in admin queue
+      // - rejected → resubmit after fixes, mark pending again
+      // - pending → still pending, no-op
+      // - approved → leave as approved (small edits don't reset)
+      const nextApprovalStatus =
+        current?.approvalStatus === 'approved'
+          ? 'approved'
+          : ('pending' as const)
+
       await ctx.db
         .update(user)
         .set({
@@ -77,11 +95,12 @@ export const vendorProfileRouter = createTRPCRouter({
           vendorFocus: input.focus,
           vendorExperience: input.experience,
           vendorShowcaseImages: input.showcaseImages,
+          vendorApprovalStatus: nextApprovalStatus,
           updatedAt: new Date(),
         })
         .where(eq(user.id, ctx.session.user.id))
 
-      return { ok: true }
+      return { ok: true, approvalStatus: nextApprovalStatus }
     }),
 })
 

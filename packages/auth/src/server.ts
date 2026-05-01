@@ -136,9 +136,11 @@ export function createAuth(cookiePrefix: string) {
             const candidate = typeof requested === 'string' ? requested : ''
             const role = allowed.includes(candidate) ? candidate : 'attendee'
             // Vendors must be approved by an admin before they can be assigned
-            // to events. Other roles bypass this gate.
-            const vendorApprovalStatus = role === 'vendor' ? 'pending' : null
-            return { data: { ...user, role, vendorApprovalStatus } }
+            // to events. Approval status starts as null ("profile not yet
+            // submitted") — it flips to 'pending' the first time they save
+            // their profile via vendor.profile.update, which is when the
+            // admin moderation queue should pick them up.
+            return { data: { ...user, role, vendorApprovalStatus: null } }
           },
           after: async (user) => {
             // Fire and forget — a failing welcome email must not block signup.
