@@ -35,6 +35,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { formatShortDate as formatJoined } from '@/lib/date'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
 const ROLE_VALUES = ['all', 'attendee', 'organizer', 'vendor'] as const
 type RoleTab = (typeof ROLE_VALUES)[number]
@@ -179,36 +180,63 @@ export function UsersContent() {
     reactivateMutation.isPending ||
     removeMutation.isPending
 
-  function handleAction(
+  const dialog = useActionDialog()
+
+  async function handleAction(
     action: 'suspend' | 'disable' | 'reactivate' | 'remove',
     target: UserRow
   ) {
     if (isPending) return
 
     if (action === 'suspend') {
-      const reason =
-        prompt(`Reason for suspending ${target.name}? (optional)`) ?? ''
+      const reason = await dialog.prompt({
+        title: `Suspend ${target.name}`,
+        description:
+          'They will be signed out and emailed the reason. Suspensions expire after 30 days.',
+        inputLabel: 'Reason (optional)',
+        placeholder: 'e.g. Multiple policy violations',
+        confirmLabel: 'Suspend',
+        tone: 'warning',
+      })
+      if (reason === null) return
       suspendMutation.mutate({ id: target.id, reason })
       return
     }
     if (action === 'disable') {
-      const reason =
-        prompt(`Reason for disabling ${target.name}? (optional)`) ?? ''
+      const reason = await dialog.prompt({
+        title: `Disable ${target.name}`,
+        description:
+          'Their account is permanently locked. They will be signed out and emailed the reason.',
+        inputLabel: 'Reason (optional)',
+        placeholder: 'e.g. Repeated abuse',
+        confirmLabel: 'Disable',
+        tone: 'danger',
+      })
+      if (reason === null) return
       disableMutation.mutate({ id: target.id, reason })
       return
     }
     if (action === 'reactivate') {
+      const ok = await dialog.confirm({
+        title: `Reactivate ${target.name}?`,
+        description:
+          'Their ban will be cleared and they will be emailed that they can sign in again.',
+        confirmLabel: 'Reactivate',
+        tone: 'success',
+      })
+      if (!ok) return
       reactivateMutation.mutate({ id: target.id })
       return
     }
     // remove
-    if (
-      !confirm(
-        `Permanently remove ${target.name}? Their data and tickets will be deleted.`
-      )
-    ) {
-      return
-    }
+    const ok = await dialog.confirm({
+      title: `Remove ${target.name}?`,
+      description:
+        'This permanently deletes their account, sessions, and tickets. They will be emailed a removal notice.',
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    })
+    if (!ok) return
     removeMutation.mutate({ id: target.id })
   }
 

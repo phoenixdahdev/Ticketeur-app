@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@ticketur/ui/components/button'
 
 import { useTRPC } from '@/lib/trpc'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
 type Props = {
   kind: 'vendor' | 'event'
@@ -114,13 +115,38 @@ export function ApproveRejectActions({
     approveEventMut.isPending ||
     rejectEventMut.isPending
 
-  function handleApprove() {
+  const dialog = useActionDialog()
+
+  async function handleApprove() {
+    const ok = await dialog.confirm({
+      title:
+        kind === 'vendor' ? `Approve ${name}?` : `Approve "${name}"?`,
+      description:
+        kind === 'vendor'
+          ? 'They will be notified by email and become bookable for events.'
+          : 'It will go live and the organizer will be notified by email.',
+      confirmLabel: 'Approve',
+      tone: 'success',
+    })
+    if (!ok) return
     if (kind === 'vendor') approveVendorMut.mutate({ id })
     else approveEventMut.mutate({ id })
   }
 
-  function handleReject() {
-    const reason = prompt(`Reason for rejecting ${name}? (optional)`) ?? ''
+  async function handleReject() {
+    const reason = await dialog.prompt({
+      title:
+        kind === 'vendor' ? `Reject ${name}?` : `Reject "${name}"?`,
+      description:
+        kind === 'vendor'
+          ? 'They will be emailed the reason and can update + resubmit their profile.'
+          : 'The event moves back to drafts and the organizer gets emailed the reason.',
+      inputLabel: 'Reason (optional)',
+      placeholder: 'What needs to change before this can be approved?',
+      confirmLabel: 'Reject',
+      tone: 'danger',
+    })
+    if (reason === null) return
     if (kind === 'vendor') rejectVendorMut.mutate({ id, reason })
     else rejectEventMut.mutate({ id, reason })
   }

@@ -17,6 +17,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { toDate } from '@/lib/date'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
 type QueueItem = RouterOutputs['admin']['moderation']['queue'][number]
 
@@ -137,29 +138,60 @@ export function ModerationQueue() {
     rejectEventMut.isPending ||
     dismissFlagMut.isPending
 
-  function handleApprove(item: QueueItem) {
+  const dialog = useActionDialog()
+
+  async function handleApprove(item: QueueItem) {
     if (busy) return
+    if (item.kind === 'report') {
+      router.push(item.href)
+      return
+    }
+    const ok = await dialog.confirm({
+      title:
+        item.kind === 'vendor'
+          ? `Approve ${item.title}?`
+          : `Approve "${item.title}"?`,
+      description:
+        item.kind === 'vendor'
+          ? 'They will be notified by email and become bookable for events.'
+          : 'It will go live and the organizer will be notified by email.',
+      confirmLabel: 'Approve',
+      tone: 'success',
+    })
+    if (!ok) return
     if (item.kind === 'vendor') approveVendorMut.mutate({ id: item.id })
-    else if (item.kind === 'event') approveEventMut.mutate({ id: item.id })
-    else router.push(item.href)
+    else approveEventMut.mutate({ id: item.id })
   }
 
-  function handleReject(item: QueueItem) {
+  async function handleReject(item: QueueItem) {
     if (busy) return
-    if (item.kind === 'vendor') {
-      const reason =
-        prompt(`Reason for rejecting ${item.title}? (optional)`) ?? ''
-      rejectVendorMut.mutate({ id: item.id, reason })
+    if (item.kind === 'report') {
+      const ok = await dialog.confirm({
+        title: 'Dismiss this report?',
+        description: 'It will be marked resolved with no action taken.',
+        confirmLabel: 'Dismiss',
+      })
+      if (!ok) return
+      dismissFlagMut.mutate({ id: item.id })
       return
     }
-    if (item.kind === 'event') {
-      const reason =
-        prompt(`Reason for rejecting ${item.title}? (optional)`) ?? ''
-      rejectEventMut.mutate({ id: item.id, reason })
-      return
-    }
-    // report — dismiss
-    dismissFlagMut.mutate({ id: item.id })
+    const reason = await dialog.prompt({
+      title:
+        item.kind === 'vendor'
+          ? `Reject ${item.title}?`
+          : `Reject "${item.title}"?`,
+      description:
+        item.kind === 'vendor'
+          ? 'They will be emailed the reason and can update + resubmit their profile.'
+          : 'The event moves back to drafts and the organizer gets emailed the reason.',
+      inputLabel: 'Reason (optional)',
+      placeholder: 'What needs to change before this can be approved?',
+      confirmLabel: 'Reject',
+      tone: 'danger',
+    })
+    if (reason === null) return
+    if (item.kind === 'vendor') rejectVendorMut.mutate({ id: item.id, reason })
+    else rejectEventMut.mutate({ id: item.id, reason })
   }
 
   const items = data ?? []

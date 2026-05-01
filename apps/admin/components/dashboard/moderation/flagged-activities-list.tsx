@@ -8,6 +8,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { formatMonthDay } from '@/lib/date'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
 type FlaggedActivity =
   RouterOutputs['admin']['moderation']['flaggedActivities'][number]
@@ -74,8 +75,9 @@ export function FlaggedActivitiesList({
   )
 
   const busy = dismissMutation.isPending || suspendMutation.isPending
+  const dialog = useActionDialog()
 
-  function handleSuspend(row: FlaggedActivity) {
+  async function handleSuspend(row: FlaggedActivity) {
     if (busy) return
     if (row.subjectType === 'event') {
       toast(
@@ -83,13 +85,27 @@ export function FlaggedActivitiesList({
       )
       return
     }
-    const reason =
-      prompt(`Suspension reason? Leave blank to use the report reason.`) ?? ''
+    const reason = await dialog.prompt({
+      title: `Suspend reported ${row.subjectType}?`,
+      description:
+        'They will be signed out and emailed the reason. Leave blank to use the report reason.',
+      inputLabel: 'Reason (optional)',
+      placeholder: row.reason,
+      confirmLabel: 'Suspend',
+      tone: 'danger',
+    })
+    if (reason === null) return
     suspendMutation.mutate({ id: row.id, reason })
   }
 
-  function handleDismiss(row: FlaggedActivity) {
+  async function handleDismiss(row: FlaggedActivity) {
     if (busy) return
+    const ok = await dialog.confirm({
+      title: 'Dismiss this report?',
+      description: 'It will be marked resolved with no action taken.',
+      confirmLabel: 'Dismiss',
+    })
+    if (!ok) return
     dismissMutation.mutate({ id: row.id })
   }
 

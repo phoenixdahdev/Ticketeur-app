@@ -1,4 +1,5 @@
 import { AdminShell } from '@/components/dashboard/admin-shell'
+import { ActionDialogPortal } from '@/components/dashboard/action-dialog/portal'
 import { getSession } from '@/lib/auth'
 
 export default async function DashboardLayout({
@@ -16,6 +17,7 @@ export default async function DashboardLayout({
       }}
     >
       {children}
+      <ActionDialogPortal />
     </AdminShell>
   )
 }
