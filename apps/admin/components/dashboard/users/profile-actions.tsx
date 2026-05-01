@@ -4,13 +4,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { Button } from '@ticketur/ui/components/button'
+import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
+
+type UserStatus = RouterOutputs['admin']['users']['byId']['status']
 
 type Props = {
   userId: string
   userName: string
-  status: 'active' | 'suspended' | 'disabled'
+  status: UserStatus
 }
 
 export function ProfileActions({ userId, userName, status }: Props) {
@@ -87,28 +91,57 @@ export function ProfileActions({ userId, userName, status }: Props) {
     reactivateMutation.isPending ||
     removeMutation.isPending
 
-  function handleSuspend() {
-    const reason = prompt(`Reason for suspending ${userName}? (optional)`) ?? ''
+  const dialog = useActionDialog()
+
+  async function handleSuspend() {
+    const reason = await dialog.prompt({
+      title: `Suspend ${userName}`,
+      description:
+        'They will be signed out and emailed the reason. Suspensions expire after 30 days.',
+      inputLabel: 'Reason (optional)',
+      placeholder: 'e.g. Multiple policy violations',
+      confirmLabel: 'Suspend',
+      tone: 'warning',
+    })
+    if (reason === null) return
     suspendMutation.mutate({ id: userId, reason })
   }
 
-  function handleDisable() {
-    const reason = prompt(`Reason for disabling ${userName}? (optional)`) ?? ''
+  async function handleDisable() {
+    const reason = await dialog.prompt({
+      title: `Disable ${userName}`,
+      description:
+        'Their account is permanently locked. They will be signed out and emailed the reason.',
+      inputLabel: 'Reason (optional)',
+      placeholder: 'e.g. Repeated abuse',
+      confirmLabel: 'Disable',
+      tone: 'danger',
+    })
+    if (reason === null) return
     disableMutation.mutate({ id: userId, reason })
   }
 
-  function handleReactivate() {
+  async function handleReactivate() {
+    const ok = await dialog.confirm({
+      title: `Reactivate ${userName}?`,
+      description:
+        'Their ban will be cleared and they will be emailed that they can sign in again.',
+      confirmLabel: 'Reactivate',
+      tone: 'success',
+    })
+    if (!ok) return
     reactivateMutation.mutate({ id: userId })
   }
 
-  function handleRemove() {
-    if (
-      !confirm(
-        `Permanently remove ${userName}? Their data and tickets will be deleted.`
-      )
-    ) {
-      return
-    }
+  async function handleRemove() {
+    const ok = await dialog.confirm({
+      title: `Remove ${userName}?`,
+      description:
+        'This permanently deletes their account, sessions, and tickets. They will be emailed a removal notice.',
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    })
+    if (!ok) return
     removeMutation.mutate({ id: userId })
   }
 

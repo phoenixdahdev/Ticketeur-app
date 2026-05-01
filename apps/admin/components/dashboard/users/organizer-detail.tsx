@@ -9,6 +9,7 @@ import { cn } from '@ticketur/ui/lib/utils'
 import type { RouterOutputs } from '@ticketur/api'
 
 import { ProfileActions } from '@/components/dashboard/users/profile-actions'
+import { StatusPill } from '@/components/dashboard/users/status-pill'
 import { formatShortDate as formatDate } from '@/lib/date'
 
 type OrganizerDetail = Extract<
@@ -69,13 +70,7 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
                 />
               ) : null}
             </div>
-            <span className="text-emerald-600 text-xs font-semibold">
-              {user.status === 'active'
-                ? 'Active'
-                : user.status === 'suspended'
-                ? 'Suspended'
-                : 'Disabled'}
-            </span>
+            <StatusPill status={user.status} />
           </div>
 
           <div className="flex flex-1 flex-col items-center gap-3 md:items-start">

@@ -14,6 +14,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { formatShortDate as formatDate } from '@/lib/date'
+import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
 type PendingEvent =
   RouterOutputs['admin']['moderation']['pendingEvents'][number]
@@ -70,15 +71,33 @@ export function ModerationEventsTable({
   )
 
   const busy = approveMutation.isPending || rejectMutation.isPending
+  const dialog = useActionDialog()
 
-  function handleApprove(e: PendingEvent) {
+  async function handleApprove(e: PendingEvent) {
     if (busy) return
+    const ok = await dialog.confirm({
+      title: `Approve "${e.title}"?`,
+      description:
+        'It will go live and the organizer will be notified by email.',
+      confirmLabel: 'Approve',
+      tone: 'success',
+    })
+    if (!ok) return
     approveMutation.mutate({ id: e.id })
   }
 
-  function handleReject(e: PendingEvent) {
+  async function handleReject(e: PendingEvent) {
     if (busy) return
-    const reason = prompt(`Reason for rejecting ${e.title}? (optional)`) ?? ''
+    const reason = await dialog.prompt({
+      title: `Reject "${e.title}"?`,
+      description:
+        'The event moves back to drafts and the organizer gets emailed the reason.',
+      inputLabel: 'Reason (optional)',
+      placeholder: 'What needs to change before this can be approved?',
+      confirmLabel: 'Reject',
+      tone: 'danger',
+    })
+    if (reason === null) return
     rejectMutation.mutate({ id: e.id, reason })
   }
 
