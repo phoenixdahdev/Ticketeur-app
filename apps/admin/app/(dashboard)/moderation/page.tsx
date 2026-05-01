@@ -1,21 +1,12 @@
 import type { Metadata } from 'next'
 
 import { ModerationTabs } from '@/components/dashboard/moderation/moderation-tabs'
-import {
-  listPendingVendors,
-  listPendingEvents,
-  listFlaggedActivities,
-} from '@/lib/mock-moderation'
 
 export const metadata: Metadata = {
   title: 'Moderation',
 }
 
 export default function ModerationPage() {
-  const vendors = listPendingVendors()
-  const events = listPendingEvents()
-  const flagged = listFlaggedActivities()
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
       <header className="flex flex-col gap-1.5">
@@ -27,7 +18,7 @@ export default function ModerationPage() {
         </p>
       </header>
 
-      <ModerationTabs vendors={vendors} events={events} flagged={flagged} />
+      <ModerationTabs />
     </div>
   )
 }

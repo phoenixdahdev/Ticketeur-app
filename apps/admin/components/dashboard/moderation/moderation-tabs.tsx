@@ -1,18 +1,15 @@
 'use client'
 
 import { motion } from 'motion/react'
+import { useQuery } from '@tanstack/react-query'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
 
 import { cn } from '@ticketur/ui/lib/utils'
 
+import { useTRPC } from '@/lib/trpc'
 import { ModerationVendorsTable } from '@/components/dashboard/moderation/moderation-vendors-table'
 import { ModerationEventsTable } from '@/components/dashboard/moderation/moderation-events-table'
 import { FlaggedActivitiesList } from '@/components/dashboard/moderation/flagged-activities-list'
-import type {
-  PendingVendor,
-  PendingEvent,
-  FlaggedActivity,
-} from '@/lib/mock-moderation'
 
 const TABS = ['vendors', 'events', 'flagged'] as const
 type Tab = (typeof TABS)[number]
@@ -23,18 +20,28 @@ const TAB_LABELS: Record<Tab, string> = {
   flagged: 'Flagged Activities',
 }
 
-export function ModerationTabs({
-  vendors,
-  events,
-  flagged,
-}: {
-  vendors: PendingVendor[]
-  events: PendingEvent[]
-  flagged: FlaggedActivity[]
-}) {
+export function ModerationTabs() {
+  const trpc = useTRPC()
+
   const [tab, setTab] = useQueryState(
     'tab',
     parseAsStringLiteral(TABS).withDefault('vendors')
+  )
+
+  const vendorsQuery = useQuery(
+    trpc.admin.moderation.pendingVendors.queryOptions(undefined, {
+      enabled: tab === 'vendors',
+    })
+  )
+  const eventsQuery = useQuery(
+    trpc.admin.moderation.pendingEvents.queryOptions(undefined, {
+      enabled: tab === 'events',
+    })
+  )
+  const flaggedQuery = useQuery(
+    trpc.admin.moderation.flaggedActivities.queryOptions(undefined, {
+      enabled: tab === 'flagged',
+    })
   )
 
   return (
@@ -75,11 +82,20 @@ export function ModerationTabs({
 
       <div>
         {tab === 'vendors' ? (
-          <ModerationVendorsTable rows={vendors} />
+          <ModerationVendorsTable
+            rows={vendorsQuery.data ?? []}
+            loading={vendorsQuery.isLoading}
+          />
         ) : tab === 'events' ? (
-          <ModerationEventsTable rows={events} />
+          <ModerationEventsTable
+            rows={eventsQuery.data ?? []}
+            loading={eventsQuery.isLoading}
+          />
         ) : (
-          <FlaggedActivitiesList rows={flagged} />
+          <FlaggedActivitiesList
+            rows={flaggedQuery.data ?? []}
+            loading={flaggedQuery.isLoading}
+          />
         )}
       </div>
     </div>

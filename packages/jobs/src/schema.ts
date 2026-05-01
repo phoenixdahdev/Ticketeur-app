@@ -83,6 +83,27 @@ export const accountRemovedSchema = z.object({
   name: z.string(),
 })
 
+export const vendorApprovedSchema = z.object({
+  email: z.email(),
+  vendorName: z.string(),
+  businessName: z.string(),
+  profileUrl: z.url(),
+})
+
+export const vendorRejectedSchema = z.object({
+  email: z.email(),
+  vendorName: z.string(),
+  businessName: z.string(),
+  reason: z.string().default(''),
+})
+
+export const eventRejectedSchema = z.object({
+  email: z.email(),
+  organizerName: z.string(),
+  eventTitle: z.string(),
+  reason: z.string().default(''),
+})
+
 export type VerificationOtpPayload = z.infer<typeof verificationOtpSchema>
 export type PasswordResetPayload = z.infer<typeof passwordResetSchema>
 export type TwoFactorOtpPayload = z.infer<typeof twoFactorOtpSchema>
@@ -94,3 +115,6 @@ export type AccountSuspendedPayload = z.infer<typeof accountSuspendedSchema>
 export type AccountDisabledPayload = z.infer<typeof accountDisabledSchema>
 export type AccountReactivatedPayload = z.infer<typeof accountReactivatedSchema>
 export type AccountRemovedPayload = z.infer<typeof accountRemovedSchema>
+export type VendorApprovedPayload = z.infer<typeof vendorApprovedSchema>
+export type VendorRejectedPayload = z.infer<typeof vendorRejectedSchema>
+export type EventRejectedPayload = z.infer<typeof eventRejectedSchema>
