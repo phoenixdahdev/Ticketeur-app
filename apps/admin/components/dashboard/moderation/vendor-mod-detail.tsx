@@ -1,9 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import type { PendingVendor } from '@/lib/mock-moderation'
+import type { RouterOutputs } from '@ticketur/api'
+
 import { ApproveRejectActions } from '@/components/dashboard/moderation/approve-reject-actions'
 import { formatShortDate as formatDate } from '@/lib/date'
+
+type PendingVendor = RouterOutputs['admin']['moderation']['vendorById']
 
 export function VendorModDetail({ vendor }: { vendor: PendingVendor }) {
   return (
@@ -87,7 +90,11 @@ export function VendorModDetail({ vendor }: { vendor: PendingVendor }) {
         </div>
       </section>
 
-      <ApproveRejectActions />
+      <ApproveRejectActions
+        kind="vendor"
+        id={vendor.id}
+        name={vendor.name}
+      />
     </div>
   )
 }

@@ -10,6 +10,9 @@ export {
   accountDisabledSchema,
   accountReactivatedSchema,
   accountRemovedSchema,
+  vendorApprovedSchema,
+  vendorRejectedSchema,
+  eventRejectedSchema,
 } from './schema'
 export type {
   VerificationOtpPayload,
@@ -23,4 +26,7 @@ export type {
   AccountDisabledPayload,
   AccountReactivatedPayload,
   AccountRemovedPayload,
+  VendorApprovedPayload,
+  VendorRejectedPayload,
+  EventRejectedPayload,
 } from './schema'

@@ -1,25 +1,108 @@
 'use client'
 
-import { Button } from '@ticketur/ui/components/button'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
-import type { FlaggedActivity } from '@/lib/mock-moderation'
+import { Button } from '@ticketur/ui/components/button'
+import type { RouterOutputs } from '@ticketur/api'
+
+import { useTRPC } from '@/lib/trpc'
 import { formatMonthDay } from '@/lib/date'
 
-const SUBJECT_LABEL: Record<FlaggedActivity['subjectType'], string> = {
+type FlaggedActivity =
+  RouterOutputs['admin']['moderation']['flaggedActivities'][number]
+type SubjectType = FlaggedActivity['subjectType']
+
+const SUBJECT_LABEL: Record<SubjectType, string> = {
   vendor: 'VENDOR',
   organizer: 'ORGANIZER',
   attendee: 'ATTENDEE',
   event: 'EVENT',
 }
 
-const SUSPEND_LABEL: Record<FlaggedActivity['subjectType'], string> = {
+const SUSPEND_LABEL: Record<SubjectType, string> = {
   vendor: 'Suspend Vendor',
   organizer: 'Suspend Organizer',
   attendee: 'Suspend Attendee',
-  event: 'Suspend Event',
+  event: 'Reject Event',
 }
 
-export function FlaggedActivitiesList({ rows }: { rows: FlaggedActivity[] }) {
+export function FlaggedActivitiesList({
+  rows,
+  loading,
+}: {
+  rows: FlaggedActivity[]
+  loading: boolean
+}) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  function invalidate() {
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.flaggedActivities.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.stats.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.users.list.queryKey(),
+    })
+  }
+
+  const dismissMutation = useMutation(
+    trpc.admin.moderation.dismissFlag.mutationOptions({
+      onSuccess: () => {
+        toast.success('Report dismissed')
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not dismiss', { description: e.message }),
+    })
+  )
+
+  const suspendMutation = useMutation(
+    trpc.admin.moderation.suspendFromFlag.mutationOptions({
+      onSuccess: () => {
+        toast.success('Subject suspended', {
+          description: 'They have been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not suspend', { description: e.message }),
+    })
+  )
+
+  const busy = dismissMutation.isPending || suspendMutation.isPending
+
+  function handleSuspend(row: FlaggedActivity) {
+    if (busy) return
+    if (row.subjectType === 'event') {
+      toast(
+        'Event reports are handled via the Events tab — approve or reject the event there.'
+      )
+      return
+    }
+    const reason =
+      prompt(`Suspension reason? Leave blank to use the report reason.`) ?? ''
+    suspendMutation.mutate({ id: row.id, reason })
+  }
+
+  function handleDismiss(row: FlaggedActivity) {
+    if (busy) return
+    dismissMutation.mutate({ id: row.id })
+  }
+
+  if (loading) {
+    return (
+      <div className="border-border/60 bg-background flex min-h-40 items-center justify-center rounded-2xl border p-10">
+        <p className="text-muted-foreground text-sm">
+          Loading flagged activity…
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {rows.length === 0 ? (
@@ -50,11 +133,18 @@ export function FlaggedActivitiesList({ rows }: { rows: FlaggedActivity[] }) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button
                   type="button"
+                  disabled={busy}
+                  onClick={() => handleSuspend(row)}
                   className="bg-rose-500 text-white hover:bg-rose-600"
                 >
                   {SUSPEND_LABEL[row.subjectType]}
                 </Button>
-                <Button type="button" variant="outline">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => handleDismiss(row)}
+                >
                   Dismiss
                 </Button>
               </div>

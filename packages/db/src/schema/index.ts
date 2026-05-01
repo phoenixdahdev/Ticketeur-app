@@ -7,6 +7,7 @@ export {
   orders,
   tickets,
   activityLog,
+  reports,
   eventsRelations,
   ticketTiersRelations,
   eventVendorsRelations,
@@ -14,6 +15,7 @@ export {
   ordersRelations,
   ticketsRelations,
   activityLogRelations,
+  reportsRelations,
 } from './events'
 export type {
   EventStatus,
@@ -21,4 +23,6 @@ export type {
   ExternalVendorInviteStatus,
   OrderStatus,
   ActivityType,
+  ReportSubjectType,
+  ReportStatus,
 } from './events'

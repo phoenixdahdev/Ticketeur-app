@@ -304,3 +304,39 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
     references: [events.id],
   }),
 }))
+
+// ─── Reports / Moderation Flags ───────────────────────────────────────────
+
+export type ReportSubjectType = 'vendor' | 'organizer' | 'attendee' | 'event'
+export type ReportStatus = 'open' | 'dismissed' | 'actioned'
+
+export const reports = pgTable(
+  'reports',
+  {
+    id: text('id').primaryKey(),
+    subjectType: text('subject_type').$type<ReportSubjectType>().notNull(),
+    // Points to user.id for {vendor, organizer, attendee} or events.id for event.
+    // Not declared as a real FK because it's polymorphic.
+    subjectId: text('subject_id').notNull(),
+    reason: text('reason').notNull(),
+    detail: text('detail').notNull().default(''),
+    reportedBy: text('reported_by').references(() => user.id, {
+      onDelete: 'set null',
+      onUpdate: 'cascade',
+    }),
+    status: text('status').$type<ReportStatus>().notNull().default('open'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    resolvedAt: timestamp('resolved_at'),
+  },
+  (t) => [
+    index('reports_status_idx').on(t.status),
+    index('reports_subject_idx').on(t.subjectType, t.subjectId),
+  ]
+)
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  reporter: one(user, {
+    fields: [reports.reportedBy],
+    references: [user.id],
+  }),
+}))

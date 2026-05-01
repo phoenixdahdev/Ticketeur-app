@@ -1,24 +1,18 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 
-import { getPendingVendor } from '@/lib/mock-moderation'
-import { BackButton } from '@/components/dashboard/users/back-button'
-import { VendorModDetail } from '@/components/dashboard/moderation/vendor-mod-detail'
+import { VendorModDetailContent } from '@/components/dashboard/moderation/vendor-mod-detail-content'
 
 export async function generateMetadata({
   params,
 }: PageProps<'/moderation/vendor/[id]'>): Promise<Metadata> {
   const { id } = await params
-  const vendor = getPendingVendor(id)
-  return { title: vendor ? `Review ${vendor.name}` : 'Vendor review' }
+  return { title: `Vendor review ${id.slice(0, 8)}` }
 }
 
 export default async function VendorModerationPage({
   params,
 }: PageProps<'/moderation/vendor/[id]'>) {
   const { id } = await params
-  const vendor = getPendingVendor(id)
-  if (!vendor) notFound()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
@@ -31,9 +25,7 @@ export default async function VendorModerationPage({
         </p>
       </header>
 
-      <BackButton label="Back" />
-
-      <VendorModDetail vendor={vendor} />
+      <VendorModDetailContent id={id} />
     </div>
   )
 }

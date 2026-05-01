@@ -2,20 +2,86 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Tick02Icon,
   CancelCircleIcon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
 } from '@hugeicons/core-free-icons'
 
-import { cn } from '@ticketur/ui/lib/utils'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { PendingEvent } from '@/lib/mock-moderation'
+import { useTRPC } from '@/lib/trpc'
 import { formatShortDate as formatDate } from '@/lib/date'
 
-export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
+type PendingEvent =
+  RouterOutputs['admin']['moderation']['pendingEvents'][number]
+
+export function ModerationEventsTable({
+  rows,
+  loading,
+}: {
+  rows: PendingEvent[]
+  loading: boolean
+}) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  function invalidate() {
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.pendingEvents.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.stats.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.events.list.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.events.stats.queryKey(),
+    })
+  }
+
+  const approveMutation = useMutation(
+    trpc.admin.moderation.approveEvent.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event approved', {
+          description: 'The organizer has been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not approve', { description: e.message }),
+    })
+  )
+
+  const rejectMutation = useMutation(
+    trpc.admin.moderation.rejectEvent.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event rejected', {
+          description: 'The organizer has been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not reject', { description: e.message }),
+    })
+  )
+
+  const busy = approveMutation.isPending || rejectMutation.isPending
+
+  function handleApprove(e: PendingEvent) {
+    if (busy) return
+    approveMutation.mutate({ id: e.id })
+  }
+
+  function handleReject(e: PendingEvent) {
+    if (busy) return
+    const reason = prompt(`Reason for rejecting ${e.title}? (optional)`) ?? ''
+    rejectMutation.mutate({ id: e.id, reason })
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
@@ -31,7 +97,15 @@ export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
-              {rows.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      Loading pending events…
+                    </p>
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center">
                     <p className="text-muted-foreground text-sm">
@@ -50,22 +124,32 @@ export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
                         href={`/moderation/event/${row.id}`}
                         className="flex items-center gap-3"
                       >
-                        <Image
-                          src={row.thumbnailUrl}
-                          alt=""
-                          width={40}
-                          height={40}
-                          className="size-10 shrink-0 rounded-full object-cover"
-                        />
+                        {row.thumbnailUrl ? (
+                          <Image
+                            src={row.thumbnailUrl}
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="size-10 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                            {row.title.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <span className="text-foreground hover:text-primary font-semibold transition-colors">
                           {row.title}
                         </span>
                       </Link>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="bg-muted text-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase">
-                        {row.category}
-                      </span>
+                      {row.category ? (
+                        <span className="bg-muted text-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase">
+                          {row.category}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </td>
                     <td className="text-foreground px-5 py-4 whitespace-nowrap">
                       {formatDate(row.registeredAt)}
@@ -75,14 +159,24 @@ export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5">
-                        <ActionPill tone="success" label="Approve">
+                        <ActionPill
+                          tone="success"
+                          label="Approve"
+                          disabled={busy}
+                          onClick={() => handleApprove(row)}
+                        >
                           <HugeiconsIcon
                             icon={Tick02Icon}
                             className="size-4"
                             strokeWidth={2}
                           />
                         </ActionPill>
-                        <ActionPill tone="danger" label="Reject">
+                        <ActionPill
+                          tone="danger"
+                          label="Reject"
+                          disabled={busy}
+                          onClick={() => handleReject(row)}
+                        >
                           <HugeiconsIcon
                             icon={CancelCircleIcon}
                             className="size-4"
@@ -98,7 +192,9 @@ export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
           </table>
         </div>
       </div>
-      <PaginationStub total={rows.length} />
+      <p className="text-muted-foreground text-xs sm:text-sm">
+        Showing {rows.length} of {rows.length}
+      </p>
     </div>
   )
 }
@@ -107,10 +203,14 @@ function ActionPill({
   tone,
   label,
   children,
+  disabled,
+  onClick,
 }: {
   tone: 'success' | 'danger'
   label: string
   children: React.ReactNode
+  disabled?: boolean
+  onClick?: () => void
 }) {
   const styles = {
     success: 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200',
@@ -120,58 +220,10 @@ function ActionPill({
     <button
       type="button"
       aria-label={label}
-      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors ${styles}`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function PaginationStub({ total }: { total: number }) {
-  return (
-    <div className="flex flex-col items-start justify-between gap-4 pt-2 sm:flex-row sm:items-center">
-      <p className="text-muted-foreground text-xs sm:text-sm">
-        Showing {total} of {total === 0 ? 0 : 18} events
-      </p>
-      <nav aria-label="Pagination" className="flex items-center gap-2">
-        <PageButton aria-label="Previous page" disabled>
-          <HugeiconsIcon
-            icon={ArrowLeft01Icon}
-            className="size-4"
-            strokeWidth={2}
-          />
-        </PageButton>
-        <PageButton active>1</PageButton>
-        <PageButton>2</PageButton>
-        <PageButton>3</PageButton>
-        <PageButton aria-label="Next page">
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            className="size-4"
-            strokeWidth={2}
-          />
-        </PageButton>
-      </nav>
-    </div>
-  )
-}
-
-function PageButton({
-  active,
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
-  return (
-    <button
-      type="button"
-      {...props}
-      className={cn(
-        'border-border/60 inline-flex size-9 items-center justify-center rounded-md border text-sm font-medium transition-colors',
-        'disabled:cursor-not-allowed disabled:opacity-40',
-        active
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'text-foreground hover:bg-muted'
-      )}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}
     >
       {children}
     </button>

@@ -2,23 +2,26 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Tick02Icon,
   CancelCircleIcon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
 } from '@hugeicons/core-free-icons'
 
-import { cn } from '@ticketur/ui/lib/utils'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '@ticketur/ui/components/avatar'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { PendingVendor } from '@/lib/mock-moderation'
+import { useTRPC } from '@/lib/trpc'
 import { formatShortDate as formatDate } from '@/lib/date'
+
+type PendingVendor =
+  RouterOutputs['admin']['moderation']['pendingVendors'][number]
 
 function getInitials(name: string) {
   return (
@@ -31,7 +34,64 @@ function getInitials(name: string) {
   )
 }
 
-export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
+export function ModerationVendorsTable({
+  rows,
+  loading,
+}: {
+  rows: PendingVendor[]
+  loading: boolean
+}) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  function invalidate() {
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.pendingVendors.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.stats.queryKey(),
+    })
+  }
+
+  const approveMutation = useMutation(
+    trpc.admin.moderation.approveVendor.mutationOptions({
+      onSuccess: () => {
+        toast.success('Vendor approved', {
+          description: 'They have been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not approve', { description: e.message }),
+    })
+  )
+
+  const rejectMutation = useMutation(
+    trpc.admin.moderation.rejectVendor.mutationOptions({
+      onSuccess: () => {
+        toast.success('Vendor rejected', {
+          description: 'They have been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not reject', { description: e.message }),
+    })
+  )
+
+  const busy = approveMutation.isPending || rejectMutation.isPending
+
+  function handleApprove(v: PendingVendor) {
+    if (busy) return
+    approveMutation.mutate({ id: v.id })
+  }
+
+  function handleReject(v: PendingVendor) {
+    if (busy) return
+    const reason = prompt(`Reason for rejecting ${v.name}? (optional)`) ?? ''
+    rejectMutation.mutate({ id: v.id, reason })
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
@@ -47,7 +107,15 @@ export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
-              {rows.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      Loading pending vendors…
+                    </p>
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center">
                     <p className="text-muted-foreground text-sm">
@@ -57,7 +125,10 @@ export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
                 </tr>
               ) : (
                 rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-muted/40 text-sm transition-colors">
+                  <tr
+                    key={row.id}
+                    className="hover:bg-muted/40 text-sm transition-colors"
+                  >
                     <td className="px-5 py-4">
                       <Link
                         href={`/moderation/vendor/${row.id}`}
@@ -85,9 +156,13 @@ export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
                       </Link>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="bg-muted text-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase">
-                        {row.category}
-                      </span>
+                      {row.category ? (
+                        <span className="bg-muted text-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase">
+                          {row.category}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </td>
                     <td className="text-foreground px-5 py-4 whitespace-nowrap">
                       {formatDate(row.registeredAt)}
@@ -108,14 +183,24 @@ export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5">
-                        <ActionPill tone="success" label="Approve">
+                        <ActionPill
+                          tone="success"
+                          label="Approve"
+                          disabled={busy}
+                          onClick={() => handleApprove(row)}
+                        >
                           <HugeiconsIcon
                             icon={Tick02Icon}
                             className="size-4"
                             strokeWidth={2}
                           />
                         </ActionPill>
-                        <ActionPill tone="danger" label="Reject">
+                        <ActionPill
+                          tone="danger"
+                          label="Reject"
+                          disabled={busy}
+                          onClick={() => handleReject(row)}
+                        >
                           <HugeiconsIcon
                             icon={CancelCircleIcon}
                             className="size-4"
@@ -131,7 +216,9 @@ export function ModerationVendorsTable({ rows }: { rows: PendingVendor[] }) {
           </table>
         </div>
       </div>
-      <PaginationStub total={rows.length} />
+      <p className="text-muted-foreground text-xs sm:text-sm">
+        Showing {rows.length} of {rows.length}
+      </p>
     </div>
   )
 }
@@ -140,10 +227,14 @@ function ActionPill({
   tone,
   label,
   children,
+  disabled,
+  onClick,
 }: {
   tone: 'success' | 'danger'
   label: string
   children: React.ReactNode
+  disabled?: boolean
+  onClick?: () => void
 }) {
   const styles = {
     success: 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200',
@@ -153,58 +244,10 @@ function ActionPill({
     <button
       type="button"
       aria-label={label}
-      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors ${styles}`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function PaginationStub({ total }: { total: number }) {
-  return (
-    <div className="flex flex-col items-start justify-between gap-4 pt-2 sm:flex-row sm:items-center">
-      <p className="text-muted-foreground text-xs sm:text-sm">
-        Showing {total} of {total}
-      </p>
-      <nav aria-label="Pagination" className="flex items-center gap-2">
-        <PageButton aria-label="Previous page" disabled>
-          <HugeiconsIcon
-            icon={ArrowLeft01Icon}
-            className="size-4"
-            strokeWidth={2}
-          />
-        </PageButton>
-        <PageButton active>1</PageButton>
-        <PageButton>2</PageButton>
-        <PageButton>3</PageButton>
-        <PageButton aria-label="Next page">
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            className="size-4"
-            strokeWidth={2}
-          />
-        </PageButton>
-      </nav>
-    </div>
-  )
-}
-
-function PageButton({
-  active,
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
-  return (
-    <button
-      type="button"
-      {...props}
-      className={cn(
-        'border-border/60 inline-flex size-9 items-center justify-center rounded-md border text-sm font-medium transition-colors',
-        'disabled:cursor-not-allowed disabled:opacity-40',
-        active
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'text-foreground hover:bg-muted'
-      )}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}
     >
       {children}
     </button>
