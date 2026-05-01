@@ -40,17 +40,37 @@ const listSchema = z.object({
   pageSize: z.number().int().positive().max(100).default(10),
 })
 
-type AdminUserStatus = 'active' | 'suspended' | 'disabled'
+// Bans always supersede the approval state, so if you switch on `status`
+// for action branching the suspended/disabled branches still work for
+// vendors. Approval values only show when the user is not banned.
+type AdminUserStatus =
+  | 'active'
+  | 'suspended'
+  | 'disabled'
+  | 'incomplete'
+  | 'pending'
+  | 'approved'
+  | 'rejected'
 type AdminUserListRole = 'attendee' | 'organizer' | 'vendor'
+type VendorApprovalStatus = 'pending' | 'approved' | 'rejected' | null
 
 function deriveStatus(
+  role: AdminUserListRole,
   banned: boolean | null,
-  banExpires: Date | null
+  banExpires: Date | null,
+  approvalStatus: VendorApprovalStatus
 ): AdminUserStatus {
-  if (!banned) return 'active'
-  // permanent ban (no expiry) = disabled; temp ban = suspended
-  if (banExpires === null) return 'disabled'
-  return 'suspended'
+  if (banned) {
+    // permanent ban (no expiry) = disabled; temp ban = suspended
+    if (banExpires === null) return 'disabled'
+    return 'suspended'
+  }
+  if (role === 'vendor') {
+    // null = signed up but profile not yet submitted for review
+    if (approvalStatus === null) return 'incomplete'
+    return approvalStatus
+  }
+  return 'active'
 }
 
 // Always exclude admins from results — admin app should not surface
@@ -141,6 +161,7 @@ export const adminUsersRouter = createTRPCRouter({
           image: user.image,
           banned: user.banned,
           banExpires: user.banExpires,
+          vendorApprovalStatus: user.vendorApprovalStatus,
         })
         .from(user)
         .where(where)
@@ -156,15 +177,23 @@ export const adminUsersRouter = createTRPCRouter({
     const total = Number(totalRow[0]?.value ?? 0)
 
     return {
-      rows: rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        role: ((r.role ?? 'attendee') as AdminUserListRole),
-        joinedAt: r.createdAt.toISOString(),
-        status: deriveStatus(r.banned ?? null, r.banExpires ?? null),
-        avatarUrl: r.image ?? null,
-      })),
+      rows: rows.map((r) => {
+        const role = (r.role ?? 'attendee') as AdminUserListRole
+        return {
+          id: r.id,
+          name: r.name,
+          email: r.email,
+          role,
+          joinedAt: r.createdAt.toISOString(),
+          status: deriveStatus(
+            role,
+            r.banned ?? null,
+            r.banExpires ?? null,
+            r.vendorApprovalStatus as VendorApprovalStatus
+          ),
+          avatarUrl: r.image ?? null,
+        }
+      }),
       total,
     }
   }),
@@ -188,7 +217,12 @@ export const adminUsersRouter = createTRPCRouter({
         name: u.name,
         email: u.email,
         joinedAt: u.createdAt.toISOString(),
-        status: deriveStatus(u.banned ?? null, u.banExpires ?? null),
+        status: deriveStatus(
+          role,
+          u.banned ?? null,
+          u.banExpires ?? null,
+          (u.vendorApprovalStatus ?? null) as VendorApprovalStatus
+        ),
         avatarUrl: u.image ?? null,
       }
 

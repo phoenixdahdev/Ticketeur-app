@@ -4,14 +4,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { Button } from '@ticketur/ui/components/button'
+import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { useActionDialog } from '@/components/dashboard/action-dialog/store'
 
+type UserStatus = RouterOutputs['admin']['users']['byId']['status']
+
 type Props = {
   userId: string
   userName: string
-  status: 'active' | 'suspended' | 'disabled'
+  status: UserStatus
 }
 
 export function ProfileActions({ userId, userName, status }: Props) {
