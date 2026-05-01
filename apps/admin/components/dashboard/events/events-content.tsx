@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
+import { useQuery } from '@tanstack/react-query'
 import {
   parseAsInteger,
   parseAsString,
@@ -20,13 +21,13 @@ import {
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Input } from '@ticketur/ui/components/input'
+import type { RouterOutputs } from '@ticketur/api'
 
-import {
-  listAdminEvents,
-  type AdminEventRow,
-  type AdminEventStatus,
-} from '@/lib/mock-events'
+import { useTRPC } from '@/lib/trpc'
 import { formatShortDate as formatDate } from '@/lib/date'
+
+type AdminEventRow = RouterOutputs['admin']['events']['list']['rows'][number]
+type AdminEventStatus = AdminEventRow['status']
 
 const STATUS_TABS = ['all', 'published', 'archived', 'flagged'] as const
 type StatusTab = (typeof STATUS_TABS)[number]
@@ -44,7 +45,7 @@ type SortField = (typeof SORT_FIELDS)[number]
 const DIR_VALUES = ['asc', 'desc'] as const
 type SortDir = (typeof DIR_VALUES)[number]
 
-const TOTAL = 24_512
+const PAGE_SIZE = 10
 
 const STATUS_LABEL: Record<AdminEventStatus, string> = {
   published: 'Published',
@@ -63,6 +64,8 @@ function formatNumber(n: number) {
 }
 
 export function EventsContent() {
+  const trpc = useTRPC()
+
   const [params, setParams] = useQueryStates(
     {
       tab: parseAsStringLiteral(STATUS_TABS).withDefault('all'),
@@ -74,39 +77,20 @@ export function EventsContent() {
     { history: 'replace', clearOnDefault: true }
   )
 
-  const rows = useMemo(() => {
-    let list = listAdminEvents()
-    if (params.tab !== 'all') {
-      list = list.filter((e) => e.status === params.tab)
-    }
-    if (params.q) {
-      const q = params.q.toLowerCase()
-      list = list.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.organizerName.toLowerCase().includes(q) ||
-          e.reference.toLowerCase().includes(q)
-      )
-    }
-    const sorted = [...list].sort((a, b) => {
-      let cmp = 0
-      switch (params.sort) {
-        case 'date':
-          cmp = a.date.localeCompare(b.date)
-          break
-        case 'name':
-          cmp = a.title.localeCompare(b.title)
-          break
-        case 'sales':
-          cmp = a.sold / a.total - b.sold / b.total
-          break
-      }
-      return params.dir === 'asc' ? cmp : -cmp
+  const listQuery = useQuery(
+    trpc.admin.events.list.queryOptions({
+      tab: params.tab,
+      q: params.q,
+      sort: params.sort,
+      dir: params.dir,
+      page: params.page,
+      pageSize: PAGE_SIZE,
     })
-    return sorted
-  }, [params.tab, params.q, params.sort, params.dir])
+  )
 
-  const totalPages = 3
+  const rows = listQuery.data?.rows ?? []
+  const total = listQuery.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const current = Math.min(Math.max(params.page, 1), totalPages)
 
   return (
@@ -203,11 +187,21 @@ export function EventsContent() {
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
-              {rows.length === 0 ? (
+              {listQuery.isLoading ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center">
                     <p className="text-muted-foreground text-sm">
-                      No events match your filters.
+                      Loading events…
+                    </p>
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      {params.q || params.tab !== 'all'
+                        ? 'No events match your filters.'
+                        : 'No events yet.'}
                     </p>
                   </td>
                 </tr>
@@ -220,7 +214,7 @@ export function EventsContent() {
       </div>
 
       <Pagination
-        total={TOTAL}
+        total={total}
         shown={rows.length}
         current={current}
         totalPages={totalPages}
@@ -240,13 +234,19 @@ function Row({ row }: { row: AdminEventRow }) {
           href={`/events/${row.id}`}
           className="flex items-center gap-3"
         >
-          <Image
-            src={row.thumbnailUrl}
-            alt=""
-            width={40}
-            height={40}
-            className="size-10 shrink-0 rounded-full object-cover"
-          />
+          {row.thumbnailUrl ? (
+            <Image
+              src={row.thumbnailUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="size-10 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+              {row.title.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-foreground hover:text-primary font-semibold transition-colors">
               {row.title}

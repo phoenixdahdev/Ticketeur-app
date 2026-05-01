@@ -1,21 +1,34 @@
 import Image from 'next/image'
 import { HugeiconsIcon } from '@hugeicons/react'
+import type { IconSvgElement } from '@hugeicons/react'
 import {
   Calendar03Icon,
   Clock01Icon,
   MapsLocation02Icon,
   ArrowUp01Icon,
   CancelCircleIcon,
+  MusicNote03Icon,
+  Idea01Icon,
+  DrinkIcon,
+  UserGroupIcon,
+  GameController01Icon,
+  StarIcon,
+  CameraVideoIcon,
+  Briefcase01Icon,
+  PaintBoardIcon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { AdminEventDetail, AdminEventTier } from '@/lib/mock-events'
 import {
   formatWeekdayDate as formatLongDate,
   formatMonthDay as formatShortDate,
   daysUntil,
 } from '@/lib/date'
+
+type AdminEventDetail = RouterOutputs['admin']['events']['byId']
+type AdminEventTier = AdminEventDetail['tiers'][number]
 
 const TIER_BAR: Record<AdminEventTier['status'], string> = {
   'sold-out': 'bg-rose-500',
@@ -33,8 +46,27 @@ const TIER_TONE: Record<AdminEventTier['status'], string> = {
   early: 'text-orange-500',
 }
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
+const FEATURE_ICONS: Record<string, IconSvgElement> = {
+  'Live DJ Sets': MusicNote03Icon,
+  'Laser Show': Idea01Icon,
+  'Open VIP Bar': DrinkIcon,
+  Mascots: UserGroupIcon,
+  Games: GameController01Icon,
+  'Food & Drink': DrinkIcon,
+  Workshops: Briefcase01Icon,
+  Networking: UserGroupIcon,
+  'Live Music': MusicNote03Icon,
+  'Photo Booth': CameraVideoIcon,
+  'Art Showcase': PaintBoardIcon,
+}
+
+function iconForFeature(label: string): IconSvgElement {
+  return FEATURE_ICONS[label] ?? StarIcon
+}
+
+// Prices and revenue come from the API in minor units (kobo).
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
 export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
@@ -47,14 +79,18 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
     <div className="flex flex-col gap-6 md:gap-8">
       {/* Banner with overlay title */}
       <div className="relative aspect-[1360/360] w-full overflow-hidden rounded-2xl">
-        <Image
-          src={event.bannerUrl}
-          alt=""
-          fill
-          sizes="(max-width: 1024px) 100vw, 1360px"
-          className="object-cover"
-          priority
-        />
+        {event.bannerUrl ? (
+          <Image
+            src={event.bannerUrl}
+            alt=""
+            fill
+            sizes="(max-width: 1024px) 100vw, 1360px"
+            className="object-cover"
+            priority
+          />
+        ) : (
+          <div className="from-primary to-primary/70 size-full bg-gradient-to-br" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute right-5 bottom-5 left-5 flex flex-col gap-2 md:right-8 md:bottom-8 md:left-8">
           <span className="inline-flex w-fit items-center rounded-md bg-emerald-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
@@ -87,26 +123,28 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
             <DetailPill icon={MapsLocation02Icon} text={event.location} />
           </div>
         </div>
-        <div className="flex flex-col gap-3">
-          <h3 className="text-foreground text-base font-semibold">Features</h3>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {event.features.map((f, i) => (
-              <div
-                key={i}
-                className="border-primary/30 bg-primary/5 flex flex-col items-center justify-center gap-2 rounded-xl border py-5 text-center"
-              >
-                <HugeiconsIcon
-                  icon={f.icon}
-                  className="text-primary size-6"
-                  strokeWidth={1.8}
-                />
-                <span className="text-foreground text-xs font-semibold md:text-sm">
-                  {f.label}
-                </span>
-              </div>
-            ))}
+        {event.features.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-foreground text-base font-semibold">Features</h3>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {event.features.map((label) => (
+                <div
+                  key={label}
+                  className="border-primary/30 bg-primary/5 flex flex-col items-center justify-center gap-2 rounded-xl border py-5 text-center"
+                >
+                  <HugeiconsIcon
+                    icon={iconForFeature(label)}
+                    className="text-primary size-6"
+                    strokeWidth={1.8}
+                  />
+                  <span className="text-foreground text-xs font-semibold md:text-sm">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
 
       {/* Revenue / Sold / Date triple */}
@@ -214,7 +252,7 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
                   {TIER_LABEL[tier.status]}
                 </span>
                 <span className="text-foreground text-sm font-semibold">
-                  ${tier.price.toLocaleString('en-US')}.00
+                  {formatNaira(tier.price)}
                 </span>
               </div>
             </li>
@@ -246,13 +284,19 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
                   />
                 </button>
                 <div className="bg-muted relative aspect-[3/2] w-full">
-                  <Image
-                    src={v.imageUrl}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover"
-                  />
+                  {v.imageUrl ? (
+                    <Image
+                      src={v.imageUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="bg-primary/10 text-primary flex size-full items-center justify-center text-2xl font-bold">
+                      {v.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 p-3">
                   <div className="flex items-center justify-between gap-2">
