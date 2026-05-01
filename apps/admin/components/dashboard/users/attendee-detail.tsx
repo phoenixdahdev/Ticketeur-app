@@ -77,7 +77,11 @@ export function AttendeeDetailView({ user }: { user: AttendeeDetail }) {
           </div>
 
           <div className="flex justify-center md:justify-end">
-            <ProfileActions />
+            <ProfileActions
+              userId={user.id}
+              userName={user.name}
+              status={user.status}
+            />
           </div>
         </div>
       </section>

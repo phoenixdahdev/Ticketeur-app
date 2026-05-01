@@ -98,7 +98,11 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
           </div>
 
           <div className="flex justify-center md:justify-end">
-            <ProfileActions />
+            <ProfileActions
+              userId={user.id}
+              userName={user.name}
+              status={user.status}
+            />
           </div>
         </div>
       </section>
