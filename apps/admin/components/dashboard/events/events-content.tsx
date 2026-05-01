@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
@@ -16,6 +16,8 @@ import {
   Search01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  ArrowUp01Icon,
+  ArrowDown01Icon,
   MoreVerticalIcon,
 } from '@hugeicons/core-free-icons'
 
@@ -93,6 +95,20 @@ export function EventsContent() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const current = Math.min(Math.max(params.page, 1), totalPages)
 
+  const handleSort = useCallback(
+    (field: SortField) => {
+      void setParams((prev) => ({
+        sort: field,
+        dir:
+          prev.sort === field && prev.dir === 'asc'
+            ? ('desc' as SortDir)
+            : ('asc' as SortDir),
+        page: 1,
+      }))
+    },
+    [setParams]
+  )
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
@@ -134,42 +150,22 @@ export function EventsContent() {
           })}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
-              strokeWidth={1.8}
-            />
-            <Input
-              type="search"
-              value={params.q}
-              onChange={(e) =>
-                void setParams({ q: e.target.value || null, page: 1 })
-              }
-              placeholder="Search"
-              aria-label="Search events"
-              className="h-10 w-full pl-9"
-            />
-          </div>
-          <select
-            value={`${params.sort}:${params.dir}`}
-            onChange={(e) => {
-              const [sort, dir] = e.target.value.split(':') as [
-                SortField,
-                SortDir,
-              ]
-              void setParams({ sort, dir, page: 1 })
-            }}
-            aria-label="Sort by"
-            className="border-border/60 bg-background text-foreground hover:bg-muted/50 focus-visible:ring-primary/40 inline-flex h-10 items-center rounded-md border px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
-          >
-            <option value="date:desc">Sort by — Newest</option>
-            <option value="date:asc">Sort by — Oldest</option>
-            <option value="name:asc">Sort by — Name (A→Z)</option>
-            <option value="sales:desc">Sort by — Sales (high)</option>
-            <option value="sales:asc">Sort by — Sales (low)</option>
-          </select>
+        <div className="relative w-full sm:w-64">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            strokeWidth={1.8}
+          />
+          <Input
+            type="search"
+            value={params.q}
+            onChange={(e) =>
+              void setParams({ q: e.target.value || null, page: 1 })
+            }
+            placeholder="Search"
+            aria-label="Search events"
+            className="h-10 w-full pl-9"
+          />
         </div>
       </div>
 
@@ -177,12 +173,33 @@ export function EventsContent() {
         <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[860px] table-auto">
             <thead className="bg-primary/5">
-              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                <th className="px-5 py-4 text-left">Event Name</th>
+              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
+                <SortableHeader
+                  field="name"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Event Name
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Organizer</th>
-                <th className="px-5 py-4 text-left">Date</th>
+                <SortableHeader
+                  field="date"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Date
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Status</th>
-                <th className="px-5 py-4 text-left">Ticket Sales</th>
+                <SortableHeader
+                  field="sales"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Ticket Sales
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Actions</th>
               </tr>
             </thead>
@@ -221,6 +238,46 @@ export function EventsContent() {
         onPage={(p) => void setParams({ page: p })}
       />
     </div>
+  )
+}
+
+function SortableHeader({
+  field,
+  sort,
+  dir,
+  onSort,
+  children,
+}: {
+  field: SortField
+  sort: SortField
+  dir: SortDir
+  onSort: (field: SortField) => void
+  children: React.ReactNode
+}) {
+  const active = sort === field
+  return (
+    <th className="px-5 py-4 text-left">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-sort={
+          active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
+        }
+        className={cn(
+          'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
+          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        <span>{children}</span>
+        {active ? (
+          <HugeiconsIcon
+            icon={dir === 'asc' ? ArrowUp01Icon : ArrowDown01Icon}
+            className="size-3.5"
+            strokeWidth={2.2}
+          />
+        ) : null}
+      </button>
+    </th>
   )
 }
 

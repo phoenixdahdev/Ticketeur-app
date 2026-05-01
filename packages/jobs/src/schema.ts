@@ -58,6 +58,31 @@ export const ticketConfirmationSchema = z.object({
   pdfFilename: z.string().optional(),
 })
 
+export const accountSuspendedSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+  reason: z.string().default(''),
+  // Pre-formatted display string ("May 31, 2026") so the worker doesn't need
+  // date-fns. Empty when no expiry.
+  expiresAt: z.string().nullable().default(null),
+})
+
+export const accountDisabledSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+  reason: z.string().default(''),
+})
+
+export const accountReactivatedSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+})
+
+export const accountRemovedSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+})
+
 export type VerificationOtpPayload = z.infer<typeof verificationOtpSchema>
 export type PasswordResetPayload = z.infer<typeof passwordResetSchema>
 export type TwoFactorOtpPayload = z.infer<typeof twoFactorOtpSchema>
@@ -65,3 +90,7 @@ export type WelcomeEmailPayload = z.infer<typeof welcomeEmailSchema>
 export type VendorInvitePayload = z.infer<typeof vendorInviteSchema>
 export type EventApprovedPayload = z.infer<typeof eventApprovedSchema>
 export type TicketConfirmationPayload = z.infer<typeof ticketConfirmationSchema>
+export type AccountSuspendedPayload = z.infer<typeof accountSuspendedSchema>
+export type AccountDisabledPayload = z.infer<typeof accountDisabledSchema>
+export type AccountReactivatedPayload = z.infer<typeof accountReactivatedSchema>
+export type AccountRemovedPayload = z.infer<typeof accountRemovedSchema>

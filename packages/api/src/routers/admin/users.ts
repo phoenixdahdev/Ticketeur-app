@@ -13,11 +13,14 @@ import {
   sql,
 } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
+import { tasks } from '@trigger.dev/sdk'
+import { addDays, format } from 'date-fns'
 
 import {
   events,
   eventVendors,
   orders,
+  session,
   ticketTiers,
   user,
 } from '@ticketur/db'
@@ -53,6 +56,35 @@ function deriveStatus(
 // Always exclude admins from results — admin app should not surface
 // platform admins to itself.
 const NOT_ADMIN = ne(user.role, 'admin')
+
+// Selects an actionable target: not an admin, not the caller themselves.
+async function findActionTarget(
+  db: typeof import('@ticketur/db').db,
+  callerId: string,
+  targetId: string
+) {
+  const [target] = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    })
+    .from(user)
+    .where(and(eq(user.id, targetId), NOT_ADMIN))
+    .limit(1)
+
+  if (!target) {
+    throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' })
+  }
+  if (target.id === callerId) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Cannot moderate your own account',
+    })
+  }
+  return target
+}
 
 export const adminUsersRouter = createTRPCRouter({
   stats: adminProcedure.query(async ({ ctx }) => {
@@ -305,5 +337,128 @@ export const adminUsersRouter = createTRPCRouter({
           thumbnailUrl: r.bannerUrl ?? '',
         })),
       }
+    }),
+
+  suspend: adminProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        reason: z.string().default(''),
+        days: z.number().int().min(1).max(365).default(30),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const target = await findActionTarget(
+        ctx.db,
+        ctx.session.user.id,
+        input.id
+      )
+
+      const expiresAt = addDays(new Date(), input.days)
+
+      await ctx.db
+        .update(user)
+        .set({
+          banned: true,
+          banReason: input.reason || null,
+          banExpires: expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, target.id))
+
+      // Kill any open sessions immediately so the user is signed out.
+      await ctx.db.delete(session).where(eq(session.userId, target.id))
+
+      void tasks.trigger('send-account-suspended', {
+        email: target.email,
+        name: target.name,
+        reason: input.reason,
+        expiresAt: format(expiresAt, 'MMMM d, yyyy'),
+      })
+
+      return { ok: true as const }
+    }),
+
+  disable: adminProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        reason: z.string().default(''),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const target = await findActionTarget(
+        ctx.db,
+        ctx.session.user.id,
+        input.id
+      )
+
+      await ctx.db
+        .update(user)
+        .set({
+          banned: true,
+          banReason: input.reason || null,
+          banExpires: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, target.id))
+
+      await ctx.db.delete(session).where(eq(session.userId, target.id))
+
+      void tasks.trigger('send-account-disabled', {
+        email: target.email,
+        name: target.name,
+        reason: input.reason,
+      })
+
+      return { ok: true as const }
+    }),
+
+  reactivate: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const target = await findActionTarget(
+        ctx.db,
+        ctx.session.user.id,
+        input.id
+      )
+
+      await ctx.db
+        .update(user)
+        .set({
+          banned: false,
+          banReason: null,
+          banExpires: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, target.id))
+
+      void tasks.trigger('send-account-reactivated', {
+        email: target.email,
+        name: target.name,
+      })
+
+      return { ok: true as const }
+    }),
+
+  remove: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const target = await findActionTarget(
+        ctx.db,
+        ctx.session.user.id,
+        input.id
+      )
+
+      // Notify before deletion since the row is about to disappear. Sessions
+      // and dependent rows cascade off the user FK.
+      void tasks.trigger('send-account-removed', {
+        email: target.email,
+        name: target.name,
+      })
+
+      await ctx.db.delete(user).where(eq(user.id, target.id))
+
+      return { ok: true as const }
     }),
 })
