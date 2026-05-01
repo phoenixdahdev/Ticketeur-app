@@ -3,6 +3,7 @@
 import { Button } from '@ticketur/ui/components/button'
 
 import type { FlaggedActivity } from '@/lib/mock-moderation'
+import { formatMonthDay } from '@/lib/date'
 
 const SUBJECT_LABEL: Record<FlaggedActivity['subjectType'], string> = {
   vendor: 'VENDOR',
@@ -16,13 +17,6 @@ const SUSPEND_LABEL: Record<FlaggedActivity['subjectType'], string> = {
   organizer: 'Suspend Organizer',
   attendee: 'Suspend Attendee',
   event: 'Suspend Event',
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-  })
 }
 
 export function FlaggedActivitiesList({ rows }: { rows: FlaggedActivity[] }) {
@@ -46,7 +40,7 @@ export function FlaggedActivitiesList({ rows }: { rows: FlaggedActivity[] }) {
                 <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   {SUBJECT_LABEL[row.subjectType]}{' '}
                   <span className="text-muted-foreground/60 mx-2">•</span>
-                  {formatShortDate(row.date).toUpperCase()}
+                  {formatMonthDay(row.date).toUpperCase()}
                 </p>
                 <p className="font-heading text-foreground text-lg font-bold">
                   {row.reason}

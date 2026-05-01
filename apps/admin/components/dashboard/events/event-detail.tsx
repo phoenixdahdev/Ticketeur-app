@@ -11,6 +11,11 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 
 import type { AdminEventDetail, AdminEventTier } from '@/lib/mock-events'
+import {
+  formatWeekdayDate as formatLongDate,
+  formatMonthDay as formatShortDate,
+  daysUntil,
+} from '@/lib/date'
 
 const TIER_BAR: Record<AdminEventTier['status'], string> = {
   'sold-out': 'bg-rose-500',
@@ -30,27 +35,6 @@ const TIER_TONE: Record<AdminEventTier['status'], string> = {
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
-}
-
-function formatLongDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-  })
-}
-
-function daysUntil(iso: string) {
-  const ms = new Date(iso).getTime() - Date.now()
-  return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24)))
 }
 
 export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {

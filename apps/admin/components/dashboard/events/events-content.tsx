@@ -26,6 +26,7 @@ import {
   type AdminEventRow,
   type AdminEventStatus,
 } from '@/lib/mock-events'
+import { formatShortDate as formatDate } from '@/lib/date'
 
 const STATUS_TABS = ['all', 'published', 'archived', 'flagged'] as const
 type StatusTab = (typeof STATUS_TABS)[number]
@@ -59,14 +60,6 @@ const STATUS_TONE: Record<AdminEventStatus, string> = {
 
 function formatNumber(n: number) {
   return n.toLocaleString('en-US')
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
 }
 
 export function EventsContent() {

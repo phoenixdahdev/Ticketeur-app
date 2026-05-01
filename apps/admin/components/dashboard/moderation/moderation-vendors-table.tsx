@@ -18,14 +18,7 @@ import {
 } from '@ticketur/ui/components/avatar'
 
 import type { PendingVendor } from '@/lib/mock-moderation'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
+import { formatShortDate as formatDate } from '@/lib/date'
 
 function getInitials(name: string) {
   return (

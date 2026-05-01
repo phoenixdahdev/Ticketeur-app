@@ -7,18 +7,10 @@ import {
 } from '@ticketur/ui/components/avatar'
 
 import type { Transaction } from '@/lib/mock-transactions'
+import { formatWeekdayDate as formatLongDate } from '@/lib/date'
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
-}
-
-function formatLongDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
 }
 
 function getInitials(name: string) {

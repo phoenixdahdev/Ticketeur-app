@@ -13,14 +13,7 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 
 import type { PendingEvent } from '@/lib/mock-moderation'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
+import { formatShortDate as formatDate } from '@/lib/date'
 
 export function ModerationEventsTable({ rows }: { rows: PendingEvent[] }) {
   return (

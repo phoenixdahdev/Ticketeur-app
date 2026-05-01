@@ -6,9 +6,15 @@ import { motion } from 'motion/react'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { OrganizerDetail } from '@/lib/mock-users'
 import { ProfileActions } from '@/components/dashboard/users/profile-actions'
+import { formatShortDate as formatDate } from '@/lib/date'
+
+type OrganizerDetail = Extract<
+  RouterOutputs['admin']['users']['byId'],
+  { role: 'organizer' }
+>
 
 const PORTFOLIO_TABS = ['all', 'active', 'archived', 'flagged'] as const
 type PortfolioTab = (typeof PORTFOLIO_TABS)[number]
@@ -26,20 +32,13 @@ const STATUS_TONE = {
   flagged: 'bg-rose-50 text-rose-600 px-2.5 py-1 rounded-md',
 } as const
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
-
 function formatNumber(n: number) {
   return n.toLocaleString('en-US')
 }
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
+// Revenue is summed in minor units; format to display naira.
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
 export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {

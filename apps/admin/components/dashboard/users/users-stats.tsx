@@ -1,3 +1,6 @@
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
 import {
   UserMultiple02Icon,
   UserGroupIcon,
@@ -5,9 +8,17 @@ import {
   Store01Icon,
 } from '@hugeicons/core-free-icons'
 
+import { useTRPC } from '@/lib/trpc'
 import { StatCard } from '@/components/dashboard/stat-card'
 
+function formatNumber(n: number) {
+  return n.toLocaleString('en-US')
+}
+
 export function UsersStats() {
+  const trpc = useTRPC()
+  const { data, isLoading } = useQuery(trpc.admin.users.stats.queryOptions())
+
   return (
     <section
       aria-label="User stats"
@@ -15,27 +26,31 @@ export function UsersStats() {
     >
       <StatCard
         label="Total Users"
-        value="24,512"
+        value={data ? formatNumber(data.total) : '—'}
         icon={UserMultiple02Icon}
         tone="purple"
+        loading={isLoading}
       />
       <StatCard
         label="Attendees"
-        value="15,894"
+        value={data ? formatNumber(data.attendees) : '—'}
         icon={UserGroupIcon}
         tone="purple"
+        loading={isLoading}
       />
       <StatCard
         label="Organizers"
-        value="5,410"
+        value={data ? formatNumber(data.organizers) : '—'}
         icon={Calendar03Icon}
         tone="purple"
+        loading={isLoading}
       />
       <StatCard
         label="Vendors"
-        value="3,200"
+        value={data ? formatNumber(data.vendors) : '—'}
         icon={Store01Icon}
         tone="purple"
+        loading={isLoading}
       />
     </section>
   )

@@ -25,6 +25,7 @@ import {
 } from '@ticketur/ui/components/avatar'
 
 import { listMockTransactions } from '@/lib/mock-transactions'
+import { formatShortDate } from '@/lib/date'
 
 const SORT_FIELDS = ['date', 'amount', 'fee'] as const
 type SortField = (typeof SORT_FIELDS)[number]
@@ -36,14 +37,6 @@ const TOTAL_TXNS = 24_512
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
 }
 
 function getInitials(name: string) {

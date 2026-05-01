@@ -15,6 +15,10 @@ import {
 
 import type { PendingEvent, TicketTier } from '@/lib/mock-moderation'
 import { ApproveRejectActions } from '@/components/dashboard/moderation/approve-reject-actions'
+import {
+  formatWeekdayDate as formatDate,
+  formatShortDate as formatJoined,
+} from '@/lib/date'
 
 const TIER_STATUS_TONE: Record<TicketTier['status'], string> = {
   'sold-out': 'text-rose-500',
@@ -32,23 +36,6 @@ const TIER_BAR_COLOR: Record<TicketTier['status'], string> = {
   'sold-out': 'bg-rose-500',
   active: 'bg-amber-500',
   early: 'bg-orange-500',
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
-
-function formatJoined(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
 }
 
 function formatNaira(n: number) {

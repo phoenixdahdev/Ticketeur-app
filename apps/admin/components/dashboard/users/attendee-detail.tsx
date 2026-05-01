@@ -1,25 +1,23 @@
 import Image from 'next/image'
 
-import { cn } from '@ticketur/ui/lib/utils'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '@ticketur/ui/components/avatar'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { AttendeeDetail } from '@/lib/mock-users'
 import { ProfileActions } from '@/components/dashboard/users/profile-actions'
+import { formatShortDate as formatDate } from '@/lib/date'
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
+type AttendeeDetail = Extract<
+  RouterOutputs['admin']['users']['byId'],
+  { role: 'attendee' }
+>
 
-function formatNaira(amount: number) {
-  return `₦${amount.toLocaleString('en-NG')}`
+// Tickets are stored in minor units (kobo). Format to display naira.
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
 function getInitials(name: string) {

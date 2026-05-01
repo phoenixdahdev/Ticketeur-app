@@ -9,9 +9,15 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { CheckmarkBadge02Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { VendorDetail } from '@/lib/mock-users'
 import { ProfileActions } from '@/components/dashboard/users/profile-actions'
+import { formatShortDate as formatDate } from '@/lib/date'
+
+type VendorDetail = Extract<
+  RouterOutputs['admin']['users']['byId'],
+  { role: 'vendor' }
+>
 
 const HISTORY_TABS = ['all', 'upcoming', 'archived'] as const
 type HistoryTab = (typeof HISTORY_TABS)[number]
@@ -26,14 +32,6 @@ const STATUS_TONE = {
   upcoming: 'text-emerald-600',
   archived: 'bg-muted text-muted-foreground px-2.5 py-1 rounded-md',
 } as const
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
 
 export function VendorDetailView({ user }: { user: VendorDetail }) {
   const [tab, setTab] = useQueryState(

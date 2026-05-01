@@ -3,14 +3,7 @@ import Link from 'next/link'
 
 import type { PendingVendor } from '@/lib/mock-moderation'
 import { ApproveRejectActions } from '@/components/dashboard/moderation/approve-reject-actions'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
+import { formatShortDate as formatDate } from '@/lib/date'
 
 export function VendorModDetail({ vendor }: { vendor: PendingVendor }) {
   return (
