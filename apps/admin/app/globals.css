@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+@import '@ticketur/ui/globals.css';
+@import 'streamdown/styles.css';
+@plugin '@tailwindcss/typography';
