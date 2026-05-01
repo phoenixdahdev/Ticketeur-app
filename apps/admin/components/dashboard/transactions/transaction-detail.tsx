@@ -1,24 +1,26 @@
 import Image from 'next/image'
+import { format } from 'date-fns'
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '@ticketur/ui/components/avatar'
+import type { RouterOutputs } from '@ticketur/api'
 
-import type { Transaction } from '@/lib/mock-transactions'
+import { formatWeekdayDate as formatLongDate, toDate } from '@/lib/date'
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
+type Tx = RouterOutputs['admin']['transactions']['byId']
+
+// Order amounts come from the API in minor units (kobo).
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
-function formatLongDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
+function formatPaidAt(iso: string) {
+  const d = toDate(iso)
+  if (!d) return ''
+  return format(d, "MMMM d, yyyy 'at' h:mm:ss a")
 }
 
 function getInitials(name: string) {
@@ -32,7 +34,7 @@ function getInitials(name: string) {
   )
 }
 
-export function TransactionDetail({ tx }: { tx: Transaction }) {
+export function TransactionDetail({ tx }: { tx: Tx }) {
   return (
     <div className="flex flex-col gap-6">
       <section className="border-border/60 bg-background flex flex-col gap-5 rounded-2xl border p-5 md:p-6">
@@ -40,7 +42,7 @@ export function TransactionDetail({ tx }: { tx: Transaction }) {
           <h2 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-3xl">
             {tx.reference}
           </h2>
-          <p className="text-muted-foreground text-sm">{tx.paidAt}</p>
+          <p className="text-muted-foreground text-sm">{formatPaidAt(tx.date)}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 md:gap-10">
@@ -57,10 +59,10 @@ export function TransactionDetail({ tx }: { tx: Transaction }) {
           </h3>
           <div className="flex items-center gap-3">
             <Avatar className="border-border/60 size-10 border">
-              {tx.attendeeAvatarUrl ? (
-                <AvatarImage asChild src={tx.attendeeAvatarUrl} alt="">
+              {tx.attendee.avatarUrl ? (
+                <AvatarImage asChild src={tx.attendee.avatarUrl} alt="">
                   <Image
-                    src={tx.attendeeAvatarUrl}
+                    src={tx.attendee.avatarUrl}
                     alt=""
                     width={40}
                     height={40}
@@ -69,15 +71,15 @@ export function TransactionDetail({ tx }: { tx: Transaction }) {
                 </AvatarImage>
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {getInitials(tx.attendeeName)}
+                {getInitials(tx.attendee.name)}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <span className="text-foreground text-sm font-semibold">
-                {tx.attendeeName}
+                {tx.attendee.name}
               </span>
               <span className="text-muted-foreground text-xs">
-                {tx.attendeeEmail}
+                {tx.attendee.email}
               </span>
             </div>
           </div>
@@ -88,10 +90,10 @@ export function TransactionDetail({ tx }: { tx: Transaction }) {
             Event Details
           </h3>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
-            <FieldBlock label="Event Name" value={tx.eventName} />
-            <FieldBlock label="Date" value={formatLongDate(tx.eventDate)} />
-            <FieldBlock label="Time" value={tx.eventTime} />
-            <FieldBlock label="Location" value={tx.eventLocation} />
+            <FieldBlock label="Event Name" value={tx.event.name} />
+            <FieldBlock label="Date" value={formatLongDate(tx.event.date)} />
+            <FieldBlock label="Time" value={tx.event.time} />
+            <FieldBlock label="Location" value={tx.event.location} />
           </div>
         </div>
 
@@ -100,9 +102,12 @@ export function TransactionDetail({ tx }: { tx: Transaction }) {
             Ticket Details
           </h3>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <FieldBlock label="Tier" value={tx.tier} />
-            <FieldBlock label="Amount" value={formatNaira(tx.amount)} />
-            <FieldBlock label="Quantity" value={tx.qty.toString()} />
+            <FieldBlock label="Tier" value={tx.ticket.tier} />
+            <FieldBlock
+              label="Amount"
+              value={formatNaira(tx.ticket.amount)}
+            />
+            <FieldBlock label="Quantity" value={tx.ticket.qty.toString()} />
           </div>
         </div>
       </section>

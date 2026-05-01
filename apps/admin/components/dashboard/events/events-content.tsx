@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
+import { useQuery } from '@tanstack/react-query'
 import {
   parseAsInteger,
   parseAsString,
@@ -15,17 +16,20 @@ import {
   Search01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  ArrowUp01Icon,
+  ArrowDown01Icon,
   MoreVerticalIcon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Input } from '@ticketur/ui/components/input'
+import type { RouterOutputs } from '@ticketur/api'
 
-import {
-  listAdminEvents,
-  type AdminEventRow,
-  type AdminEventStatus,
-} from '@/lib/mock-events'
+import { useTRPC } from '@/lib/trpc'
+import { formatShortDate as formatDate } from '@/lib/date'
+
+type AdminEventRow = RouterOutputs['admin']['events']['list']['rows'][number]
+type AdminEventStatus = AdminEventRow['status']
 
 const STATUS_TABS = ['all', 'published', 'archived', 'flagged'] as const
 type StatusTab = (typeof STATUS_TABS)[number]
@@ -43,7 +47,7 @@ type SortField = (typeof SORT_FIELDS)[number]
 const DIR_VALUES = ['asc', 'desc'] as const
 type SortDir = (typeof DIR_VALUES)[number]
 
-const TOTAL = 24_512
+const PAGE_SIZE = 10
 
 const STATUS_LABEL: Record<AdminEventStatus, string> = {
   published: 'Published',
@@ -61,15 +65,9 @@ function formatNumber(n: number) {
   return n.toLocaleString('en-US')
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-}
-
 export function EventsContent() {
+  const trpc = useTRPC()
+
   const [params, setParams] = useQueryStates(
     {
       tab: parseAsStringLiteral(STATUS_TABS).withDefault('all'),
@@ -81,40 +79,35 @@ export function EventsContent() {
     { history: 'replace', clearOnDefault: true }
   )
 
-  const rows = useMemo(() => {
-    let list = listAdminEvents()
-    if (params.tab !== 'all') {
-      list = list.filter((e) => e.status === params.tab)
-    }
-    if (params.q) {
-      const q = params.q.toLowerCase()
-      list = list.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.organizerName.toLowerCase().includes(q) ||
-          e.reference.toLowerCase().includes(q)
-      )
-    }
-    const sorted = [...list].sort((a, b) => {
-      let cmp = 0
-      switch (params.sort) {
-        case 'date':
-          cmp = a.date.localeCompare(b.date)
-          break
-        case 'name':
-          cmp = a.title.localeCompare(b.title)
-          break
-        case 'sales':
-          cmp = a.sold / a.total - b.sold / b.total
-          break
-      }
-      return params.dir === 'asc' ? cmp : -cmp
+  const listQuery = useQuery(
+    trpc.admin.events.list.queryOptions({
+      tab: params.tab,
+      q: params.q,
+      sort: params.sort,
+      dir: params.dir,
+      page: params.page,
+      pageSize: PAGE_SIZE,
     })
-    return sorted
-  }, [params.tab, params.q, params.sort, params.dir])
+  )
 
-  const totalPages = 3
+  const rows = listQuery.data?.rows ?? []
+  const total = listQuery.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const current = Math.min(Math.max(params.page, 1), totalPages)
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      void setParams((prev) => ({
+        sort: field,
+        dir:
+          prev.sort === field && prev.dir === 'asc'
+            ? ('desc' as SortDir)
+            : ('asc' as SortDir),
+        page: 1,
+      }))
+    },
+    [setParams]
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -157,42 +150,22 @@ export function EventsContent() {
           })}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
-              strokeWidth={1.8}
-            />
-            <Input
-              type="search"
-              value={params.q}
-              onChange={(e) =>
-                void setParams({ q: e.target.value || null, page: 1 })
-              }
-              placeholder="Search"
-              aria-label="Search events"
-              className="h-10 w-full pl-9"
-            />
-          </div>
-          <select
-            value={`${params.sort}:${params.dir}`}
-            onChange={(e) => {
-              const [sort, dir] = e.target.value.split(':') as [
-                SortField,
-                SortDir,
-              ]
-              void setParams({ sort, dir, page: 1 })
-            }}
-            aria-label="Sort by"
-            className="border-border/60 bg-background text-foreground hover:bg-muted/50 focus-visible:ring-primary/40 inline-flex h-10 items-center rounded-md border px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
-          >
-            <option value="date:desc">Sort by — Newest</option>
-            <option value="date:asc">Sort by — Oldest</option>
-            <option value="name:asc">Sort by — Name (A→Z)</option>
-            <option value="sales:desc">Sort by — Sales (high)</option>
-            <option value="sales:asc">Sort by — Sales (low)</option>
-          </select>
+        <div className="relative w-full sm:w-64">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            strokeWidth={1.8}
+          />
+          <Input
+            type="search"
+            value={params.q}
+            onChange={(e) =>
+              void setParams({ q: e.target.value || null, page: 1 })
+            }
+            placeholder="Search"
+            aria-label="Search events"
+            className="h-10 w-full pl-9"
+          />
         </div>
       </div>
 
@@ -200,21 +173,52 @@ export function EventsContent() {
         <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[860px] table-auto">
             <thead className="bg-primary/5">
-              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                <th className="px-5 py-4 text-left">Event Name</th>
+              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
+                <SortableHeader
+                  field="name"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Event Name
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Organizer</th>
-                <th className="px-5 py-4 text-left">Date</th>
+                <SortableHeader
+                  field="date"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Date
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Status</th>
-                <th className="px-5 py-4 text-left">Ticket Sales</th>
+                <SortableHeader
+                  field="sales"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Ticket Sales
+                </SortableHeader>
                 <th className="px-5 py-4 text-left">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
-              {rows.length === 0 ? (
+              {listQuery.isLoading ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center">
                     <p className="text-muted-foreground text-sm">
-                      No events match your filters.
+                      Loading events…
+                    </p>
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      {params.q || params.tab !== 'all'
+                        ? 'No events match your filters.'
+                        : 'No events yet.'}
                     </p>
                   </td>
                 </tr>
@@ -227,13 +231,53 @@ export function EventsContent() {
       </div>
 
       <Pagination
-        total={TOTAL}
+        total={total}
         shown={rows.length}
         current={current}
         totalPages={totalPages}
         onPage={(p) => void setParams({ page: p })}
       />
     </div>
+  )
+}
+
+function SortableHeader({
+  field,
+  sort,
+  dir,
+  onSort,
+  children,
+}: {
+  field: SortField
+  sort: SortField
+  dir: SortDir
+  onSort: (field: SortField) => void
+  children: React.ReactNode
+}) {
+  const active = sort === field
+  return (
+    <th className="px-5 py-4 text-left">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-sort={
+          active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
+        }
+        className={cn(
+          'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
+          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        <span>{children}</span>
+        {active ? (
+          <HugeiconsIcon
+            icon={dir === 'asc' ? ArrowUp01Icon : ArrowDown01Icon}
+            className="size-3.5"
+            strokeWidth={2.2}
+          />
+        ) : null}
+      </button>
+    </th>
   )
 }
 
@@ -247,13 +291,19 @@ function Row({ row }: { row: AdminEventRow }) {
           href={`/events/${row.id}`}
           className="flex items-center gap-3"
         >
-          <Image
-            src={row.thumbnailUrl}
-            alt=""
-            width={40}
-            height={40}
-            className="size-10 shrink-0 rounded-full object-cover"
-          />
+          {row.thumbnailUrl ? (
+            <Image
+              src={row.thumbnailUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="size-10 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+              {row.title.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-foreground hover:text-primary font-semibold transition-colors">
               {row.title}

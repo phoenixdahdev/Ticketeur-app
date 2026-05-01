@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useQuery } from '@tanstack/react-query'
 import {
   parseAsInteger,
   parseAsString,
@@ -14,6 +15,8 @@ import {
   Search01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  ArrowUp01Icon,
+  ArrowDown01Icon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
@@ -24,7 +27,8 @@ import {
   AvatarImage,
 } from '@ticketur/ui/components/avatar'
 
-import { listMockTransactions } from '@/lib/mock-transactions'
+import { useTRPC } from '@/lib/trpc'
+import { formatShortDate } from '@/lib/date'
 
 const SORT_FIELDS = ['date', 'amount', 'fee'] as const
 type SortField = (typeof SORT_FIELDS)[number]
@@ -32,18 +36,11 @@ type SortField = (typeof SORT_FIELDS)[number]
 const DIR_VALUES = ['asc', 'desc'] as const
 type SortDir = (typeof DIR_VALUES)[number]
 
-const TOTAL_TXNS = 24_512
+const PAGE_SIZE = 10
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
+// Order amounts come from the API in minor units (kobo).
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
 function getInitials(name: string) {
@@ -58,6 +55,8 @@ function getInitials(name: string) {
 }
 
 export function TransactionsContent() {
+  const trpc = useTRPC()
+
   const [params, setParams] = useQueryStates(
     {
       q: parseAsString.withDefault(''),
@@ -68,37 +67,34 @@ export function TransactionsContent() {
     { history: 'replace', clearOnDefault: true }
   )
 
-  const rows = useMemo(() => {
-    let list = listMockTransactions()
-    if (params.q) {
-      const q = params.q.toLowerCase()
-      list = list.filter(
-        (t) =>
-          t.attendeeName.toLowerCase().includes(q) ||
-          t.eventName.toLowerCase().includes(q) ||
-          t.reference.toLowerCase().includes(q)
-      )
-    }
-    const sorted = [...list].sort((a, b) => {
-      let cmp = 0
-      switch (params.sort) {
-        case 'date':
-          cmp = a.date.localeCompare(b.date)
-          break
-        case 'amount':
-          cmp = a.amount - b.amount
-          break
-        case 'fee':
-          cmp = a.fee - b.fee
-          break
-      }
-      return params.dir === 'asc' ? cmp : -cmp
+  const listQuery = useQuery(
+    trpc.admin.transactions.list.queryOptions({
+      q: params.q,
+      sort: params.sort,
+      dir: params.dir,
+      page: params.page,
+      pageSize: PAGE_SIZE,
     })
-    return sorted
-  }, [params.q, params.sort, params.dir])
+  )
 
-  const totalPages = 3
+  const rows = listQuery.data?.rows ?? []
+  const total = listQuery.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const current = Math.min(Math.max(params.page, 1), totalPages)
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      void setParams((prev) => ({
+        sort: field,
+        dir:
+          prev.sort === field && prev.dir === 'asc'
+            ? ('desc' as SortDir)
+            : ('asc' as SortDir),
+        page: 1,
+      }))
+    },
+    [setParams]
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,46 +116,58 @@ export function TransactionsContent() {
             className="h-10 w-full pl-9"
           />
         </div>
-        <select
-          value={`${params.sort}:${params.dir}`}
-          onChange={(e) => {
-            const [sort, dir] = e.target.value.split(':') as [
-              SortField,
-              SortDir,
-            ]
-            void setParams({ sort, dir, page: 1 })
-          }}
-          aria-label="Sort by"
-          className="border-border/60 bg-background text-foreground hover:bg-muted/50 focus-visible:ring-primary/40 inline-flex h-10 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2 md:w-44"
-        >
-          <option value="date:desc">Sort by — Newest</option>
-          <option value="date:asc">Sort by — Oldest</option>
-          <option value="amount:desc">Sort by — Amount (high)</option>
-          <option value="amount:asc">Sort by — Amount (low)</option>
-          <option value="fee:desc">Sort by — Fee (high)</option>
-          <option value="fee:asc">Sort by — Fee (low)</option>
-        </select>
       </div>
 
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
         <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[860px] table-auto">
             <thead className="bg-primary/5">
-              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
                 <th className="px-5 py-4 text-left">User</th>
                 <th className="px-5 py-4 text-left">Event</th>
                 <th className="px-5 py-4 text-left">Ticket Tier (Qty)</th>
-                <th className="px-5 py-4 text-left">Amount</th>
-                <th className="px-5 py-4 text-left">Fee</th>
-                <th className="px-5 py-4 text-left">Date</th>
+                <SortableHeader
+                  field="amount"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Amount
+                </SortableHeader>
+                <SortableHeader
+                  field="fee"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Fee
+                </SortableHeader>
+                <SortableHeader
+                  field="date"
+                  sort={params.sort}
+                  dir={params.dir}
+                  onSort={handleSort}
+                >
+                  Date
+                </SortableHeader>
               </tr>
             </thead>
             <tbody className="divide-border/60 divide-y">
-              {rows.length === 0 ? (
+              {listQuery.isLoading ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center">
                     <p className="text-muted-foreground text-sm">
-                      No transactions match your search.
+                      Loading transactions…
+                    </p>
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      {params.q
+                        ? 'No transactions match your search.'
+                        : 'No transactions yet.'}
                     </p>
                   </td>
                 </tr>
@@ -226,13 +234,53 @@ export function TransactionsContent() {
       </div>
 
       <Pagination
-        total={TOTAL_TXNS}
+        total={total}
         shown={rows.length}
         current={current}
         totalPages={totalPages}
         onPage={(p) => void setParams({ page: p })}
       />
     </div>
+  )
+}
+
+function SortableHeader({
+  field,
+  sort,
+  dir,
+  onSort,
+  children,
+}: {
+  field: SortField
+  sort: SortField
+  dir: SortDir
+  onSort: (field: SortField) => void
+  children: React.ReactNode
+}) {
+  const active = sort === field
+  return (
+    <th className="px-5 py-4 text-left">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-sort={
+          active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
+        }
+        className={cn(
+          'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
+          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        <span>{children}</span>
+        {active ? (
+          <HugeiconsIcon
+            icon={dir === 'asc' ? ArrowUp01Icon : ArrowDown01Icon}
+            className="size-3.5"
+            strokeWidth={2.2}
+          />
+        ) : null}
+      </button>
+    </th>
   )
 }
 

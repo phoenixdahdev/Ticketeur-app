@@ -7,6 +7,7 @@ import { vendorsRouter } from './vendors'
 import { vendorRouter } from './vendor/_index'
 import { publicRouter } from './public/_index'
 import { accountRouter } from './account/_index'
+import { adminRouter } from './admin/_index'
 
 export const appRouter = createTRPCRouter({
   org: createTRPCRouter({
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   vendor: vendorRouter,
   public: publicRouter,
   account: accountRouter,
+  admin: adminRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -1,24 +1,18 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 
-import { getMockTransaction } from '@/lib/mock-transactions'
-import { BackButton } from '@/components/dashboard/users/back-button'
-import { TransactionDetail } from '@/components/dashboard/transactions/transaction-detail'
+import { TransactionDetailContent } from '@/components/dashboard/transactions/transaction-detail-content'
 
 export async function generateMetadata({
   params,
 }: PageProps<'/transactions/[id]'>): Promise<Metadata> {
   const { id } = await params
-  const tx = getMockTransaction(id)
-  return { title: tx ? tx.reference : 'Transaction' }
+  return { title: `TXN-${id.slice(0, 8).toUpperCase()}` }
 }
 
 export default async function TransactionDetailPage({
   params,
 }: PageProps<'/transactions/[id]'>) {
   const { id } = await params
-  const tx = getMockTransaction(id)
-  if (!tx) notFound()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
@@ -31,9 +25,7 @@ export default async function TransactionDetailPage({
         </p>
       </header>
 
-      <BackButton label="Back" />
-
-      <TransactionDetail tx={tx} />
+      <TransactionDetailContent id={id} />
     </div>
   )
 }

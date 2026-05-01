@@ -1,16 +1,22 @@
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
 import { UserMultiple02Icon } from '@hugeicons/core-free-icons'
 
+import { useTRPC } from '@/lib/trpc'
 import { StatCard } from '@/components/dashboard/stat-card'
-import {
-  TX_TOTAL_REVENUE,
-  TX_TOTAL_FEES,
-} from '@/lib/mock-transactions'
 
-function formatNaira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
+// Stats are summed in minor units (kobo); convert to naira on display.
+function formatNaira(minor: number) {
+  return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
 export function TransactionsStats() {
+  const trpc = useTRPC()
+  const { data, isLoading } = useQuery(
+    trpc.admin.transactions.stats.queryOptions()
+  )
+
   return (
     <section
       aria-label="Financial overview"
@@ -18,15 +24,17 @@ export function TransactionsStats() {
     >
       <StatCard
         label="Total Revenue"
-        value={formatNaira(TX_TOTAL_REVENUE)}
+        value={data ? formatNaira(data.totalRevenue) : '—'}
         icon={UserMultiple02Icon}
         tone="blue"
+        loading={isLoading}
       />
       <StatCard
         label="Total platform fees"
-        value={formatNaira(TX_TOTAL_FEES)}
+        value={data ? formatNaira(data.totalFees) : '—'}
         icon={UserMultiple02Icon}
         tone="blue"
+        loading={isLoading}
       />
     </section>
   )
