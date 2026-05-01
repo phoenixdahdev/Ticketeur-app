@@ -1,5 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { formatDistanceToNow } from 'date-fns'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Delete02Icon,
@@ -7,46 +13,157 @@ import {
   Tick02Icon,
 } from '@hugeicons/core-free-icons'
 
-type ModerationItem = {
-  id: string
-  title: string
-  reason: string
-  reasonLabel: string
-  reportedAt: string
-  imageUrl: string
+import type { RouterOutputs } from '@ticketur/api'
+
+import { useTRPC } from '@/lib/trpc'
+import { toDate } from '@/lib/date'
+
+type QueueItem = RouterOutputs['admin']['moderation']['queue'][number]
+
+function relativeTime(iso: string) {
+  const d = toDate(iso)
+  if (!d) return ''
+  return `Reported ${formatDistanceToNow(d, { addSuffix: false })} ago`
 }
 
-const ITEMS: ModerationItem[] = [
-  {
-    id: '1',
-    title: 'Lagos Fest 2026',
-    reason: 'Flagged for:',
-    reasonLabel: 'Fraud Suspicion',
-    reportedAt: 'Reported 2h ago',
-    imageUrl:
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop',
-  },
-  {
-    id: '2',
-    title: 'Tasty Bites',
-    reason: 'Request:',
-    reasonLabel: 'Vendor Approval',
-    reportedAt: 'Reported 5h ago',
-    imageUrl:
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop',
-  },
-  {
-    id: '3',
-    title: 'Secret Rooftop Party',
-    reason: 'Request:',
-    reasonLabel: 'Event Approval',
-    reportedAt: 'Reported 5h ago',
-    imageUrl:
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=200&h=200&fit=crop',
-  },
-]
+function getInitials(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase())
+      .join('') || '?'
+  )
+}
 
 export function ModerationQueue() {
+  const trpc = useTRPC()
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { data, isLoading } = useQuery(
+    trpc.admin.moderation.queue.queryOptions()
+  )
+
+  function invalidate() {
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.queue.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.stats.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.pendingVendors.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.pendingEvents.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.moderation.flaggedActivities.queryKey(),
+    })
+    queryClient.invalidateQueries({
+      queryKey: trpc.admin.overview.stats.queryKey(),
+    })
+  }
+
+  const approveVendorMut = useMutation(
+    trpc.admin.moderation.approveVendor.mutationOptions({
+      onSuccess: () => {
+        toast.success('Vendor approved', {
+          description: 'They have been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not approve', { description: e.message }),
+    })
+  )
+
+  const rejectVendorMut = useMutation(
+    trpc.admin.moderation.rejectVendor.mutationOptions({
+      onSuccess: () => {
+        toast.success('Vendor rejected', {
+          description: 'They have been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not reject', { description: e.message }),
+    })
+  )
+
+  const approveEventMut = useMutation(
+    trpc.admin.moderation.approveEvent.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event approved', {
+          description: 'The organizer has been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not approve', { description: e.message }),
+    })
+  )
+
+  const rejectEventMut = useMutation(
+    trpc.admin.moderation.rejectEvent.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event rejected', {
+          description: 'The organizer has been notified by email.',
+        })
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not reject', { description: e.message }),
+    })
+  )
+
+  const dismissFlagMut = useMutation(
+    trpc.admin.moderation.dismissFlag.mutationOptions({
+      onSuccess: () => {
+        toast.success('Report dismissed')
+        invalidate()
+      },
+      onError: (e) =>
+        toast.error('Could not dismiss', { description: e.message }),
+    })
+  )
+
+  const busy =
+    approveVendorMut.isPending ||
+    rejectVendorMut.isPending ||
+    approveEventMut.isPending ||
+    rejectEventMut.isPending ||
+    dismissFlagMut.isPending
+
+  function handleApprove(item: QueueItem) {
+    if (busy) return
+    if (item.kind === 'vendor') approveVendorMut.mutate({ id: item.id })
+    else if (item.kind === 'event') approveEventMut.mutate({ id: item.id })
+    else router.push(item.href)
+  }
+
+  function handleReject(item: QueueItem) {
+    if (busy) return
+    if (item.kind === 'vendor') {
+      const reason =
+        prompt(`Reason for rejecting ${item.title}? (optional)`) ?? ''
+      rejectVendorMut.mutate({ id: item.id, reason })
+      return
+    }
+    if (item.kind === 'event') {
+      const reason =
+        prompt(`Reason for rejecting ${item.title}? (optional)`) ?? ''
+      rejectEventMut.mutate({ id: item.id, reason })
+      return
+    }
+    // report — dismiss
+    dismissFlagMut.mutate({ id: item.id })
+  }
+
+  const items = data ?? []
+
   return (
     <section
       aria-label="Moderation queue"
@@ -64,61 +181,97 @@ export function ModerationQueue() {
         </Link>
       </header>
 
-      <ul className="flex flex-col">
-        {ITEMS.map((item) => (
-          <li
-            key={item.id}
-            className="border-border/60 flex items-center gap-3 border-b py-3 last:border-b-0 last:pb-0 first:pt-0"
-          >
-            <Image
-              src={item.imageUrl}
-              alt=""
-              width={56}
-              height={56}
-              className="size-12 shrink-0 rounded-full object-cover md:size-14"
+      {isLoading ? (
+        <div className="flex flex-col gap-3 py-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-muted h-14 animate-pulse rounded-xl"
             />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <p className="text-foreground text-sm font-semibold md:text-base">
-                {item.title}
-              </p>
-              <p className="text-muted-foreground text-xs md:text-sm">
-                {item.reason}{' '}
-                <span className="text-primary font-medium">
-                  {item.reasonLabel}
-                </span>
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <span className="text-muted-foreground hidden text-xs whitespace-nowrap md:block">
-                {item.reportedAt}
-              </span>
-              <div className="flex items-center gap-1.5">
-                <ActionPill tone="danger" label="Reject">
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    className="size-4"
-                    strokeWidth={1.8}
-                  />
-                </ActionPill>
-                <ActionPill tone="muted" label="View">
-                  <HugeiconsIcon
-                    icon={ViewIcon}
-                    className="size-4"
-                    strokeWidth={1.8}
-                  />
-                </ActionPill>
-                <ActionPill tone="success" label="Approve">
-                  <HugeiconsIcon
-                    icon={Tick02Icon}
-                    className="size-4"
-                    strokeWidth={2}
-                  />
-                </ActionPill>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-muted-foreground py-8 text-center text-sm">
+          Nothing pending — all caught up.
+        </p>
+      ) : (
+        <ul className="flex flex-col">
+          {items.map((item) => (
+            <li
+              key={`${item.kind}-${item.id}`}
+              className="border-border/60 flex items-center gap-3 border-b py-3 last:border-b-0 last:pb-0 first:pt-0"
+            >
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="size-12 shrink-0 rounded-full object-cover md:size-14"
+                />
+              ) : (
+                <div className="bg-primary/10 text-primary flex size-12 shrink-0 items-center justify-center rounded-full text-xs font-semibold md:size-14">
+                  {getInitials(item.title)}
+                </div>
+              )}
+              <div className="flex min-w-0 flex-1 flex-col">
+                <p className="text-foreground truncate text-sm font-semibold md:text-base">
+                  {item.title}
+                </p>
+                <p className="text-muted-foreground truncate text-xs md:text-sm">
+                  {item.reasonLabel}{' '}
+                  <span className="text-primary font-medium">
+                    {item.reasonValue}
+                  </span>
+                </p>
               </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+              <div className="flex flex-col items-end gap-2">
+                <span className="text-muted-foreground hidden text-xs whitespace-nowrap md:block">
+                  {relativeTime(item.timestamp)}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <ActionPill
+                    tone="danger"
+                    label={item.kind === 'report' ? 'Dismiss' : 'Reject'}
+                    disabled={busy}
+                    onClick={() => handleReject(item)}
+                  >
+                    <HugeiconsIcon
+                      icon={Delete02Icon}
+                      className="size-4"
+                      strokeWidth={1.8}
+                    />
+                  </ActionPill>
+                  <ActionPill
+                    tone="muted"
+                    label="View"
+                    disabled={busy}
+                    onClick={() => router.push(item.href)}
+                  >
+                    <HugeiconsIcon
+                      icon={ViewIcon}
+                      className="size-4"
+                      strokeWidth={1.8}
+                    />
+                  </ActionPill>
+                  <ActionPill
+                    tone="success"
+                    label={item.kind === 'report' ? 'Open' : 'Approve'}
+                    disabled={busy || item.kind === 'report'}
+                    onClick={() => handleApprove(item)}
+                  >
+                    <HugeiconsIcon
+                      icon={Tick02Icon}
+                      className="size-4"
+                      strokeWidth={2}
+                    />
+                  </ActionPill>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -127,10 +280,14 @@ function ActionPill({
   tone,
   label,
   children,
+  disabled,
+  onClick,
 }: {
   tone: 'danger' | 'muted' | 'success'
   label: string
   children: React.ReactNode
+  disabled?: boolean
+  onClick?: () => void
 }) {
   const styles = {
     danger: 'bg-red-100 text-red-600 hover:bg-red-200',
@@ -141,7 +298,10 @@ function ActionPill({
     <button
       type="button"
       aria-label={label}
-      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors ${styles}`}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex h-7 w-9 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${styles}`}
     >
       {children}
     </button>

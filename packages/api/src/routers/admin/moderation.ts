@@ -113,6 +113,97 @@ export const adminModerationRouter = createTRPCRouter({
     }))
   }),
 
+  // Top 5 pending items mixed across vendor approvals, event approvals,
+  // and open reports. Used by the overview page.
+  queue: adminProcedure.query(async ({ ctx }) => {
+    const [vendorRows, eventRows, reportRows] = await Promise.all([
+      ctx.db
+        .select({
+          id: user.id,
+          name: user.name,
+          businessName: user.businessName,
+          image: user.image,
+          createdAt: user.createdAt,
+        })
+        .from(user)
+        .where(VENDOR_PENDING)
+        .orderBy(desc(user.createdAt))
+        .limit(5),
+      ctx.db
+        .select({
+          id: events.id,
+          title: events.title,
+          bannerUrl: events.bannerUrl,
+          createdAt: events.createdAt,
+        })
+        .from(events)
+        .where(EVENT_PENDING)
+        .orderBy(desc(events.createdAt))
+        .limit(5),
+      ctx.db
+        .select()
+        .from(reports)
+        .where(REPORT_OPEN)
+        .orderBy(desc(reports.createdAt))
+        .limit(5),
+    ])
+
+    type Item = {
+      kind: 'vendor' | 'event' | 'report'
+      // Routing target for the row's view button.
+      href: string
+      // ID of the underlying record (used for approve/reject mutations).
+      id: string
+      title: string
+      reasonLabel: string
+      reasonValue: string
+      imageUrl: string | null
+      timestamp: string
+    }
+
+    const items: Item[] = [
+      ...vendorRows.map(
+        (v): Item => ({
+          kind: 'vendor',
+          href: `/moderation/vendor/${v.id}`,
+          id: v.id,
+          title: v.businessName ?? v.name,
+          reasonLabel: 'Request:',
+          reasonValue: 'Vendor Approval',
+          imageUrl: v.image ?? null,
+          timestamp: v.createdAt.toISOString(),
+        })
+      ),
+      ...eventRows.map(
+        (e): Item => ({
+          kind: 'event',
+          href: `/moderation/event/${e.id}`,
+          id: e.id,
+          title: e.title,
+          reasonLabel: 'Request:',
+          reasonValue: 'Event Approval',
+          imageUrl: e.bannerUrl ?? null,
+          timestamp: e.createdAt.toISOString(),
+        })
+      ),
+      ...reportRows.map(
+        (r): Item => ({
+          kind: 'report',
+          href: '/moderation?tab=flagged',
+          id: r.id,
+          title: r.reason,
+          reasonLabel: 'Flagged for:',
+          reasonValue: r.detail || r.reason,
+          imageUrl: null,
+          timestamp: r.createdAt.toISOString(),
+        })
+      ),
+    ]
+
+    items.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+    return items.slice(0, 5)
+  }),
+
   flaggedActivities: adminProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db
       .select()
