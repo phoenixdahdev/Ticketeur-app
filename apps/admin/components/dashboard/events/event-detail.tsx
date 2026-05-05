@@ -24,6 +24,7 @@ import type { RouterOutputs } from '@ticketur/api'
 import {
   formatWeekdayDate as formatLongDate,
   formatMonthDay as formatShortDate,
+  formatEventDateRange,
   daysUntil,
 } from '@/lib/date'
 
@@ -118,7 +119,14 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
             Event Details
           </h3>
           <div className="flex flex-wrap gap-3">
-            <DetailPill icon={Calendar03Icon} text={formatLongDate(event.date)} />
+            <DetailPill
+              icon={Calendar03Icon}
+              text={
+                event.endDate && event.endDate !== event.date
+                  ? formatEventDateRange(event.date, event.endDate)
+                  : formatLongDate(event.date)
+              }
+            />
             <DetailPill icon={Clock01Icon} text={event.eventTime} />
             <DetailPill icon={MapsLocation02Icon} text={event.location} />
           </div>
@@ -206,7 +214,9 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
             Event Date
           </span>
           <span className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
-            {formatShortDate(event.date)}
+            {event.endDate && event.endDate !== event.date
+              ? formatEventDateRange(event.date, event.endDate)
+              : formatShortDate(event.date)}
           </span>
           <span className="text-muted-foreground text-xs">
             ({daysUntil(event.date)} days remaining)

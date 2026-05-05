@@ -8,7 +8,11 @@ import {
 } from '@ticketur/ui/components/avatar'
 import type { RouterOutputs } from '@ticketur/api'
 
-import { formatWeekdayDate as formatLongDate, toDate } from '@/lib/date'
+import {
+  formatWeekdayDate as formatLongDate,
+  formatEventDateRange,
+  toDate,
+} from '@/lib/date'
 
 type Tx = RouterOutputs['admin']['transactions']['byId']
 
@@ -91,7 +95,14 @@ export function TransactionDetail({ tx }: { tx: Tx }) {
           </h3>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
             <FieldBlock label="Event Name" value={tx.event.name} />
-            <FieldBlock label="Date" value={formatLongDate(tx.event.date)} />
+            <FieldBlock
+              label="Date"
+              value={
+                tx.event.endDate && tx.event.endDate !== tx.event.date
+                  ? formatEventDateRange(tx.event.date, tx.event.endDate)
+                  : formatLongDate(tx.event.date)
+              }
+            />
             <FieldBlock label="Time" value={tx.event.time} />
             <FieldBlock label="Location" value={tx.event.location} />
           </div>

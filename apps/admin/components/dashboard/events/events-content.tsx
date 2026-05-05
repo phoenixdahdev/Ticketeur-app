@@ -26,7 +26,7 @@ import { Input } from '@ticketur/ui/components/input'
 import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
-import { formatShortDate as formatDate } from '@/lib/date'
+import { formatEventDateRange } from '@/lib/date'
 
 type AdminEventRow = RouterOutputs['admin']['events']['list']['rows'][number]
 type AdminEventStatus = AdminEventRow['status']
@@ -318,7 +318,7 @@ function Row({ row }: { row: AdminEventRow }) {
         {row.organizerName}
       </td>
       <td className="text-foreground px-5 py-4 whitespace-nowrap">
-        {formatDate(row.date)}
+        {formatEventDateRange(row.date, row.endDate)}
       </td>
       <td className="px-5 py-4">
         <span

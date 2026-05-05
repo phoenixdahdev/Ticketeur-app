@@ -13,7 +13,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { ProfileActions } from '@/components/dashboard/users/profile-actions'
 import { StatusPill } from '@/components/dashboard/users/status-pill'
-import { formatShortDate as formatDate } from '@/lib/date'
+import { formatShortDate as formatDate, formatEventDateRange } from '@/lib/date'
 
 type VendorDetail = Extract<
   RouterOutputs['admin']['users']['byId'],
@@ -259,7 +259,7 @@ export function VendorDetailView({ user }: { user: VendorDetail }) {
                         </span>
                       </td>
                       <td className="text-foreground px-5 py-4 whitespace-nowrap">
-                        {formatDate(row.date)}
+                        {formatEventDateRange(row.date, row.endDate)}
                       </td>
                       <td className="px-5 py-4">
                         <span
