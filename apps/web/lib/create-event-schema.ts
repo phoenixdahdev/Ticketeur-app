@@ -26,20 +26,29 @@ export const externalVendorSchema = z.object({
   phone: z.string().trim().min(1, 'Phone number required'),
 })
 
-export const createEventSchema = z.object({
-  title: z.string().trim().min(1, 'Event title required'),
-  description: z
-    .string()
-    .trim()
-    .min(10, 'Add at least 10 characters describing the event'),
-  date: z.string().min(1, 'Date required'),
-  time: z.string().min(1, 'Time required'),
-  location: z.string().trim().min(1, 'Location required'),
-  features: z.array(z.string().trim()),
-  tiers: z.array(ticketTierSchema).min(1, 'At least one ticket tier'),
-  assignedVendorIds: z.array(z.string()),
-  externalInvites: z.array(externalVendorSchema),
-})
+export const createEventSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Event title required'),
+    description: z
+      .string()
+      .trim()
+      .min(10, 'Add at least 10 characters describing the event'),
+    date: z.string().min(1, 'Date required'),
+    // ISO end date for multi-day events. Null means single-day; the event
+    // runs only on `date`. Always present in form values (kept null when
+    // the user picks the Single-day toggle) so RHF types stay stable.
+    endDate: z.string().nullable(),
+    time: z.string().min(1, 'Time required'),
+    location: z.string().trim().min(1, 'Location required'),
+    features: z.array(z.string().trim()),
+    tiers: z.array(ticketTierSchema).min(1, 'At least one ticket tier'),
+    assignedVendorIds: z.array(z.string()),
+    externalInvites: z.array(externalVendorSchema),
+  })
+  .refine(
+    (v) => !v.endDate || v.endDate >= v.date,
+    { path: ['endDate'], message: 'End date must be on or after the start date' }
+  )
 
 export type TicketTierValues = z.infer<typeof ticketTierSchema>
 export type ExternalVendorValues = z.infer<typeof externalVendorSchema>
@@ -49,6 +58,7 @@ export const CREATE_EVENT_DEFAULTS: CreateEventValues = {
   title: '',
   description: '',
   date: '',
+  endDate: null,
   time: '',
   location: '',
   features: [],

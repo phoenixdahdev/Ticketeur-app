@@ -277,6 +277,7 @@ export const adminUsersRouter = createTRPCRouter({
             title: events.title,
             status: events.status,
             eventDate: events.eventDate,
+            endDate: events.endDate,
             bannerUrl: events.bannerUrl,
             sold: sql<number>`coalesce(sum(${ticketTiers.sold}), 0)`,
             total: sql<number>`coalesce(sum(${ticketTiers.quantity}), 0)`,
@@ -316,6 +317,7 @@ export const adminUsersRouter = createTRPCRouter({
             eventId: r.id,
             category: '',
             date: r.eventDate,
+            endDate: r.endDate,
             sold: Number(r.sold),
             total: Number(r.total),
             status: ((r.status === 'upcoming' || r.status === 'archived'
@@ -338,6 +340,7 @@ export const adminUsersRouter = createTRPCRouter({
           eventId: events.id,
           eventName: events.title,
           eventDate: events.eventDate,
+          endDate: events.endDate,
           status: events.status,
           bannerUrl: events.bannerUrl,
         })
@@ -364,6 +367,7 @@ export const adminUsersRouter = createTRPCRouter({
           eventName: r.eventName,
           category: '',
           date: r.eventDate,
+          endDate: r.endDate,
           status:
             r.status === 'upcoming'
               ? ('upcoming' as const)

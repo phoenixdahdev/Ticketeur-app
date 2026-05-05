@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import { TRPCError } from '@trpc/server'
 import { tasks } from '@trigger.dev/sdk'
+import { format } from 'date-fns'
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -29,14 +30,15 @@ const startInput = z.object({
   buyerPhone: z.string().trim().min(7, 'Phone required'),
 })
 
-function formatEventDate(iso: string) {
-  const d = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('en-US', {
-    month: 'long',
-    day: '2-digit',
-    year: 'numeric',
-  })
+function formatEventDate(start: string, end: string | null) {
+  const startDate = new Date(`${start}T00:00:00`)
+  if (Number.isNaN(startDate.getTime())) return start
+  const startStr = format(startDate, 'MMMM d, yyyy')
+  if (!end || end === start) return startStr
+  const endDate = new Date(`${end}T00:00:00`)
+  if (Number.isNaN(endDate.getTime())) return startStr
+  // Cross-year is rare for tickets; one safe format covers all cases.
+  return `${startStr} – ${format(endDate, 'MMMM d, yyyy')}`
 }
 
 export const publicCheckoutRouter = createTRPCRouter({
@@ -60,6 +62,7 @@ export const publicCheckoutRouter = createTRPCRouter({
             id: events.id,
             title: events.title,
             eventDate: events.eventDate,
+            endDate: events.endDate,
             eventTime: events.eventTime,
             location: events.location,
             status: events.status,
@@ -172,6 +175,7 @@ export const publicCheckoutRouter = createTRPCRouter({
           isFree,
           eventTitle: event.title,
           eventDate: event.eventDate,
+          endDate: event.endDate,
           eventTime: event.eventTime,
           eventLocation: event.location,
           tierName: tier.name,
@@ -193,7 +197,7 @@ export const publicCheckoutRouter = createTRPCRouter({
           email: input.buyerEmail,
           firstName,
           eventTitle: result.eventTitle,
-          eventDate: formatEventDate(result.eventDate),
+          eventDate: formatEventDate(result.eventDate, result.endDate),
           eventTime: result.eventTime,
           eventLocation: result.eventLocation,
           ticketTier: result.tierName,

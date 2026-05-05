@@ -181,7 +181,7 @@ function TicketRow({ order }: { order: OrderRow }) {
         </div>
 
         <ul className="text-muted-foreground flex flex-wrap gap-x-5 gap-y-1.5 text-xs sm:text-sm">
-          <Meta icon={Calendar03Icon} value={formatEventDate(order.event.eventDate)} />
+          <Meta icon={Calendar03Icon} value={formatEventDate(order.event.eventDate, order.event.endDate)} />
           <Meta icon={Clock01Icon} value={order.event.eventTime} />
           <Meta icon={Location01Icon} value={order.event.location} />
         </ul>

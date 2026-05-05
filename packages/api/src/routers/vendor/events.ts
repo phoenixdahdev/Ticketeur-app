@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, lt, gte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import {
@@ -24,8 +24,13 @@ export const vendorEventsRouter = createTRPCRouter({
     const today = new Date().toISOString().slice(0, 10)
 
     const filters = [eq(eventVendors.vendorId, vendorId)]
-    if (input.tab === 'upcoming') filters.push(gte(events.eventDate, today))
-    if (input.tab === 'past') filters.push(lt(events.eventDate, today))
+    // Multi-day events: still upcoming while today <= end_date (or event_date if no end).
+    if (input.tab === 'upcoming') {
+      filters.push(sql`COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}`)
+    }
+    if (input.tab === 'past') {
+      filters.push(sql`COALESCE(${events.endDate}, ${events.eventDate}) < ${today}`)
+    }
     if (input.q.trim().length > 0) {
       filters.push(ilike(events.title, `%${input.q.trim()}%`))
     }
@@ -35,6 +40,7 @@ export const vendorEventsRouter = createTRPCRouter({
         id: events.id,
         title: events.title,
         eventDate: events.eventDate,
+        endDate: events.endDate,
         eventTime: events.eventTime,
         location: events.location,
         bannerUrl: events.bannerUrl,

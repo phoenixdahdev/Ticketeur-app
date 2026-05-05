@@ -42,6 +42,7 @@ type ServerEvent = {
   id: string
   title: string
   eventDate: string
+  endDate: string | null
   eventTime: string
   location: string
   bannerUrl: string | null
@@ -64,11 +65,14 @@ const STATUS_TONE: Record<DerivedStatus, string> = {
 
 function deriveStatus(
   eventDate: string,
+  endDate: string | null,
   serverStatus: string
 ): DerivedStatus {
   const today = new Date().toISOString().slice(0, 10)
-  if (eventDate === today) return 'live'
-  if (eventDate < today) return 'past'
+  const lastDay = endDate ?? eventDate
+  // Multi-day events are "live" while today falls inside the run.
+  if (today >= eventDate && today <= lastDay) return 'live'
+  if (lastDay < today) return 'past'
   if (serverStatus === 'upcoming') return 'upcoming'
   return 'upcoming'
 }
@@ -211,7 +215,7 @@ export function VendorEventsContent() {
 }
 
 function VendorEventRow({ ev }: { ev: ServerEvent }) {
-  const status = deriveStatus(ev.eventDate, ev.status)
+  const status = deriveStatus(ev.eventDate, ev.endDate, ev.status)
   return (
     <article className="border-border/60 bg-background flex flex-col gap-0 overflow-hidden rounded-2xl border shadow-sm shadow-black/[0.02] sm:flex-row sm:items-stretch">
       <div className="bg-muted relative h-32 shrink-0 sm:h-auto sm:w-36">
@@ -242,7 +246,7 @@ function VendorEventRow({ ev }: { ev: ServerEvent }) {
               className="size-3.5"
               strokeWidth={1.8}
             />
-            {formatEventDate(ev.eventDate)}
+            {formatEventDate(ev.eventDate, ev.endDate)}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <HugeiconsIcon

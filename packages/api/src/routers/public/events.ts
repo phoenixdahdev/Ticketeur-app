@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ilike, ne, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
@@ -9,6 +9,13 @@ import { createTRPCRouter, publicProcedure } from '../../trpc'
 // temp bans hide; expired temp bans fall through. Mirrors the vendor router
 // filter so banned organizers/vendors stop appearing on public surfaces.
 const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires} IS NOT NULL AND ${user.banExpires} < NOW()))`
+
+// Multi-day events stay visible while in progress: an event is "still
+// happening" if its end_date (or event_date for single-day) is today or
+// later. Caller passes an ISO YYYY-MM-DD `today`.
+function stillRunning(today: string) {
+  return sql`COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}`
+}
 
 const listInput = z.object({
   q: z.string().default(''),
@@ -21,10 +28,7 @@ export const publicEventsRouter = createTRPCRouter({
   list: publicProcedure.input(listInput).query(async ({ ctx, input }) => {
     const today = new Date().toISOString().slice(0, 10)
 
-    const filters = [
-      eq(events.status, 'upcoming'),
-      gte(events.eventDate, today),
-    ]
+    const filters = [eq(events.status, 'upcoming'), stillRunning(today)]
     if (input.q.trim().length > 0) {
       filters.push(ilike(events.title, `%${input.q.trim()}%`))
     }
@@ -40,6 +44,7 @@ export const publicEventsRouter = createTRPCRouter({
         id: events.id,
         title: events.title,
         eventDate: events.eventDate,
+        endDate: events.endDate,
         eventTime: events.eventTime,
         location: events.location,
         bannerUrl: events.bannerUrl,
@@ -80,6 +85,7 @@ export const publicEventsRouter = createTRPCRouter({
         id: events.id,
         title: events.title,
         eventDate: events.eventDate,
+        endDate: events.endDate,
         eventTime: events.eventTime,
         location: events.location,
         bannerUrl: events.bannerUrl,
@@ -89,11 +95,7 @@ export const publicEventsRouter = createTRPCRouter({
       .innerJoin(user, eq(user.id, events.organizerId))
       .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
       .where(
-        and(
-          eq(events.status, 'upcoming'),
-          gte(events.eventDate, today),
-          notCurrentlyBanned
-        )
+        and(eq(events.status, 'upcoming'), stillRunning(today), notCurrentlyBanned)
       )
       .groupBy(events.id)
       .orderBy(desc(events.createdAt))
@@ -117,6 +119,7 @@ export const publicEventsRouter = createTRPCRouter({
           id: events.id,
           title: events.title,
           eventDate: events.eventDate,
+          endDate: events.endDate,
           location: events.location,
           bannerUrl: events.bannerUrl,
           minPrice: minPriceExpr,
@@ -128,7 +131,7 @@ export const publicEventsRouter = createTRPCRouter({
           and(
             ne(events.id, input.id),
             eq(events.status, 'upcoming'),
-            gte(events.eventDate, today),
+            stillRunning(today),
             notCurrentlyBanned
           )
         )

@@ -33,6 +33,7 @@ export const accountTicketsRouter = createTRPCRouter({
           id: events.id,
           title: events.title,
           eventDate: events.eventDate,
+          endDate: events.endDate,
           eventTime: events.eventTime,
           location: events.location,
           bannerUrl: events.bannerUrl,

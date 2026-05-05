@@ -56,6 +56,7 @@ export async function generateMetadata({
       description: events.description,
       bannerUrl: events.bannerUrl,
       eventDate: events.eventDate,
+      endDate: events.endDate,
       eventTime: events.eventTime,
       location: events.location,
       status: events.status,
@@ -78,7 +79,7 @@ export async function generateMetadata({
   const description =
     plain.length > 0
       ? truncate(plain, 160)
-      : `${formatEventDate(event.eventDate)} at ${event.location}. Get your tickets on ${SITE_NAME}.`
+      : `${formatEventDate(event.eventDate, event.endDate)} at ${event.location}. Get your tickets on ${SITE_NAME}.`
 
   return {
     title: event.title,

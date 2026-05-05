@@ -259,7 +259,11 @@ export function EventDetail({ id }: { id: string }) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <DetailItem
             icon={Calendar03Icon}
-            primary={`${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`}
+            primary={
+              event.endDate && event.endDate !== event.eventDate
+                ? formatEventDate(event.eventDate, event.endDate)
+                : `${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`
+            }
           />
           <DetailItem icon={Clock01Icon} primary={event.eventTime} />
           <DetailItem icon={Location01Icon} primary={event.location} />
@@ -290,7 +294,7 @@ export function EventDetail({ id }: { id: string }) {
           />
           <SoldStatBlock sold={sold} total={total} pct={pct} />
           <DateStatBlock
-            date={formatEventDate(event.eventDate)}
+            date={formatEventDate(event.eventDate, event.endDate)}
             ended={status === 'archived'}
           />
         </div>

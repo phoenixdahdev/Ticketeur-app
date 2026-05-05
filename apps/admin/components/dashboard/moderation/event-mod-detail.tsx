@@ -28,6 +28,7 @@ import { ApproveRejectActions } from '@/components/dashboard/moderation/approve-
 import {
   formatWeekdayDate as formatDate,
   formatShortDate as formatJoined,
+  formatEventDateRange,
 } from '@/lib/date'
 
 type PendingEvent = RouterOutputs['admin']['moderation']['eventById']
@@ -118,7 +119,14 @@ export function EventModDetail({ event }: { event: PendingEvent }) {
       <section className="border-border/60 bg-background flex flex-col gap-4 rounded-2xl border p-5 md:p-6">
         <h3 className="text-foreground text-base font-semibold">Event Details</h3>
         <div className="flex flex-wrap gap-3">
-          <DetailPill icon={Calendar03Icon} text={formatDate(event.eventDate)} />
+          <DetailPill
+            icon={Calendar03Icon}
+            text={
+              event.endDate && event.endDate !== event.eventDate
+                ? formatEventDateRange(event.eventDate, event.endDate)
+                : formatDate(event.eventDate)
+            }
+          />
           <DetailPill icon={Clock01Icon} text={event.eventTime} />
           <DetailPill icon={MapsLocation02Icon} text={event.location} />
         </div>

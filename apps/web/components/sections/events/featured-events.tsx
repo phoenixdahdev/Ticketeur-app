@@ -59,6 +59,7 @@ export function FeaturedEvents() {
                       : 'Free Entry'
                   }
                   date={event.eventDate}
+                  endDate={event.endDate}
                   location={event.location}
                   imageUrl={event.bannerUrl ?? EVENT_PLACEHOLDER}
                   href={`/events/${event.id}`}

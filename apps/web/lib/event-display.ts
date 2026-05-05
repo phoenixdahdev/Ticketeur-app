@@ -1,3 +1,7 @@
+import { format } from 'date-fns'
+
+import { formatEventDateRange, toDate } from './date'
+
 export function initialsFromTitle(title: string): string {
   const words = title.trim().split(/\s+/).filter(Boolean)
   if (words.length === 0) return '??'
@@ -5,21 +9,15 @@ export function initialsFromTitle(title: string): string {
   return (words[0]![0]! + words[1]![0]!).toUpperCase()
 }
 
-export function formatEventDate(iso: string): string {
-  // iso is YYYY-MM-DD; render as "Oct 24, 2024"
-  const d = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
+// Range-aware: pass an end ISO for multi-day events, or null/undefined for single.
+export function formatEventDate(start: string, end?: string | null): string {
+  return formatEventDateRange(start, end ?? null)
 }
 
 export function formatWeekday(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('en-US', { weekday: 'long' })
+  const d = toDate(iso)
+  if (!d) return ''
+  return format(d, 'EEEE')
 }
 
 export function eventCode(id: string): string {

@@ -149,6 +149,7 @@ export const adminTransactionsRouter = createTRPCRouter({
           status: orders.status,
           eventTitle: events.title,
           eventDate: events.eventDate,
+          endDate: events.endDate,
           eventTime: events.eventTime,
           eventLocation: events.location,
           tierName: ticketTiers.name,
@@ -186,6 +187,7 @@ export const adminTransactionsRouter = createTRPCRouter({
         event: {
           name: row.eventTitle,
           date: row.eventDate,
+          endDate: row.endDate,
           time: row.eventTime,
           location: row.eventLocation,
         },

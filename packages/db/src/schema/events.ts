@@ -26,6 +26,9 @@ export const events = pgTable(
     description: text('description').notNull().default(''),
     // ISO date string (YYYY-MM-DD) — separate from time so the form can edit each independently
     eventDate: text('event_date').notNull(),
+    // Multi-day events: ISO date for the last day. NULL means single-day,
+    // in which case the event runs only on `eventDate`.
+    endDate: text('end_date'),
     eventTime: text('event_time').notNull(),
     location: text('location').notNull(),
     bannerUrl: text('banner_url'),

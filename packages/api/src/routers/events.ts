@@ -30,6 +30,9 @@ const createEventInput = z.object({
   title: z.string().trim().min(1),
   description: z.string().trim().min(10),
   date: z.string().min(1),
+  // ISO end date (YYYY-MM-DD) for multi-day events. Null/missing means
+  // single-day; the event runs only on `date`.
+  endDate: z.string().nullable().optional(),
   time: z.string().min(1),
   location: z.string().trim().min(1),
   bannerUrl: z.string().nullable().optional(),
@@ -73,6 +76,8 @@ export const eventsRouter = createTRPCRouter({
           title: input.title,
           description: input.description,
           eventDate: input.date,
+          endDate:
+            input.endDate && input.endDate !== input.date ? input.endDate : null,
           eventTime: input.time,
           location: input.location,
           bannerUrl: input.bannerUrl ?? null,
@@ -325,6 +330,7 @@ export const eventsRouter = createTRPCRouter({
         id: events.id,
         title: events.title,
         eventDate: events.eventDate,
+        endDate: events.endDate,
         location: events.location,
         status: events.status,
         sold: soldExpr,

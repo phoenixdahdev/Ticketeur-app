@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { useTRPC } from '@/lib/trpc'
 import type { VendorRecord } from '@/lib/vendors'
+import { formatEventDateRange } from '@/lib/date'
 
 import { VendorAbout } from '@/components/sections/vendor-detail/vendor-about'
 import { VendorHero } from '@/components/sections/vendor-detail/vendor-hero'
@@ -59,11 +60,7 @@ export function VendorDetailContent({ id }: { id: string }) {
   const participatingEvents = data.participatingEvents.map((ev) => ({
     id: ev.id,
     tag: 'Event',
-    date: new Date(`${ev.eventDate}T00:00:00`).toLocaleDateString('en-US', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    }),
+    date: formatEventDateRange(ev.eventDate, ev.endDate),
     title: ev.title,
     description: '',
     location: ev.location,
