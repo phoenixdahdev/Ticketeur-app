@@ -11,21 +11,15 @@ import {
   REGISTERED_VENDORS,
   type CreateEventValues,
 } from '@/lib/create-event-schema'
+import { formatEventDateRange } from '@/lib/date'
 
 function formatPrice(n: number) {
   return `₦${n.toLocaleString('en-US')}`
 }
 
-function formatDate(iso: string) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
+function formatDate(start: string, end: string | null) {
+  if (!start) return '—'
+  return formatEventDateRange(start, end)
 }
 
 function formatTime(time: string) {
@@ -95,7 +89,10 @@ export function PreviewView({
             )}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <FieldRow label="Date" value={formatDate(values.date)} />
+            <FieldRow
+              label="Date"
+              value={formatDate(values.date, values.endDate)}
+            />
             <FieldRow label="Time" value={formatTime(values.time)} />
             <FieldRow label="Location" value={values.location || '—'} />
           </div>

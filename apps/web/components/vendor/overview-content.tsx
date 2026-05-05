@@ -10,6 +10,8 @@ import {
 } from '@hugeicons/core-free-icons'
 
 import { useTRPC } from '@/lib/trpc'
+import { formatEventDateRange } from '@/lib/date'
+import { formatWeekday } from '@/lib/event-display'
 
 import { VendorStatCard } from '@/components/vendor/stat-card'
 import { VendorEventCard } from '@/components/vendor/event-card'
@@ -125,6 +127,7 @@ type ServerEvent = {
   id: string
   title: string
   eventDate: string
+  endDate: string | null
   eventTime: string
   location: string
   bannerUrl: string | null
@@ -135,14 +138,12 @@ function serverToCard(ev: ServerEvent): VendorEvent {
   const d = new Date(`${ev.eventDate}T00:00:00`)
   const formattedDate = Number.isNaN(d.getTime())
     ? ev.eventDate
-    : d.toLocaleDateString('en-US', {
-        month: 'long',
-        day: '2-digit',
-        year: 'numeric',
-      })
+    : formatEventDateRange(ev.eventDate, ev.endDate)
   const today = new Date().toISOString().slice(0, 10)
+  // Use end_date when present so multi-day events stay "upcoming" until they finish.
+  const lastDay = ev.endDate ?? ev.eventDate
   const computedStatus =
-    ev.eventDate < today ? 'past' : ev.status === 'upcoming' ? 'upcoming' : 'upcoming'
+    lastDay < today ? 'past' : ev.status === 'upcoming' ? 'upcoming' : 'upcoming'
   return {
     id: ev.id,
     title: ev.title,
@@ -151,9 +152,7 @@ function serverToCard(ev: ServerEvent): VendorEvent {
     time: ev.eventTime,
     location: ev.location,
     venue: ev.location,
-    weekday: Number.isNaN(d.getTime())
-      ? ''
-      : d.toLocaleDateString('en-US', { weekday: 'long' }),
+    weekday: Number.isNaN(d.getTime()) ? '' : formatWeekday(ev.eventDate),
     category: 'MUSIC',
     status: computedStatus as VendorEvent['status'],
     image: ev.bannerUrl ?? '/hero-bg.png',

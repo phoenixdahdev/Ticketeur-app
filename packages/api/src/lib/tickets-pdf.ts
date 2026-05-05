@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob'
+import { format } from 'date-fns'
 import { eq } from 'drizzle-orm'
 import PDFDocument from 'pdfkit'
 import QRCode from 'qrcode'
@@ -38,7 +39,7 @@ export async function generateAndStoreTicketsPdf({
 
   const pdf = await renderTicketsPdf({
     eventTitle: head.event.title,
-    eventDate: formatDate(head.event.eventDate),
+    eventDate: formatDate(head.event.eventDate, head.event.endDate),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
     tierName: head.tier.name,
@@ -63,15 +64,14 @@ export async function generateAndStoreTicketsPdf({
   return blob.url
 }
 
-function formatDate(iso: string) {
-  const d = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
+function formatDate(start: string, end: string | null) {
+  const startDate = new Date(`${start}T00:00:00`)
+  if (Number.isNaN(startDate.getTime())) return start
+  const startStr = format(startDate, 'EEEE, MMMM d, yyyy')
+  if (!end || end === start) return startStr
+  const endDate = new Date(`${end}T00:00:00`)
+  if (Number.isNaN(endDate.getTime())) return startStr
+  return `${startStr} – ${format(endDate, 'EEEE, MMMM d, yyyy')}`
 }
 
 async function renderTicketsPdf(input: {

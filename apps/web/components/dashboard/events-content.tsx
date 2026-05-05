@@ -359,6 +359,7 @@ type EventRowData = {
   id: string
   title: string
   eventDate: string
+  endDate: string | null
   location: string
   status: EventStatus
   sold: number
@@ -389,7 +390,7 @@ function EventRow({
         </div>
       </td>
       <td className="text-foreground px-5 py-4 whitespace-nowrap">
-        {formatEventDate(ev.eventDate)}
+        {formatEventDate(ev.eventDate, ev.endDate)}
       </td>
       <td className="text-foreground px-5 py-4 whitespace-nowrap">
         {ev.location}

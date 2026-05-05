@@ -150,25 +150,9 @@ export function FormView({
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Controller
-            name="date"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid || undefined}>
-                <FieldLabel htmlFor="date" className="text-sm font-semibold">
-                  Date
-                </FieldLabel>
-                <DatePicker
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  invalid={fieldState.invalid}
-                />
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
-          />
+        <DateField form={form} />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Controller
             name="time"
             control={form.control}
@@ -369,7 +353,131 @@ function Section({
   )
 }
 
-function DatePicker({
+function isoFromDate(d: Date) {
+  const y = d.getFullYear()
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function dateFromIso(iso: string | null | undefined) {
+  return iso ? new Date(`${iso}T00:00:00`) : undefined
+}
+
+function formatDateLabel(iso: string) {
+  const d = dateFromIso(iso)
+  if (!d) return ''
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  })
+}
+
+function DateField({
+  form,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<CreateEventValues, any, any>
+}) {
+  const date = form.watch('date')
+  const endDate = form.watch('endDate')
+  const isRange = endDate !== null && endDate !== ''
+  const [kind, setKind] = useState<'single' | 'range'>(isRange ? 'range' : 'single')
+
+  function setSingle() {
+    setKind('single')
+    form.setValue('endDate', null, { shouldDirty: true, shouldValidate: true })
+  }
+
+  function setRange() {
+    setKind('range')
+    // Seed endDate to start so the user sees a valid range immediately if
+    // they had a start picked already.
+    if (date && !endDate) {
+      form.setValue('endDate', date, { shouldDirty: true })
+    }
+  }
+
+  return (
+    <Field>
+      <div className="flex items-center justify-between gap-3">
+        <FieldLabel className="text-sm font-semibold">Date</FieldLabel>
+        <div
+          role="tablist"
+          aria-label="Date kind"
+          className="bg-muted/60 inline-flex items-center rounded-full p-0.5 text-xs font-medium"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={kind === 'single'}
+            onClick={setSingle}
+            className={cn(
+              'rounded-full px-3 py-1 transition-colors',
+              kind === 'single'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Single day
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={kind === 'range'}
+            onClick={setRange}
+            className={cn(
+              'rounded-full px-3 py-1 transition-colors',
+              kind === 'range'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Date range
+          </button>
+        </div>
+      </div>
+
+      {kind === 'single' ? (
+        <Controller
+          name="date"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <>
+              <SingleDatePicker
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </>
+          )}
+        />
+      ) : (
+        <RangeDatePicker
+          start={date ?? ''}
+          end={endDate ?? ''}
+          onChange={(next) => {
+            form.setValue('date', next.start, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+            form.setValue('endDate', next.end, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }}
+          startError={form.formState.errors.date?.message}
+          endError={form.formState.errors.endDate?.message}
+        />
+      )}
+    </Field>
+  )
+}
+
+function SingleDatePicker({
   value,
   onChange,
   onBlur,
@@ -381,21 +489,7 @@ function DatePicker({
   invalid: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const selected = value ? new Date(`${value}T00:00:00`) : undefined
-  const display = selected
-    ? selected.toLocaleDateString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-      })
-    : ''
-
-  function toIso(d: Date) {
-    const y = d.getFullYear()
-    const m = (d.getMonth() + 1).toString().padStart(2, '0')
-    const day = d.getDate().toString().padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
+  const selected = dateFromIso(value)
 
   return (
     <Popover
@@ -416,7 +510,7 @@ function DatePicker({
           )}
         >
           <span className={cn('truncate', !value && 'font-normal')}>
-            {display || 'Pick a date'}
+            {value ? formatDateLabel(value) : 'Pick a date'}
           </span>
           <HugeiconsIcon
             icon={Calendar03Icon}
@@ -431,13 +525,90 @@ function DatePicker({
           selected={selected}
           onSelect={(d) => {
             if (d) {
-              onChange(toIso(d))
+              onChange(isoFromDate(d))
               setOpen(false)
             }
           }}
         />
       </PopoverContent>
     </Popover>
+  )
+}
+
+function RangeDatePicker({
+  start,
+  end,
+  onChange,
+  startError,
+  endError,
+}: {
+  start: string
+  end: string
+  onChange: (next: { start: string; end: string }) => void
+  startError?: string
+  endError?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = {
+    from: dateFromIso(start),
+    to: dateFromIso(end),
+  }
+  const invalid = Boolean(startError || endError)
+
+  const display = (() => {
+    if (!start) return 'Pick a date range'
+    if (!end || end === start) return formatDateLabel(start)
+    return `${formatDateLabel(start)} – ${formatDateLabel(end)}`
+  })()
+
+  return (
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-invalid={invalid}
+            className={cn(
+              'border-input bg-background hover:border-primary/60 flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors',
+              !start && 'text-muted-foreground',
+              invalid && 'border-destructive'
+            )}
+          >
+            <span className={cn('truncate', !start && 'font-normal')}>
+              {display}
+            </span>
+            <HugeiconsIcon
+              icon={Calendar03Icon}
+              className="text-muted-foreground size-4 shrink-0"
+              strokeWidth={1.8}
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-0">
+          <Calendar
+            mode="range"
+            numberOfMonths={2}
+            selected={selected}
+            onSelect={(range) => {
+              const from = range?.from
+              const to = range?.to
+              if (!from) return
+              onChange({
+                start: isoFromDate(from),
+                end: to ? isoFromDate(to) : isoFromDate(from),
+              })
+              if (from && to) setOpen(false)
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      {startError ? (
+        <p className="text-destructive text-xs font-medium">{startError}</p>
+      ) : null}
+      {endError ? (
+        <p className="text-destructive text-xs font-medium">{endError}</p>
+      ) : null}
+    </>
   )
 }
 

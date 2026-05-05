@@ -27,6 +27,7 @@ function buildPayload(
     title: values.title,
     description: values.description,
     date: values.date,
+    endDate: values.endDate,
     time: values.time,
     location: values.location,
     bannerUrl: banner,

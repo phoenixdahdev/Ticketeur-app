@@ -7,7 +7,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
-import { formatLongDate } from '@/lib/date'
+import { formatEventDateRange } from '@/lib/date'
 
 export type SmallEventStatus = 'upcoming' | 'past' | 'live' | 'sold-out'
 
@@ -18,6 +18,7 @@ export type SmallEventCardProps = {
   status?: SmallEventStatus
   price: string
   date: string | Date
+  endDate?: string | Date | null
   location: string
   imageUrl: string
   href?: string
@@ -45,6 +46,7 @@ export function SmallEventCard({
   status,
   price,
   date,
+  endDate,
   location,
   imageUrl,
   href = '#',
@@ -96,7 +98,7 @@ export function SmallEventCard({
               className="size-4 shrink-0"
               strokeWidth={1.6}
             />
-            <span>{formatLongDate(date)}</span>
+            <span>{formatEventDateRange(date, endDate ?? null)}</span>
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <HugeiconsIcon

@@ -8,7 +8,7 @@ import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
-import { formatLongDate } from '@/lib/date'
+import { formatEventDateRange } from '@/lib/date'
 
 export type EventCardProps = {
   id?: string
@@ -16,6 +16,7 @@ export type EventCardProps = {
   category: string
   price: string
   date: string | Date
+  endDate?: string | Date | null
   location: string
   imageUrl: string
   overlayBadge?: string
@@ -28,6 +29,7 @@ export function EventCard({
   category,
   price,
   date,
+  endDate,
   location,
   imageUrl,
   overlayBadge,
@@ -79,7 +81,7 @@ export function EventCard({
               className="size-4 shrink-0"
               strokeWidth={1.6}
             />
-            <span>{formatLongDate(date)}</span>
+            <span>{formatEventDateRange(date, endDate ?? null)}</span>
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <HugeiconsIcon

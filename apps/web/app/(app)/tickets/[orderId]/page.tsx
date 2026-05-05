@@ -195,7 +195,7 @@ export default async function OrderTicketsPage({
           <KeyDetail
             icon={Calendar03Icon}
             label="Date"
-            value={formatEventDate(head.event.eventDate)}
+            value={formatEventDate(head.event.eventDate, head.event.endDate)}
           />
           <KeyDetail
             icon={Clock01Icon}
@@ -232,7 +232,7 @@ export default async function OrderTicketsPage({
               tierName={head.tier.name}
               holderName={head.order.buyerName || 'Guest'}
               eventTitle={head.event.title}
-              eventDate={formatEventDate(head.event.eventDate)}
+              eventDate={formatEventDate(head.event.eventDate, head.event.endDate)}
               eventTime={head.event.eventTime}
             />
           ))}

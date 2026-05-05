@@ -157,7 +157,7 @@ export async function notifyOrderFulfilled({
     email: head.order.buyerEmail,
     firstName,
     eventTitle: head.event.title,
-    eventDate: formatEventDate(head.event.eventDate),
+    eventDate: formatEventDate(head.event.eventDate, head.event.endDate),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
     ticketTier: head.tier.name,

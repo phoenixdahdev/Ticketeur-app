@@ -64,7 +64,7 @@ export function EventDetailContent({ id }: { id: string }) {
     id: event.id,
     title: event.title,
     status: 'Upcoming Event',
-    date: formatEventDate(event.eventDate),
+    date: formatEventDate(event.eventDate, event.endDate),
     time: event.eventTime,
     location: event.location,
     imageUrl: event.bannerUrl ?? EVENT_PLACEHOLDER,

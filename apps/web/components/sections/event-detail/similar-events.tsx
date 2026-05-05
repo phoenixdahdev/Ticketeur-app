@@ -60,6 +60,7 @@ export function SimilarEvents({ eventId }: { eventId: string }) {
                     event.minPrice > 0 ? formatNaira(event.minPrice) : 'Free'
                   }
                   date={event.eventDate}
+                  endDate={event.endDate}
                   location={event.location}
                   imageUrl={event.bannerUrl ?? PLACEHOLDER}
                   href={`/events/${event.id}`}

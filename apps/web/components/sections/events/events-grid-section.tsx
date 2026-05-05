@@ -110,6 +110,7 @@ export function EventsGridSection() {
     status: 'upcoming' as const,
     price: ev.minPrice > 0 ? formatNaira(ev.minPrice) : 'Free',
     date: ev.eventDate,
+    endDate: ev.endDate,
     location: ev.location,
     imageUrl: ev.bannerUrl ?? EVENT_PLACEHOLDER,
     href: `/events/${ev.id}`,
