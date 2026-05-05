@@ -5,6 +5,11 @@ import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 
+// Active bans hide the user. Permanent bans (banExpires null) and unexpired
+// temp bans hide; expired temp bans fall through. Mirrors the vendor router
+// filter so banned organizers/vendors stop appearing on public surfaces.
+const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires} IS NOT NULL AND ${user.banExpires} < NOW()))`
+
 const listInput = z.object({
   q: z.string().default(''),
   category: z.string().default('all'),
@@ -41,8 +46,9 @@ export const publicEventsRouter = createTRPCRouter({
         minPrice: minPriceExpr,
       })
       .from(events)
+      .innerJoin(user, eq(user.id, events.organizerId))
       .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
-      .where(and(...filters))
+      .where(and(...filters, notCurrentlyBanned))
       .groupBy(events.id)
       .orderBy(asc(events.eventDate))
       .limit(input.pageSize)
@@ -51,7 +57,8 @@ export const publicEventsRouter = createTRPCRouter({
     const totalCountRows = await ctx.db
       .select({ count: sql<number>`COUNT(*)::int` })
       .from(events)
-      .where(and(...filters))
+      .innerJoin(user, eq(user.id, events.organizerId))
+      .where(and(...filters, notCurrentlyBanned))
 
     return {
       rows,
@@ -79,9 +86,14 @@ export const publicEventsRouter = createTRPCRouter({
         minPrice: minPriceExpr,
       })
       .from(events)
+      .innerJoin(user, eq(user.id, events.organizerId))
       .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
       .where(
-        and(eq(events.status, 'upcoming'), gte(events.eventDate, today))
+        and(
+          eq(events.status, 'upcoming'),
+          gte(events.eventDate, today),
+          notCurrentlyBanned
+        )
       )
       .groupBy(events.id)
       .orderBy(desc(events.createdAt))
@@ -110,12 +122,14 @@ export const publicEventsRouter = createTRPCRouter({
           minPrice: minPriceExpr,
         })
         .from(events)
+        .innerJoin(user, eq(user.id, events.organizerId))
         .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
         .where(
           and(
             ne(events.id, input.id),
             eq(events.status, 'upcoming'),
-            gte(events.eventDate, today)
+            gte(events.eventDate, today),
+            notCurrentlyBanned
           )
         )
         .groupBy(events.id)
@@ -129,13 +143,18 @@ export const publicEventsRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const found = await ctx.db
-        .select()
+        .select({ event: events })
         .from(events)
+        .innerJoin(user, eq(user.id, events.organizerId))
         .where(
-          and(eq(events.id, input.id), eq(events.status, 'upcoming'))
+          and(
+            eq(events.id, input.id),
+            eq(events.status, 'upcoming'),
+            notCurrentlyBanned
+          )
         )
         .limit(1)
-      const event = found[0]
+      const event = found[0]?.event
       if (!event) return null
 
       const tiers = await ctx.db
@@ -157,7 +176,7 @@ export const publicEventsRouter = createTRPCRouter({
         })
         .from(eventVendors)
         .innerJoin(user, eq(user.id, eventVendors.vendorId))
-        .where(eq(eventVendors.eventId, event.id))
+        .where(and(eq(eventVendors.eventId, event.id), notCurrentlyBanned))
 
       const minPrice = tiers.reduce(
         (min, t) => (min === null || t.priceMinor < min ? t.priceMinor : min),
