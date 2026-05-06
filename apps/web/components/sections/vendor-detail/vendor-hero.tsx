@@ -29,11 +29,11 @@ export function VendorHero({
       aria-label="Vendor hero"
       className="w-full px-5 pt-4 md:px-10 md:pt-6"
     >
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6 md:gap-8">
+      <div className="mx-auto flex max-w-360 flex-col gap-6 md:gap-8">
         <Link
           href="/vendors/list"
           aria-label="Back to all vendors"
-          className="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+          className="text-foreground hover:bg-muted inline-flex size-11 items-center justify-center rounded-full transition-colors"
         >
           <HugeiconsIcon
             icon={ArrowLeft02Icon}
@@ -48,7 +48,7 @@ export function VendorHero({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="relative w-full"
         >
-          <div className="relative aspect-[1360/360] w-full overflow-hidden rounded-[20px] bg-muted md:aspect-[1360/320]">
+          <div className="bg-muted relative -z-10 aspect-1360/360 w-full overflow-hidden rounded-[20px] md:aspect-1360/320">
             <Image
               src={banner}
               alt=""
@@ -56,10 +56,6 @@ export function VendorHero({
               priority
               sizes="(min-width: 1440px) 1360px, 100vw"
               className="object-cover"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
             />
           </div>
 
@@ -71,9 +67,9 @@ export function VendorHero({
               duration: 0.5,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="mx-4 -mt-16 flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-lg md:mx-8 md:-mt-20 md:flex-row md:items-center md:gap-6 md:p-6"
+            className="border-border bg-card mx-4 -mt-16 flex flex-col gap-5 rounded-2xl border p-5 shadow-lg md:mx-8 md:-mt-20 md:flex-row md:items-center md:gap-6 md:p-6"
           >
-            <div className="relative size-[96px] shrink-0 overflow-hidden rounded-xl bg-muted md:size-[120px]">
+            <div className="bg-muted relative size-24 shrink-0 overflow-hidden rounded-xl md:size-30">
               <Image
                 src={vendor.imageUrl}
                 alt={vendor.name}
@@ -85,17 +81,17 @@ export function VendorHero({
 
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+                <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-3xl">
                   {vendor.name}
                 </h1>
-                <span className="inline-flex rounded bg-[#f1f1f1] px-2 py-1 text-xs font-semibold tracking-wider text-[#6d6d6d] uppercase dark:bg-white/10 dark:text-muted-foreground">
+                <span className="dark:text-muted-foreground inline-flex rounded bg-[#f1f1f1] px-2 py-1 text-xs font-semibold tracking-wider text-[#6d6d6d] uppercase dark:bg-white/10">
                   {vendor.category}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground md:text-base">
+              <p className="text-muted-foreground text-sm md:text-base">
                 {vendor.shortDescription}
               </p>
-              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                 <li className="flex items-center gap-1.5">
                   <HugeiconsIcon
                     icon={Location01Icon}

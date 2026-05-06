@@ -23,7 +23,7 @@ export function VendorDetailContent({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto flex max-w-[1440px] items-center justify-center px-5 py-20 md:px-10 md:py-28">
+      <div className="mx-auto flex max-w-360 items-center justify-center px-5 py-20 md:px-10 md:py-28">
         <p className="text-muted-foreground text-sm">Loading vendor…</p>
       </div>
     )
