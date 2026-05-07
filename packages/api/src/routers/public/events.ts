@@ -164,7 +164,7 @@ export const publicEventsRouter = createTRPCRouter({
         .select()
         .from(ticketTiers)
         .where(eq(ticketTiers.eventId, event.id))
-        .orderBy(ticketTiers.sortOrder)
+        .orderBy(asc(ticketTiers.priceMinor), asc(ticketTiers.sortOrder))
 
       const vendors = await ctx.db
         .select({
