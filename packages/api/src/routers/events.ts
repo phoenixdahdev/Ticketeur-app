@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
 import { tasks } from '@trigger.dev/sdk'
 import { z } from 'zod'
 
@@ -375,7 +375,7 @@ export const eventsRouter = createTRPCRouter({
         .select()
         .from(ticketTiers)
         .where(eq(ticketTiers.eventId, ev.id))
-        .orderBy(ticketTiers.sortOrder)
+        .orderBy(asc(ticketTiers.priceMinor), asc(ticketTiers.sortOrder))
 
       const vendors = await ctx.db
         .select({

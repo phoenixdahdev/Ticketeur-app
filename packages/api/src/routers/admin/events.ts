@@ -183,7 +183,7 @@ export const adminEventsRouter = createTRPCRouter({
         .select()
         .from(ticketTiers)
         .where(eq(ticketTiers.eventId, ev.id))
-        .orderBy(asc(ticketTiers.sortOrder))
+        .orderBy(asc(ticketTiers.priceMinor), asc(ticketTiers.sortOrder))
 
       const totalSold = tierRows.reduce((acc, t) => acc + t.sold, 0)
       const totalQuantity = tierRows.reduce((acc, t) => acc + t.quantity, 0)

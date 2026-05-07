@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import {
   and,
+  asc,
   count,
   desc,
   eq,
@@ -303,6 +304,7 @@ export const adminModerationRouter = createTRPCRouter({
         .select()
         .from(ticketTiers)
         .where(eq(ticketTiers.eventId, ev.id))
+        .orderBy(asc(ticketTiers.priceMinor), asc(ticketTiers.sortOrder))
 
       const vendorRows = await ctx.db
         .select({
