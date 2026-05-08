@@ -68,6 +68,7 @@ export function TicketSelector({
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
   )
+  const isFreeOrder = totalQty > 0 && subtotal === 0
 
   const summary = tiers
     .filter((t) => (quantities[t.id] ?? 0) > 0)
@@ -168,9 +169,11 @@ export function TicketSelector({
               <span className="font-heading text-foreground text-2xl font-bold md:text-3xl">
                 ₦{subtotal.toLocaleString()}
               </span>
-              <span className="text-muted-foreground text-xs">
-                Excl. taxes &amp; fees
-              </span>
+              {!isFreeOrder ? (
+                <span className="text-muted-foreground text-xs">
+                  Excl. taxes &amp; fees
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -200,11 +203,15 @@ export function TicketSelector({
             className="w-full gap-2"
           >
             <HugeiconsIcon
-              icon={ShoppingCart01Icon}
+              icon={isFreeOrder ? Ticket01Icon : ShoppingCart01Icon}
               className="size-5"
               strokeWidth={1.8}
             />
-            Checkout Now
+            {isFreeOrder
+              ? totalQty === 1
+                ? 'Get Ticket'
+                : 'Get Tickets'
+              : 'Checkout Now'}
           </Button>
         </div>
       </div>
