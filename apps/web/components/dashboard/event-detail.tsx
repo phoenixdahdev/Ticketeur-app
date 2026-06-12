@@ -71,6 +71,7 @@ const STATUS_HERO_BADGE: Record<EventStatus, string> = {
   'in-review': 'bg-sky-500 text-white',
   draft: 'bg-amber-500 text-white',
   archived: 'bg-zinc-700 text-white',
+  suspended: 'bg-rose-500 text-white',
 }
 
 const STATUS_HERO_LABEL: Record<EventStatus, string> = {
@@ -78,6 +79,7 @@ const STATUS_HERO_LABEL: Record<EventStatus, string> = {
   'in-review': 'IN REVIEW',
   draft: 'DRAFT',
   archived: 'ARCHIVED',
+  suspended: 'SUSPENDED',
 }
 
 export function EventDetail({ id }: { id: string }) {

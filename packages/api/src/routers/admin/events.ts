@@ -19,6 +19,7 @@ import {
   ticketTiers,
   user,
 } from '@ticketur/db'
+import type { EventStatus } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
 
@@ -44,10 +45,11 @@ function makeReference(id: string) {
   return `#${id.slice(0, 8).toUpperCase()}`
 }
 
-type AdminEventStatus = 'published' | 'archived' | 'flagged'
+type AdminEventStatus = 'published' | 'archived' | 'flagged' | 'suspended'
 
-function mapStatus(s: 'draft' | 'in-review' | 'upcoming' | 'archived'): AdminEventStatus {
+function mapStatus(s: EventStatus): AdminEventStatus {
   if (s === 'archived') return 'archived'
+  if (s === 'suspended') return 'suspended'
   // 'upcoming' renders as Published; 'in-review' / 'draft' shouldn't reach
   // the list, but if they do treat them as published-ish for now.
   return 'published'
@@ -261,5 +263,57 @@ export const adminEventsRouter = createTRPCRouter({
           description: v.description ?? '',
         })),
       }
+    }),
+
+  // Hide a published event from every public surface. Public queries all
+  // filter status = 'upcoming', so flipping to 'suspended' is enough to pull
+  // it from listings, detail pages, and checkout.
+  suspend: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select({ id: events.id, status: events.status })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+      }
+      if (ev.status !== 'upcoming') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only a published event can be suspended.',
+        })
+      }
+      await ctx.db
+        .update(events)
+        .set({ status: 'suspended', updatedAt: new Date() })
+        .where(eq(events.id, ev.id))
+      return { ok: true as const }
+    }),
+
+  // Restore a suspended event back to the public site.
+  unsuspend: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select({ id: events.id, status: events.status })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+      }
+      if (ev.status !== 'suspended') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This event is not suspended.',
+        })
+      }
+      await ctx.db
+        .update(events)
+        .set({ status: 'upcoming', updatedAt: new Date() })
+        .where(eq(events.id, ev.id))
+      return { ok: true as const }
     }),
 })

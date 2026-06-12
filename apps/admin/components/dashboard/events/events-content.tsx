@@ -53,12 +53,14 @@ const STATUS_LABEL: Record<AdminEventStatus, string> = {
   published: 'Published',
   archived: 'Archived',
   flagged: 'Flagged',
+  suspended: 'Suspended',
 }
 
 const STATUS_TONE: Record<AdminEventStatus, string> = {
   published: 'text-emerald-600',
   archived: 'bg-muted text-muted-foreground px-2.5 py-1 rounded-md',
   flagged: 'bg-rose-50 text-rose-600 px-2.5 py-1 rounded-md',
+  suspended: 'bg-rose-50 text-rose-600 px-2.5 py-1 rounded-md',
 }
 
 function formatNumber(n: number) {

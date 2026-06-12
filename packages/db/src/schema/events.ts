@@ -13,7 +13,15 @@ import { user } from './auth'
 
 // ─── Events ────────────────────────────────────────────────────────────────
 
-export type EventStatus = 'draft' | 'in-review' | 'upcoming' | 'archived'
+// 'suspended' is an admin moderation state: the event keeps its data but is
+// hidden from every public surface (those all filter status = 'upcoming').
+// Admin suspend/unsuspend toggles between 'upcoming' and 'suspended'.
+export type EventStatus =
+  | 'draft'
+  | 'in-review'
+  | 'upcoming'
+  | 'archived'
+  | 'suspended'
 
 export const events = pgTable(
   'events',

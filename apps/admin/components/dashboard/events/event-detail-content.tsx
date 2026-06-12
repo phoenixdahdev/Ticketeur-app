@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { useTRPC } from '@/lib/trpc'
 import { BackButton } from '@/components/dashboard/users/back-button'
 import { AdminEventDetailView } from '@/components/dashboard/events/event-detail'
+import { EventActions } from '@/components/dashboard/events/event-actions'
 
 export function EventDetailContent({ id }: { id: string }) {
   const trpc = useTRPC()
@@ -30,7 +31,14 @@ export function EventDetailContent({ id }: { id: string }) {
 
   return (
     <>
-      <BackButton label="Back to Events" />
+      <div className="flex items-center justify-between gap-3">
+        <BackButton label="Back to Events" />
+        <EventActions
+          eventId={data.id}
+          eventTitle={data.title}
+          status={data.status}
+        />
+      </div>
       <AdminEventDetailView event={data} />
     </>
   )

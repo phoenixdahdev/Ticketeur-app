@@ -70,6 +70,20 @@ function formatNaira(minor: number) {
   return `₦${(minor / 100).toLocaleString('en-NG')}`
 }
 
+const HERO_STATUS_LABEL: Record<AdminEventDetail['status'], string> = {
+  published: 'Published',
+  archived: 'Archived',
+  flagged: 'Flagged',
+  suspended: 'Suspended',
+}
+
+const HERO_STATUS_TONE: Record<AdminEventDetail['status'], string> = {
+  published: 'bg-emerald-500',
+  archived: 'bg-zinc-600',
+  flagged: 'bg-rose-500',
+  suspended: 'bg-rose-500',
+}
+
 export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
   const pct =
     event.total > 0
@@ -94,8 +108,13 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute right-5 bottom-5 left-5 flex flex-col gap-2 md:right-8 md:bottom-8 md:left-8">
-          <span className="inline-flex w-fit items-center rounded-md bg-emerald-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
-            {event.status === 'published' ? 'Published' : event.status}
+          <span
+            className={cn(
+              'inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white',
+              HERO_STATUS_TONE[event.status]
+            )}
+          >
+            {HERO_STATUS_LABEL[event.status]}
           </span>
           <h2 className="font-heading text-2xl font-bold text-white drop-shadow md:text-4xl">
             {event.title}
