@@ -12,15 +12,15 @@
     "convert-fonts": "node scripts/convert-trap-fonts.mjs"
   },
   "dependencies": {
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@react-email/ui": "6.0.8",
+    "@react-email/ui": "6.6.0",
     "@ticketur/typescript-config": "workspace:*",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "react-email": "^6.0.8",
+    "react-email": "^6.6.0",
     "wawoff2": "^2.0.1"
   }
 }

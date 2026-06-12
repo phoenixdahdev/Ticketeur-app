@@ -42,7 +42,7 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
   const [state, setState] = useQueryStates(STATE_KEYS, { shallow: true })
 
   const { data, isLoading } = useQuery(
-    trpc.public.events.byId.queryOptions({ id: event.id })
+    trpc.public.events.bySlug.queryOptions({ slug: event.slug })
   )
 
   const tiers: TicketTier[] = (data?.tiers ?? []).map((t) => {

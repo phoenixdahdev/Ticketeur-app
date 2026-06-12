@@ -1,4 +1,9 @@
-export type EventStatus = 'upcoming' | 'in-review' | 'draft' | 'archived'
+export type EventStatus =
+  | 'upcoming'
+  | 'in-review'
+  | 'draft'
+  | 'archived'
+  | 'suspended'
 
 export type OrgEvent = {
   id: string
@@ -73,6 +78,7 @@ export const STATUS_LABEL: Record<EventStatus, string> = {
   'in-review': 'In Review',
   draft: 'Draft',
   archived: 'Archived',
+  suspended: 'Suspended',
 }
 
 export function findEventById(id: string): OrgEvent | undefined {
@@ -249,4 +255,6 @@ export const STATUS_TONE: Record<EventStatus, string> = {
   draft:
     'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
   archived: 'bg-muted text-muted-foreground',
+  suspended:
+    'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
 }

@@ -7,9 +7,18 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Location01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
-import type { VendorRecord } from '@/lib/vendors'
 
-type Event = NonNullable<VendorRecord['participatingEvents']>[number]
+type Event = {
+  id: string
+  slug: string
+  tag: string
+  date: string
+  title: string
+  description: string
+  location: string
+  attendees: string
+  imageUrl: string
+}
 
 const TAG_TONES: Record<string, string> = {
   Tech: 'bg-[#dbeafe] text-[#1e40af] dark:bg-[#1e40af]/20',
@@ -56,7 +65,7 @@ export function VendorParticipatingEvents({
               whileHover={{ y: -2 }}
             >
               <Link
-                href={`/events/${event.id}`}
+                href={`/events/${event.slug}`}
                 className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-lg md:flex-row md:items-center md:gap-5 md:p-5"
               >
                 <div className="relative aspect-[160/120] w-full shrink-0 overflow-hidden rounded-xl bg-muted md:aspect-auto md:h-[120px] md:w-[180px]">

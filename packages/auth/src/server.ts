@@ -13,6 +13,7 @@ import {
   vendor,
   admin as adminRole,
 } from './permissions'
+import { userAdditionalFields } from './fields'
 
 export function createAuth(cookiePrefix: string) {
   return betterAuth({
@@ -84,42 +85,11 @@ export function createAuth(cookiePrefix: string) {
     ],
 
     user: {
-      additionalFields: {
-        // `role` is managed by the admin plugin and is NOT accepted from
-        // client input (Better Auth returns FIELD_NOT_ALLOWED). Pass the
-        // requested role via `requestedRole` instead — the databaseHook
-        // below reads it and assigns the real `role` server-side.
-        requestedRole: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-        orgName: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-        orgType: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-        businessName: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-        businessCategory: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-        businessDescription: {
-          type: 'string',
-          required: false,
-          input: true,
-        },
-      },
+      // Shape lives in ./fields so the client's inferAdditionalFields() reuses
+      // the exact same object. `role` is absent here on purpose — it's owned by
+      // the admin plugin and rejected as input (FIELD_NOT_ALLOWED); clients send
+      // `requestedRole`, which the databaseHook below promotes to `role`.
+      additionalFields: userAdditionalFields,
     },
 
     databaseHooks: {

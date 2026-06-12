@@ -89,7 +89,7 @@ export function DiscoverEvents() {
                   endDate={event.endDate}
                   location={event.location}
                   imageUrl={event.bannerUrl ?? EVENT_PLACEHOLDER}
-                  href={`/events/${event.id}`}
+                  href={`/events/${event.slug}`}
                 />
               </motion.div>
             ))}

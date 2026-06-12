@@ -46,12 +46,13 @@ function absoluteUrl(value: string | null | undefined): string {
 
 export async function generateMetadata({
   params,
-}: PageProps<'/events/[id]'>): Promise<Metadata> {
-  const { id } = await params
+}: PageProps<'/events/[slug]'>): Promise<Metadata> {
+  const { slug } = await params
 
   const [event] = await db
     .select({
       id: events.id,
+      slug: events.slug,
       title: events.title,
       description: events.description,
       bannerUrl: events.bannerUrl,
@@ -62,7 +63,7 @@ export async function generateMetadata({
       status: events.status,
     })
     .from(events)
-    .where(and(eq(events.id, id), eq(events.status, 'upcoming')))
+    .where(and(eq(events.slug, slug), eq(events.status, 'upcoming')))
     .limit(1)
 
   if (!event) {
@@ -73,7 +74,7 @@ export async function generateMetadata({
   }
 
   const baseUrl = getBaseUrl()
-  const url = `${baseUrl}/events/${event.id}`
+  const url = `${baseUrl}/events/${event.slug}`
   const imageUrl = absoluteUrl(event.bannerUrl)
   const plain = markdownToPlain(event.description ?? '')
   const description =
@@ -116,7 +117,7 @@ export async function generateMetadata({
 
 export default async function EventDetailPage({
   params,
-}: PageProps<'/events/[id]'>) {
-  const { id } = await params
-  return <EventDetailContent id={id} />
+}: PageProps<'/events/[slug]'>) {
+  const { slug } = await params
+  return <EventDetailContent slug={slug} />
 }

@@ -1,10 +1,8 @@
 {
   "extends": "@ticketur/typescript-config/base.json",
   "compilerOptions": {
-    "declaration": false,
-    "declarationMap": false,
-    "types": ["node"]
+    "jsx": "react-jsx"
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }

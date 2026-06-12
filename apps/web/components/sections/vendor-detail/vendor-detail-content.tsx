@@ -59,6 +59,7 @@ export function VendorDetailContent({ id }: { id: string }) {
 
   const participatingEvents = data.participatingEvents.map((ev) => ({
     id: ev.id,
+    slug: ev.slug,
     tag: 'Event',
     date: formatEventDateRange(ev.eventDate, ev.endDate),
     title: ev.title,
