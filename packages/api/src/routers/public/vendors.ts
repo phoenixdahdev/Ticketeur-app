@@ -133,6 +133,7 @@ export const publicVendorsRouter = createTRPCRouter({
       const participating = await ctx.db
         .select({
           id: events.id,
+          slug: events.slug,
           title: events.title,
           eventDate: events.eventDate,
           endDate: events.endDate,

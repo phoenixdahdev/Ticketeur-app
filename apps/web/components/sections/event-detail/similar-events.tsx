@@ -63,7 +63,7 @@ export function SimilarEvents({ eventId }: { eventId: string }) {
                   endDate={event.endDate}
                   location={event.location}
                   imageUrl={event.bannerUrl ?? PLACEHOLDER}
-                  href={`/events/${event.id}`}
+                  href={`/events/${event.slug}`}
                 />
               </motion.div>
             ))}

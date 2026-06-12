@@ -75,7 +75,7 @@ export default async function OrderTicketsPage({
           problem persists, contact support.
         </p>
         <Button asChild size="xl">
-          <Link href={`/events/${head.event.id}`}>Back to event</Link>
+          <Link href={`/events/${head.event.slug}`}>Back to event</Link>
         </Button>
       </section>
     )
@@ -121,7 +121,7 @@ export default async function OrderTicketsPage({
     <section className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-5 py-8 md:gap-8 md:px-10 md:py-12">
       <div className="flex items-center justify-between gap-4">
         <Link
-          href={`/events/${head.event.id}`}
+          href={`/events/${head.event.slug}`}
           className="text-foreground hover:text-primary inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
         >
           <HugeiconsIcon

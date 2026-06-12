@@ -7,6 +7,7 @@ export type EventFeature = {
 
 export type EventDetailData = {
   id: string
+  slug: string
   title: string
   status: string
   date: string

@@ -45,10 +45,10 @@ function iconForFeature(label: string): IconSvgElement {
 
 const EVENT_PLACEHOLDER = '/hero-bg.png'
 
-export function EventDetailContent({ id }: { id: string }) {
+export function EventDetailContent({ slug }: { slug: string }) {
   const trpc = useTRPC()
   const { data, isLoading } = useQuery(
-    trpc.public.events.byId.queryOptions({ id })
+    trpc.public.events.bySlug.queryOptions({ slug })
   )
 
   if (isLoading) {
@@ -62,6 +62,7 @@ export function EventDetailContent({ id }: { id: string }) {
 
   const detail: EventDetailData = {
     id: event.id,
+    slug: event.slug,
     title: event.title,
     status: 'Upcoming Event',
     date: formatEventDate(event.eventDate, event.endDate),
@@ -74,7 +75,7 @@ export function EventDetailContent({ id }: { id: string }) {
       label,
     })),
     price: minPriceMinor > 0 ? formatNaira(minPriceMinor) : 'Free',
-    buyHref: `/events/${event.id}?tab=tickets`,
+    buyHref: `/events/${event.slug}?tab=tickets`,
   }
 
   const vendors: EventVendor[] = data.vendors.map((v) => ({

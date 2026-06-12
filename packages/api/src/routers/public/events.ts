@@ -42,6 +42,7 @@ export const publicEventsRouter = createTRPCRouter({
     const rows = await ctx.db
       .select({
         id: events.id,
+        slug: events.slug,
         title: events.title,
         eventDate: events.eventDate,
         endDate: events.endDate,
@@ -83,6 +84,7 @@ export const publicEventsRouter = createTRPCRouter({
     const rows = await ctx.db
       .select({
         id: events.id,
+        slug: events.slug,
         title: events.title,
         eventDate: events.eventDate,
         endDate: events.endDate,
@@ -117,6 +119,7 @@ export const publicEventsRouter = createTRPCRouter({
       const rows = await ctx.db
         .select({
           id: events.id,
+          slug: events.slug,
           title: events.title,
           eventDate: events.eventDate,
           endDate: events.endDate,
@@ -142,8 +145,8 @@ export const publicEventsRouter = createTRPCRouter({
       return rows
     }),
 
-  byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+  bySlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
       const found = await ctx.db
         .select({ event: events })
@@ -151,7 +154,7 @@ export const publicEventsRouter = createTRPCRouter({
         .innerJoin(user, eq(user.id, events.organizerId))
         .where(
           and(
-            eq(events.id, input.id),
+            eq(events.slug, input.slug),
             eq(events.status, 'upcoming'),
             notCurrentlyBanned
           )

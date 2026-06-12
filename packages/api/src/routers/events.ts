@@ -15,6 +15,7 @@ import { env } from '@ticketur/env/core'
 
 import { createTRPCRouter, organizerProcedure } from '../trpc'
 import { newId } from '../lib/ids'
+import { generateUniqueEventSlug } from '../lib/slug'
 import { logActivity } from '../lib/activity'
 
 const eventStatusEnum = z.enum(['draft', 'in-review', 'upcoming', 'archived'])
@@ -68,12 +69,16 @@ export const eventsRouter = createTRPCRouter({
     .input(createEventInput)
     .mutation(async ({ ctx, input }) => {
       const eventId = newId('evt')
+      // Slug is derived from the title server-side (never client-supplied),
+      // with -2/-3 suffixes appended on collision.
+      const slug = await generateUniqueEventSlug(ctx.db, input.title)
 
       await ctx.db.transaction(async (tx) => {
         await tx.insert(events).values({
           id: eventId,
           organizerId: ctx.session.user.id,
           title: input.title,
+          slug,
           description: input.description,
           eventDate: input.date,
           endDate:

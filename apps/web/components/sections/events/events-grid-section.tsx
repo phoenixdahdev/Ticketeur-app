@@ -113,7 +113,7 @@ export function EventsGridSection() {
     endDate: ev.endDate,
     location: ev.location,
     imageUrl: ev.bannerUrl ?? EVENT_PLACEHOLDER,
-    href: `/events/${ev.id}`,
+    href: `/events/${ev.slug}`,
   }))
 
   return (

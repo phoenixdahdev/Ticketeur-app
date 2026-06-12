@@ -23,6 +23,9 @@ export const events = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     title: text('title').notNull(),
+    // URL slug for the public event page (/events/[slug]). Unique platform-wide;
+    // generated from the title at creation time. See packages/api/src/lib/slug.ts.
+    slug: text('slug').notNull().unique(),
     description: text('description').notNull().default(''),
     // ISO date string (YYYY-MM-DD) — separate from time so the form can edit each independently
     eventDate: text('event_date').notNull(),
