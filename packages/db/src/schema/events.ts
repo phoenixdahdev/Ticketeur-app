@@ -175,12 +175,13 @@ export const orders = pgTable(
     eventId: text('event_id')
       .notNull()
       .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    tierId: text('tier_id')
-      .notNull()
-      .references(() => ticketTiers.id, {
-        onDelete: 'cascade',
-        onUpdate: 'cascade',
-      }),
+    // Legacy single-tier pointer. Nullable since a multi-tier order carries
+    // its lines in `order_items` instead; kept (and backfilled) so existing
+    // single-tier orders still resolve a tier. New orders leave this null.
+    tierId: text('tier_id').references(() => ticketTiers.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
     buyerId: text('buyer_id').references(() => user.id, {
       onDelete: 'set null',
       onUpdate: 'cascade',
@@ -227,7 +228,48 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.buyerId],
     references: [user.id],
   }),
+  items: many(orderItems),
   tickets: many(tickets),
+}))
+
+// ─── Order Items (one line per tier within an order) ──────────────────────
+
+// An order can span multiple tiers (e.g. 2× VIP + 1× General). Each line
+// snapshots the tier name and unit price at purchase time so receipts stay
+// correct even if the tier is later renamed or repriced.
+export const orderItems = pgTable(
+  'order_items',
+  {
+    id: text('id').primaryKey(),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    tierId: text('tier_id')
+      .notNull()
+      .references(() => ticketTiers.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
+    tierName: text('tier_name').notNull(),
+    // Snapshot of the tier's priceMinor at purchase time (minor units).
+    unitPriceMinor: integer('unit_price_minor').notNull(),
+    quantity: integer('quantity').notNull(),
+  },
+  (t) => [
+    index('order_items_order_idx').on(t.orderId),
+    index('order_items_tier_idx').on(t.tierId),
+  ]
+)
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  tier: one(ticketTiers, {
+    fields: [orderItems.tierId],
+    references: [ticketTiers.id],
+  }),
 }))
 
 // ─── Tickets ──────────────────────────────────────────────────────────────

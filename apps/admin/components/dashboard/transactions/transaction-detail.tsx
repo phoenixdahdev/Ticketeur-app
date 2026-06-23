@@ -112,13 +112,31 @@ export function TransactionDetail({ tx }: { tx: Tx }) {
           <h3 className="text-foreground text-base font-semibold">
             Ticket Details
           </h3>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <FieldBlock label="Tier" value={tx.ticket.tier} />
-            <FieldBlock
-              label="Amount"
-              value={formatNaira(tx.ticket.amount)}
-            />
-            <FieldBlock label="Quantity" value={tx.ticket.qty.toString()} />
+          <div className="border-border/60 divide-border/60 flex flex-col divide-y rounded-xl border">
+            {tx.items.map((item, idx) => (
+              <div
+                key={`${item.tier}-${idx}`}
+                className="flex items-center justify-between gap-4 px-4 py-3"
+              >
+                <div className="flex flex-col">
+                  <span className="text-foreground text-sm font-semibold">
+                    {item.tier}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {formatNaira(item.unitAmount)} × {item.qty}
+                  </span>
+                </div>
+                <span className="text-foreground text-sm font-semibold">
+                  {formatNaira(item.amount)}
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <span className="text-muted-foreground text-sm">Subtotal</span>
+              <span className="text-foreground text-sm font-semibold">
+                {formatNaira(tx.subtotal)}
+              </span>
+            </div>
           </div>
         </div>
       </section>

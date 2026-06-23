@@ -21,6 +21,9 @@ interface TicketConfirmationEmailProps {
   eventLocation: string
   ticketTier: string
   quantity: number
+  // Per-tier breakdown for multi-tier orders. When present, one row per tier
+  // is rendered instead of the single Ticket Type / Quantity rows.
+  items?: { tierName: string; quantity: number }[]
   ticketsUrl: string
   heroImageUrl: string
 }
@@ -33,6 +36,7 @@ export default function TicketConfirmationEmail({
   eventLocation = '',
   ticketTier = '',
   quantity = 1,
+  items,
   ticketsUrl = '#',
   heroImageUrl = 'https://www.useticketeur.com/email/ticket-hero.png',
 }: Partial<TicketConfirmationEmailProps>) {
@@ -68,8 +72,21 @@ export default function TicketConfirmationEmail({
           <DetailRow label="Date:" value={eventDate} />
           <DetailRow label="Time:" value={eventTime} />
           <DetailRow label="Location:" value={eventLocation} />
-          <DetailRow label="Ticket Type:" value={ticketTier} />
-          <DetailRow label="Quantity:" value={String(quantity)} last />
+          {items && items.length > 0 ? (
+            items.map((item, idx) => (
+              <DetailRow
+                key={`${item.tierName}-${idx}`}
+                label={idx === 0 ? 'Tickets:' : ''}
+                value={`${item.tierName} × ${item.quantity}`}
+                last={idx === items.length - 1}
+              />
+            ))
+          ) : (
+            <>
+              <DetailRow label="Ticket Type:" value={ticketTier} />
+              <DetailRow label="Quantity:" value={String(quantity)} last />
+            </>
+          )}
         </Section>
 
         <Text className="m-0 mb-2 text-base leading-6 text-gray-700">
@@ -141,8 +158,12 @@ TicketConfirmationEmail.PreviewProps = {
   eventDate: 'Saturday, October 24, 2026',
   eventTime: '9:00 AM – 6:00 PM',
   eventLocation: 'Eko Convention Centre, Lagos',
-  ticketTier: 'VIP Experience',
-  quantity: 2,
+  ticketTier: '2× VIP Experience, 1× General Admission',
+  quantity: 3,
+  items: [
+    { tierName: 'VIP Experience', quantity: 2 },
+    { tierName: 'General Admission', quantity: 1 },
+  ],
   ticketsUrl: `https://www.useticketeur.com/tickets/demo`,
   heroImageUrl: `https://www.useticketeur.com/email/ticket-hero.png`,
 } satisfies TicketConfirmationEmailProps

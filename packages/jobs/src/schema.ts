@@ -50,8 +50,14 @@ export const ticketConfirmationSchema = z.object({
   eventDate: z.string(),
   eventTime: z.string(),
   eventLocation: z.string(),
+  // Summary string for the subject/fallback (e.g. "2× VIP, 1× General").
   ticketTier: z.string(),
   quantity: z.number().int().min(1),
+  // Per-tier breakdown for multi-tier orders. When present the email renders
+  // one row per tier; otherwise it falls back to the single `ticketTier`.
+  items: z
+    .array(z.object({ tierName: z.string(), quantity: z.number().int().min(1) }))
+    .optional(),
   ticketsUrl: z.url(),
   // Optional PDF attachment fetched at send time. URL must be public.
   pdfUrl: z.url().optional(),

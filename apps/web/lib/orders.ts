@@ -1,7 +1,14 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { tasks } from '@trigger.dev/sdk'
 
-import { db, events, orders, ticketTiers, tickets } from '@ticketur/db'
+import {
+  db,
+  events,
+  orderItems,
+  orders,
+  ticketTiers,
+  tickets,
+} from '@ticketur/db'
 
 import { formatEventDate } from '@/lib/event-display'
 
@@ -23,26 +30,55 @@ export async function loadOrderById(orderId: string) {
     .select({
       order: orders,
       event: events,
-      tier: ticketTiers,
     })
     .from(orders)
     .innerJoin(events, eq(events.id, orders.eventId))
-    .innerJoin(ticketTiers, eq(ticketTiers.id, orders.tierId))
     .where(eq(orders.id, orderId))
     .limit(1)
   return rows[0] ?? null
 }
 
+// Line items for an order — one row per tier, cheapest first for stable
+// display. Each line snapshots the tier name + unit price at purchase time.
+export async function loadOrderItems(orderId: string) {
+  return db
+    .select({
+      id: orderItems.id,
+      tierId: orderItems.tierId,
+      tierName: orderItems.tierName,
+      unitPriceMinor: orderItems.unitPriceMinor,
+      quantity: orderItems.quantity,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .orderBy(asc(orderItems.unitPriceMinor))
+}
+
+export type OrderItemRow = Awaited<ReturnType<typeof loadOrderItems>>[number]
+
+// Tickets for an order, each carrying its own tier name (an order can span
+// several tiers, so a single tier lookup per order is no longer correct).
 export async function loadTicketsForOrder(orderId: string) {
   return db
-    .select()
+    .select({
+      id: tickets.id,
+      orderId: tickets.orderId,
+      eventId: tickets.eventId,
+      tierId: tickets.tierId,
+      tierName: ticketTiers.name,
+      code: tickets.code,
+      checkedIn: tickets.checkedIn,
+      checkedInAt: tickets.checkedInAt,
+      createdAt: tickets.createdAt,
+    })
     .from(tickets)
+    .leftJoin(ticketTiers, eq(ticketTiers.id, tickets.tierId))
     .where(eq(tickets.orderId, orderId))
     .orderBy(tickets.createdAt)
 }
 
-// Idempotent: if tickets already exist for this order it's a no-op.
-// Increments tier.sold by quantity in the same call.
+// Idempotent: if the order is already paid it's a no-op.
+// Bumps tier.sold per line and mints tickets per line in the same call.
 //
 // Returns `justFulfilled: true` only when this call did the pending→paid
 // transition. Side-effect callers (email, PDF) should gate on that flag so
@@ -71,35 +107,55 @@ export async function fulfillOrder({
       return { order, justFulfilled: false }
     }
 
-    // Bump tier.sold and confirm we still have stock.
-    const updated = await tx
-      .update(ticketTiers)
-      .set({ sold: sql`${ticketTiers.sold} + ${order.quantity}` })
-      .where(
-        and(
-          eq(ticketTiers.id, order.tierId),
-          sql`${ticketTiers.sold} + ${order.quantity} <= ${ticketTiers.quantity}`
-        )
-      )
-      .returning({ id: ticketTiers.id })
+    const items = await tx
+      .select({
+        tierId: orderItems.tierId,
+        quantity: orderItems.quantity,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, order.id))
 
-    if (updated.length === 0) {
-      // Stock disappeared between checkout and fulfillment. Mark failed.
-      await tx
-        .update(orders)
-        .set({ status: 'failed' })
-        .where(eq(orders.id, order.id))
-      throw new Error('Stock no longer available for this tier')
+    // For each tier line: bump tier.sold and confirm we still have stock,
+    // then mint one ticket row per unit with that line's tier.
+    const ticketRows: {
+      id: string
+      orderId: string
+      eventId: string
+      tierId: string
+      code: string
+    }[] = []
+    for (const item of items) {
+      const updated = await tx
+        .update(ticketTiers)
+        .set({ sold: sql`${ticketTiers.sold} + ${item.quantity}` })
+        .where(
+          and(
+            eq(ticketTiers.id, item.tierId),
+            sql`${ticketTiers.sold} + ${item.quantity} <= ${ticketTiers.quantity}`
+          )
+        )
+        .returning({ id: ticketTiers.id })
+
+      if (updated.length === 0) {
+        // Stock disappeared between checkout and fulfillment. Mark failed.
+        await tx
+          .update(orders)
+          .set({ status: 'failed' })
+          .where(eq(orders.id, order.id))
+        throw new Error('Stock no longer available for one of the selected tiers')
+      }
+
+      for (let i = 0; i < item.quantity; i += 1) {
+        ticketRows.push({
+          id: `tkt_${crypto.randomUUID()}`,
+          orderId: order.id,
+          eventId: order.eventId,
+          tierId: item.tierId,
+          code: crypto.randomUUID().replace(/-/g, ''),
+        })
+      }
     }
 
-    // One ticket row per unit purchased.
-    const ticketRows = Array.from({ length: order.quantity }).map(() => ({
-      id: `tkt_${crypto.randomUUID()}`,
-      orderId: order.id,
-      eventId: order.eventId,
-      tierId: order.tierId,
-      code: crypto.randomUUID().replace(/-/g, ''),
-    }))
     if (ticketRows.length > 0) {
       await tx.insert(tickets).values(ticketRows)
     }
@@ -142,6 +198,8 @@ export async function notifyOrderFulfilled({
   const head = await loadOrderById(orderId)
   if (!head) return
 
+  const items = await loadOrderItems(orderId)
+
   let pdfUrl: string | null = null
   try {
     pdfUrl = await _genPdf({ orderId, baseUrl })
@@ -152,6 +210,10 @@ export async function notifyOrderFulfilled({
   const firstName =
     (head.order.buyerName || head.order.buyerEmail || 'there').split(' ')[0] ??
     'there'
+  // "2× VIP, 1× General" — summary for the subject/fallback field.
+  const summaryLabel = items
+    .map((i) => `${i.quantity}× ${i.tierName}`)
+    .join(', ')
 
   void tasks.trigger('send-ticket-confirmation', {
     email: head.order.buyerEmail,
@@ -160,7 +222,8 @@ export async function notifyOrderFulfilled({
     eventDate: formatEventDate(head.event.eventDate, head.event.endDate),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
-    ticketTier: head.tier.name,
+    ticketTier: summaryLabel || 'Ticket',
+    items: items.map((i) => ({ tierName: i.tierName, quantity: i.quantity })),
     quantity: head.order.quantity,
     ticketsUrl: `${baseUrl}/tickets/${head.order.id}`,
     pdfUrl: pdfUrl ?? undefined,

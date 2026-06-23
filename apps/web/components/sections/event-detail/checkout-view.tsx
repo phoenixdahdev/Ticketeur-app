@@ -102,16 +102,17 @@ export function CheckoutView({
     ev.preventDefault()
     if (!validate()) return
     if (selected.length === 0) {
-      toast.error('Pick a ticket tier first.')
+      toast.error('Pick at least one ticket tier first.')
       return
     }
-    const tier = selected[0]!
-    const qty = quantities[tier.id] ?? 0
+    const items = selected.map((t) => ({
+      tierId: t.id,
+      quantity: quantities[t.id] ?? 0,
+    }))
     startTransition(() => {
       start.mutate({
         eventId: event.id,
-        tierId: tier.id,
-        quantity: qty,
+        items,
         buyerName: form.name.trim(),
         buyerEmail: form.email.trim(),
         buyerPhone: form.phone.trim(),

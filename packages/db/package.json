@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@ticketur/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.22.4",

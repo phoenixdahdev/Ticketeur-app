@@ -1,6 +1,6 @@
 import { desc, eq, or, sql } from 'drizzle-orm'
 
-import { events, orders, ticketTiers, tickets } from '@ticketur/db'
+import { events, orderItems, orders, tickets } from '@ticketur/db'
 
 import { createTRPCRouter, protectedProcedure } from '../../trpc'
 
@@ -17,6 +17,13 @@ export const accountTicketsRouter = createTRPCRouter({
         'ticket_count'
       )
 
+    // Comma-joined tier names for the order, cheapest first (e.g. "General,
+    // VIP"). An order can span several tiers, so there's no single tier.
+    const tierSummary =
+      sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`.as(
+        'tier_summary'
+      )
+
     const rows = await ctx.db
       .select({
         id: orders.id,
@@ -29,6 +36,7 @@ export const accountTicketsRouter = createTRPCRouter({
         createdAt: orders.createdAt,
         ticketsPdfUrl: orders.ticketsPdfUrl,
         ticketCount,
+        tierSummary,
         event: {
           id: events.id,
           title: events.title,
@@ -39,14 +47,9 @@ export const accountTicketsRouter = createTRPCRouter({
           bannerUrl: events.bannerUrl,
           status: events.status,
         },
-        tier: {
-          id: ticketTiers.id,
-          name: ticketTiers.name,
-        },
       })
       .from(orders)
       .innerJoin(events, eq(events.id, orders.eventId))
-      .innerJoin(ticketTiers, eq(ticketTiers.id, orders.tierId))
       .where(or(eq(orders.buyerId, userId), eq(orders.buyerEmail, userEmail)))
       .orderBy(desc(orders.createdAt))
 

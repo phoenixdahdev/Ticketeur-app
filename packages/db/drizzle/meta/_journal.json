@@ -78,6 +78,13 @@
       "when": 1781257274497,
       "tag": "0010_slim_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782191129025,
+      "tag": "0011_rapid_captain_midlands",
+      "breakpoints": true
     }
   ]
 }
