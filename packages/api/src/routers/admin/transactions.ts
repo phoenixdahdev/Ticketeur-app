@@ -13,8 +13,8 @@ import { TRPCError } from '@trpc/server'
 
 import {
   events,
+  orderItems,
   orders,
-  ticketTiers,
   user,
 } from '@ticketur/db'
 
@@ -33,6 +33,9 @@ const listSchema = z.object({
 
 // Only paid orders count as transactions in the admin view.
 const PAID = eq(orders.status, 'paid')
+
+// Comma-joined tier names for an order (an order can span several tiers).
+const tierSummarySql = sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`
 
 function makeReference(id: string) {
   return `TXN-${id.slice(0, 8).toUpperCase()}`
@@ -93,12 +96,11 @@ export const adminTransactionsRouter = createTRPCRouter({
           buyerName: orders.buyerName,
           buyerEmail: orders.buyerEmail,
           eventTitle: events.title,
-          tierName: ticketTiers.name,
+          tierSummary: tierSummarySql,
           buyerImage: user.image,
         })
         .from(orders)
         .innerJoin(events, eq(orders.eventId, events.id))
-        .innerJoin(ticketTiers, eq(orders.tierId, ticketTiers.id))
         .leftJoin(user, eq(orders.buyerId, user.id))
         .where(where)
         .orderBy(orderBy)
@@ -121,7 +123,7 @@ export const adminTransactionsRouter = createTRPCRouter({
         attendeeEmail: r.buyerEmail,
         attendeeAvatarUrl: r.buyerImage ?? null,
         eventName: r.eventTitle,
-        tier: r.tierName,
+        tier: r.tierSummary,
         qty: r.quantity,
         amount: r.totalMinor,
         fee: r.feeMinor,
@@ -152,12 +154,9 @@ export const adminTransactionsRouter = createTRPCRouter({
           endDate: events.endDate,
           eventTime: events.eventTime,
           eventLocation: events.location,
-          tierName: ticketTiers.name,
-          tierPrice: ticketTiers.priceMinor,
         })
         .from(orders)
         .innerJoin(events, eq(orders.eventId, events.id))
-        .innerJoin(ticketTiers, eq(orders.tierId, ticketTiers.id))
         .leftJoin(user, eq(orders.buyerId, user.id))
         .where(and(eq(orders.id, input.id), PAID))
         .limit(1)
@@ -169,6 +168,17 @@ export const adminTransactionsRouter = createTRPCRouter({
         })
       }
 
+      // Per-tier breakdown for the order.
+      const itemRows = await ctx.db
+        .select({
+          tierName: orderItems.tierName,
+          unitPriceMinor: orderItems.unitPriceMinor,
+          quantity: orderItems.quantity,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, input.id))
+        .orderBy(asc(orderItems.unitPriceMinor))
+
       const paidAt = row.paidAt ?? row.createdAt
 
       return {
@@ -177,6 +187,7 @@ export const adminTransactionsRouter = createTRPCRouter({
         date: paidAt.toISOString(),
         amount: row.totalMinor,
         fee: row.feeMinor,
+        subtotal: row.subtotalMinor,
         // Flutterwave doesn't get persisted yet; default for now.
         paymentMethod: 'Card' as const,
         attendee: {
@@ -191,11 +202,13 @@ export const adminTransactionsRouter = createTRPCRouter({
           time: row.eventTime,
           location: row.eventLocation,
         },
-        ticket: {
-          tier: row.tierName,
-          qty: row.quantity,
-          amount: row.subtotalMinor || row.tierPrice * row.quantity,
-        },
+        totalQty: row.quantity,
+        items: itemRows.map((it) => ({
+          tier: it.tierName,
+          qty: it.quantity,
+          unitAmount: it.unitPriceMinor,
+          amount: it.unitPriceMinor * it.quantity,
+        })),
       }
     }),
 })

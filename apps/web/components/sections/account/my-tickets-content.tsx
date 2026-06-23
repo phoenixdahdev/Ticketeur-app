@@ -168,6 +168,11 @@ function TicketRow({ order }: { order: OrderRow }) {
             <h3 className="font-heading text-foreground text-base font-bold tracking-tight md:text-lg">
               {order.event.title}
             </h3>
+            {order.tierSummary ? (
+              <p className="text-muted-foreground truncate text-xs md:text-sm">
+                {order.tierSummary}
+              </p>
+            ) : null}
           </div>
           <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
             <HugeiconsIcon
@@ -175,8 +180,10 @@ function TicketRow({ order }: { order: OrderRow }) {
               className="size-3"
               strokeWidth={2}
             />
-            {order.ticketCount > 0 ? order.ticketCount : order.quantity} ×{' '}
-            {order.tier.name}
+            {order.ticketCount > 0 ? order.ticketCount : order.quantity} ticket
+            {(order.ticketCount > 0 ? order.ticketCount : order.quantity) === 1
+              ? ''
+              : 's'}
           </span>
         </div>
 

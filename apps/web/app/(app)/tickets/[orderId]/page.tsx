@@ -21,6 +21,7 @@ import { Button } from '@ticketur/ui/components/button'
 
 import {
   loadOrderById,
+  loadOrderItems,
   loadTicketsForOrder,
   ticketUrl,
 } from '@/lib/orders'
@@ -81,12 +82,16 @@ export default async function OrderTicketsPage({
     )
   }
 
-  const ticketRows = await loadTicketsForOrder(orderId)
+  const [ticketRows, items] = await Promise.all([
+    loadTicketsForOrder(orderId),
+    loadOrderItems(orderId),
+  ])
   const baseUrl = getBaseUrl()
   const qrs = await Promise.all(
     ticketRows.map(async (t) => ({
       id: t.id,
       code: t.code,
+      tierName: t.tierName ?? 'General',
       dataUrl: await QRCode.toDataURL(ticketUrl(baseUrl, t.code), {
         width: 320,
         margin: 1,
@@ -229,7 +234,7 @@ export default async function OrderTicketsPage({
               total={qrs.length}
               code={t.code}
               qrDataUrl={t.dataUrl}
-              tierName={head.tier.name}
+              tierName={t.tierName}
               holderName={head.order.buyerName || 'Guest'}
               eventTitle={head.event.title}
               eventDate={formatEventDate(head.event.eventDate, head.event.endDate)}
@@ -263,7 +268,6 @@ export default async function OrderTicketsPage({
         <dl className="border-border/60 grid grid-cols-2 gap-y-3 border-t pt-4 text-sm md:grid-cols-3">
           <Definition label="Order ID" value={head.order.id} mono />
           <Definition label="Purchased" value={paidWhen} />
-          <Definition label="Tier" value={head.tier.name} />
           <Definition label="Quantity" value={String(head.order.quantity)} />
           <Definition
             label="Buyer"
@@ -275,6 +279,21 @@ export default async function OrderTicketsPage({
             icon={Mail01Icon}
           />
         </dl>
+
+        {/* Itemised per-tier breakdown */}
+        <div className="border-border/60 flex flex-col gap-1.5 border-t pt-4 text-sm">
+          {items.map((item) => (
+            <Row
+              key={item.id}
+              label={`${item.tierName} × ${item.quantity}`}
+              value={
+                item.unitPriceMinor === 0
+                  ? 'Free'
+                  : formatNaira(item.unitPriceMinor * item.quantity)
+              }
+            />
+          ))}
+        </div>
 
         <div className="border-border/60 flex flex-col gap-1.5 border-t pt-4 text-sm">
           <Row

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { useQuery } from '@tanstack/react-query'
-import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs'
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs'
 
 import { useTRPC } from '@/lib/trpc'
 import { formatNaira } from '@/lib/event-display'
@@ -26,8 +26,26 @@ export type TicketTier = {
 
 const STATE_KEYS = {
   step: parseAsStringLiteral(['select', 'checkout']).withDefault('select'),
-  tier: parseAsString.withDefault(''),
-  qty: parseAsInteger.withDefault(0),
+  // Cart encoded as "tierId:qty,tierId:qty". Tier ids never contain ':' or ','.
+  cart: parseAsString.withDefault(''),
+}
+
+function parseCart(raw: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const part of raw.split(',')) {
+    if (!part) continue
+    const [id, q] = part.split(':')
+    const qty = Number(q)
+    if (id && Number.isInteger(qty) && qty > 0) out[id] = qty
+  }
+  return out
+}
+
+function serializeCart(map: Record<string, number>): string {
+  return Object.entries(map)
+    .filter(([, q]) => q > 0)
+    .map(([id, q]) => `${id}:${q}`)
+    .join(',')
 }
 
 function deriveTierStatus(remaining: number, total: number): TicketTierStatus {
@@ -59,23 +77,18 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
     }
   })
 
-  // Single-tier checkout: only one tier can have qty > 0 at a time. Picking
-  // a tier zeros any previous selection.
+  // Multi-tier cart: each tier holds its own quantity, so a buyer can mix a
+  // free tier, VIP, General, etc. in a single order. Selection is additive.
+  const quantities = parseCart(state.cart)
+
   const setTierQty = (tierId: string, qty: number) => {
     const tier = tiers.find((t) => t.id === tierId)
     if (!tier || tier.status === 'sold-out') return
-    const cap = tier.remaining
-    const clamped = Math.min(Math.max(0, qty), cap)
-    if (clamped === 0 && state.tier === tierId) {
-      void setState({ tier: null, qty: null })
-      return
-    }
-    void setState({ tier: tierId, qty: clamped || null })
-  }
-
-  const quantities: Record<string, number> = {}
-  if (state.tier && state.qty > 0) {
-    quantities[state.tier] = state.qty
+    const clamped = Math.min(Math.max(0, qty), tier.remaining)
+    const next = { ...quantities }
+    if (clamped <= 0) delete next[tierId]
+    else next[tierId] = clamped
+    void setState({ cart: serializeCart(next) || null })
   }
 
   const goTo = (step: 'select' | 'checkout') => setState({ step })

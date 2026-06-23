@@ -19,6 +19,7 @@ import { addDays, format } from 'date-fns'
 import {
   events,
   eventVendors,
+  orderItems,
   orders,
   session,
   ticketTiers,
@@ -235,14 +236,14 @@ export const adminUsersRouter = createTRPCRouter({
             category: sql<string | null>`null`,
             date: orders.paidAt,
             createdAt: orders.createdAt,
-            tier: ticketTiers.name,
+            // Comma-joined tier names — an order can span several tiers.
+            tier: sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`,
             qty: orders.quantity,
             amount: orders.totalMinor,
             thumbnailUrl: events.bannerUrl,
           })
           .from(orders)
           .innerJoin(events, eq(orders.eventId, events.id))
-          .innerJoin(ticketTiers, eq(orders.tierId, ticketTiers.id))
           .where(
             and(
               eq(orders.status, 'paid'),

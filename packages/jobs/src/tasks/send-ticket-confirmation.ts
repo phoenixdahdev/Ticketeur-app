@@ -20,6 +20,7 @@ export const sendTicketConfirmationTask = task({
         eventLocation: data.eventLocation,
         ticketTier: data.ticketTier,
         quantity: data.quantity,
+        items: data.items,
         ticketsUrl: data.ticketsUrl,
       })
     )

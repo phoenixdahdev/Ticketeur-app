@@ -21,18 +21,24 @@ export async function generateAndStoreTicketsPdf({
     .select({
       order: orders,
       event: events,
-      tier: ticketTiers,
     })
     .from(orders)
     .innerJoin(events, eq(events.id, orders.eventId))
-    .innerJoin(ticketTiers, eq(ticketTiers.id, orders.tierId))
     .where(eq(orders.id, orderId))
     .limit(1)
   if (!head) return null
 
+  // Each ticket carries its own tier (an order can span several tiers), so we
+  // resolve the tier per ticket rather than once for the whole order.
   const ticketRows = await db
-    .select()
+    .select({
+      id: tickets.id,
+      code: tickets.code,
+      createdAt: tickets.createdAt,
+      tierName: ticketTiers.name,
+    })
     .from(tickets)
+    .leftJoin(ticketTiers, eq(ticketTiers.id, tickets.tierId))
     .where(eq(tickets.orderId, orderId))
     .orderBy(tickets.createdAt)
   if (ticketRows.length === 0) return null
@@ -42,11 +48,11 @@ export async function generateAndStoreTicketsPdf({
     eventDate: formatDate(head.event.eventDate, head.event.endDate),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
-    tierName: head.tier.name,
     buyerName: head.order.buyerName || 'Guest',
     tickets: ticketRows.map((t) => ({
       code: t.code,
       url: ticketUrl(baseUrl, t.code),
+      tierName: t.tierName ?? 'General',
     })),
   })
 
@@ -79,9 +85,8 @@ async function renderTicketsPdf(input: {
   eventDate: string
   eventTime: string
   eventLocation: string
-  tierName: string
   buyerName: string
-  tickets: { code: string; url: string }[]
+  tickets: { code: string; url: string; tierName: string }[]
 }): Promise<Buffer> {
   const doc = new PDFDocument({ size: 'A4', margin: 48 })
   const chunks: Buffer[] = []
@@ -110,7 +115,7 @@ async function renderTicketsPdf(input: {
     doc.moveDown(1)
     doc.fontSize(10).fillColor('#6b7280')
     doc.text(`Ticket ${i + 1} of ${input.tickets.length}`, { align: 'center' })
-    doc.text(`Tier: ${input.tierName}`, { align: 'center' })
+    doc.text(`Tier: ${ticket.tierName}`, { align: 'center' })
     doc.text(`Holder: ${input.buyerName}`, { align: 'center' })
     doc.text(`Code: ${ticket.code}`, { align: 'center' })
   }
