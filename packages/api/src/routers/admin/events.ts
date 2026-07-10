@@ -13,12 +13,7 @@ import {
 } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 
-import {
-  events,
-  eventVendors,
-  ticketTiers,
-  user,
-} from '@ticketur/db'
+import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
 import type { EventStatus } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
@@ -251,9 +246,7 @@ export const adminEventsRouter = createTRPCRouter({
           total: t.quantity,
           price: t.priceMinor,
           status: (t.sold >= t.quantity ? 'sold-out' : 'active') as
-            | 'sold-out'
-            | 'active'
-            | 'early',
+            'sold-out' | 'active' | 'early',
         })),
         vendors: vendorRows.map((v) => ({
           id: v.id,
@@ -314,6 +307,23 @@ export const adminEventsRouter = createTRPCRouter({
         .update(events)
         .set({ status: 'upcoming', updatedAt: new Date() })
         .where(eq(events.id, ev.id))
+      return { ok: true as const }
+    }),
+
+  // Permanently delete an event. Ticket tiers, vendor links, orders, etc. are
+  // removed via ON DELETE CASCADE on their event_id foreign keys.
+  remove: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select({ id: events.id })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+      }
+      await ctx.db.delete(events).where(eq(events.id, ev.id))
       return { ok: true as const }
     }),
 })

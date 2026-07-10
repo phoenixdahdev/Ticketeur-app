@@ -75,7 +75,7 @@ export function EditEventContent({ id }: { id: string }) {
     }
   }, [data])
 
-  if (isLoading || !initialValues) {
+  if (isLoading || !data || !initialValues) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-muted-foreground text-sm">
@@ -85,7 +85,7 @@ export function EditEventContent({ id }: { id: string }) {
     )
   }
 
-  const status = data!.event.status
+  const status = data.event.status
   if (!EDITABLE_STATUSES.has(status)) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -103,7 +103,7 @@ export function EditEventContent({ id }: { id: string }) {
     <EditForm
       id={id}
       initialValues={initialValues}
-      initialBanner={data!.event.bannerUrl}
+      initialBanner={data.event.bannerUrl}
       submitting={update.isPending}
       onSave={update.mutate}
     />

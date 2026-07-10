@@ -1,16 +1,29 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { AuthShell } from '@/components/auth/auth-shell'
 import { LoginForm } from '@/components/auth/login-form'
 import { SIGNUP_ROLES } from '@/lib/signup-roles'
+import { getSession } from '@/lib/auth'
+import { getPostLoginPath } from '@/lib/post-login-redirect'
 
 export const metadata: Metadata = {
   title: 'Sign In',
   description: 'Sign in to your Ticketeur account.',
 }
 
-export default function LoginPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function LoginPage() {
+  // Already signed in? Skip the form and go straight to the right place.
+  const session = await getSession()
+  if (session) {
+    const role =
+      (session.user as unknown as { role?: string | null }).role ?? null
+    redirect(getPostLoginPath(role))
+  }
+
   const { imageSrc, imageMobileSrc, imageAlt } = SIGNUP_ROLES.attendee
 
   return (

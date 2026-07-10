@@ -18,7 +18,6 @@ import {
   ArrowRight01Icon,
   ArrowUp01Icon,
   ArrowDown01Icon,
-  MoreVerticalIcon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
@@ -27,6 +26,7 @@ import type { RouterOutputs } from '@ticketur/api'
 
 import { useTRPC } from '@/lib/trpc'
 import { formatEventDateRange } from '@/lib/date'
+import { EventRowActions } from '@/components/dashboard/events/event-row-actions'
 
 type AdminEventRow = RouterOutputs['admin']['events']['list']['rows'][number]
 type AdminEventStatus = AdminEventRow['status']
@@ -117,7 +117,7 @@ export function EventsContent() {
         <div
           role="tablist"
           aria-label="Filter events"
-          className="border-border/60 -mx-1 flex items-center gap-1 overflow-x-auto border-b px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="border-border/60 -mx-1 flex [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b px-1 [&::-webkit-scrollbar]:hidden"
         >
           {TABS.map((t) => {
             const active = params.tab === t.value
@@ -172,7 +172,7 @@ export function EventsContent() {
       </div>
 
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[860px] table-auto">
             <thead className="bg-primary/5">
               <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
@@ -267,7 +267,9 @@ function SortableHeader({
         }
         className={cn(
           'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
-          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+          active
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-foreground'
         )}
       >
         <span>{children}</span>
@@ -289,10 +291,7 @@ function Row({ row }: { row: AdminEventRow }) {
   return (
     <tr className="hover:bg-muted/40 text-sm transition-colors">
       <td className="px-5 py-4">
-        <Link
-          href={`/events/${row.id}`}
-          className="flex items-center gap-3"
-        >
+        <Link href={`/events/${row.id}`} className="flex items-center gap-3">
           {row.thumbnailUrl ? (
             <Image
               src={row.thumbnailUrl}
@@ -349,17 +348,11 @@ function Row({ row }: { row: AdminEventRow }) {
         </div>
       </td>
       <td className="px-5 py-4">
-        <button
-          type="button"
-          aria-label="Row actions"
-          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-md transition-colors"
-        >
-          <HugeiconsIcon
-            icon={MoreVerticalIcon}
-            className="size-4"
-            strokeWidth={1.8}
-          />
-        </button>
+        <EventRowActions
+          eventId={row.id}
+          eventTitle={row.title}
+          status={row.status}
+        />
       </td>
     </tr>
   )

@@ -62,18 +62,23 @@ const createEventInput = z.object({
 // Editing never changes an event's status directly (publishing is a separate
 // action) or its vendor roster, so this is the create shape minus those,
 // plus the event id and tier ids.
-const updateEventInput = z.object({
-  id: z.string(),
-  title: z.string().trim().min(1),
-  description: z.string().trim().min(10),
-  date: z.string().min(1),
-  endDate: z.string().nullable().optional(),
-  time: z.string().min(1),
-  location: z.string().trim().min(1),
-  bannerUrl: z.string().nullable().optional(),
-  features: z.array(z.string().trim()).default([]),
-  tiers: z.array(updateTicketTierInput).min(1),
-})
+const updateEventInput = z
+  .object({
+    id: z.string(),
+    title: z.string().trim().min(1),
+    description: z.string().trim().min(10),
+    date: z.string().min(1),
+    endDate: z.string().nullable().optional(),
+    time: z.string().min(1),
+    location: z.string().trim().min(1),
+    bannerUrl: z.string().nullable().optional(),
+    features: z.array(z.string().trim()).default([]),
+    tiers: z.array(updateTicketTierInput).min(1),
+  })
+  .refine((v) => !v.endDate || v.endDate >= v.date, {
+    path: ['endDate'],
+    message: 'End date must be on or after the start date',
+  })
 
 const listInput = z.object({
   tab: z
@@ -298,40 +303,43 @@ export const eventsRouter = createTRPCRouter({
         })
       }
 
-      // Reconcile tiers against what's already been sold. Tiers are matched by
-      // id; anything without a known id is treated as a brand-new tier.
-      const existingTiers = await ctx.db
-        .select()
-        .from(ticketTiers)
-        .where(eq(ticketTiers.eventId, ev.id))
-      const existingById = new Map(existingTiers.map((t) => [t.id, t]))
-      const keptIds = new Set(
-        input.tiers
-          .map((t) => t.id)
-          .filter((id): id is string => Boolean(id) && existingById.has(id!))
-      )
-
-      // A tier that has sold tickets can neither be removed…
-      for (const t of existingTiers) {
-        if (!keptIds.has(t.id) && t.sold > 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `Cannot remove "${t.name}" — it already has ${t.sold} ticket(s) sold.`,
-          })
-        }
-      }
-      // …nor have its capacity dropped below what's already been sold.
-      for (const t of input.tiers) {
-        const current = t.id ? existingById.get(t.id) : undefined
-        if (current && t.quantity < current.sold) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `"${t.name}" already has ${current.sold} sold; quantity can't be lower.`,
-          })
-        }
-      }
-
       await ctx.db.transaction(async (tx) => {
+        // Reconcile tiers against what's already been sold. Read the tiers
+        // inside the transaction with a row lock (`FOR UPDATE`) so a concurrent
+        // purchase can't bump `sold` between our validation and the write.
+        // Tiers are matched by id; anything without a known id is a new tier.
+        const existingTiers = await tx
+          .select()
+          .from(ticketTiers)
+          .where(eq(ticketTiers.eventId, ev.id))
+          .for('update')
+        const existingById = new Map(existingTiers.map((t) => [t.id, t]))
+        const keptIds = new Set(
+          input.tiers
+            .map((t) => t.id)
+            .filter((id): id is string => Boolean(id) && existingById.has(id!))
+        )
+
+        // A tier that has sold tickets can neither be removed…
+        for (const t of existingTiers) {
+          if (!keptIds.has(t.id) && t.sold > 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Cannot remove "${t.name}" — it already has ${t.sold} ticket(s) sold.`,
+            })
+          }
+        }
+        // …nor have its capacity dropped below what's already been sold.
+        for (const t of input.tiers) {
+          const current = t.id ? existingById.get(t.id) : undefined
+          if (current && t.quantity < current.sold) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `"${t.name}" already has ${current.sold} sold; quantity can't be lower.`,
+            })
+          }
+        }
+
         await tx
           .update(events)
           .set({
