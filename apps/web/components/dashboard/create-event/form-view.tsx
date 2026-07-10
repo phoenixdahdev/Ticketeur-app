@@ -66,6 +66,12 @@ export function FormView({
   onBannerChange,
   onPreview,
   onSaveDraft,
+  heading = 'Create New Event',
+  subheading = 'Set up your event details, ticketing, and manage vendors.',
+  primaryLabel = 'Publish Event',
+  secondaryLabel = 'Save to Draft',
+  showVendors = true,
+  submitting = false,
 }: {
   values: CreateEventValues
   onChange: (next: CreateEventValues) => void
@@ -73,6 +79,13 @@ export function FormView({
   onBannerChange: (next: string | null) => void
   onPreview: () => void
   onSaveDraft: () => void
+  heading?: string
+  subheading?: string
+  primaryLabel?: string
+  // Pass null to hide the secondary (draft) action entirely.
+  secondaryLabel?: string | null
+  showVendors?: boolean
+  submitting?: boolean
 }) {
   const form = useForm<CreateEventValues>({
     resolver: zodResolver(createEventSchema),
@@ -95,15 +108,15 @@ export function FormView({
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden"
       noValidate
     >
       <header className="flex shrink-0 flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
-          Create New Event
+          {heading}
         </h1>
         <p className="text-muted-foreground text-sm md:text-base">
-          Set up your event details, ticketing, and manage vendors.
+          {subheading}
         </p>
       </header>
 
@@ -204,9 +217,7 @@ export function FormView({
         action={
           <button
             type="button"
-            onClick={() =>
-              tiers.append({ name: '', quantity: 100, price: 0 })
-            }
+            onClick={() => tiers.append({ name: '', quantity: 100, price: 0 })}
             className="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline"
           >
             <HugeiconsIcon
@@ -311,21 +322,29 @@ export function FormView({
         </div>
       </Section>
 
-      <VendorsEditor form={form} />
+      {showVendors ? <VendorsEditor form={form} /> : null}
 
       <div className="flex shrink-0 flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-center md:gap-4">
-        <Button type="submit" size="xl" className="w-full md:w-56">
-          Publish Event
-        </Button>
         <Button
-          type="button"
+          type="submit"
           size="xl"
-          variant="outline"
-          className="w-full md:w-44"
-          onClick={saveDraft}
+          className="w-full md:w-56"
+          disabled={submitting}
         >
-          Save to Draft
+          {primaryLabel}
         </Button>
+        {secondaryLabel !== null ? (
+          <Button
+            type="button"
+            size="xl"
+            variant="outline"
+            className="w-full md:w-44"
+            onClick={saveDraft}
+            disabled={submitting}
+          >
+            {secondaryLabel}
+          </Button>
+        ) : null}
       </div>
     </form>
   )
@@ -383,7 +402,9 @@ function DateField({
   const date = form.watch('date')
   const endDate = form.watch('endDate')
   const isRange = endDate !== null && endDate !== ''
-  const [kind, setKind] = useState<'single' | 'range'>(isRange ? 'range' : 'single')
+  const [kind, setKind] = useState<'single' | 'range'>(
+    isRange ? 'range' : 'single'
+  )
 
   function setSingle() {
     setKind('single')
@@ -844,9 +865,7 @@ function VendorsEditor({
     const needle = search.trim().toLowerCase()
     return registeredVendors
       .filter((v) => !assigned.includes(v.id))
-      .filter(
-        (v) => category === 'All Categories' || v.category === category
-      )
+      .filter((v) => category === 'All Categories' || v.category === category)
       .filter(
         (v) =>
           !needle ||
@@ -984,7 +1003,7 @@ function VendorsEditor({
             {externalInvites.map((inv) => (
               <li
                 key={inv.email}
-                className="bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium"
+                className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
               >
                 <span className="font-semibold">{inv.businessName}</span>
                 <span className="text-amber-800/80 dark:text-amber-200/70">
@@ -994,7 +1013,7 @@ function VendorsEditor({
                   type="button"
                   onClick={() => removeInvite(inv.email)}
                   aria-label={`Remove invite for ${inv.email}`}
-                  className="hover:bg-amber-500/20 inline-flex size-4 items-center justify-center rounded-full transition-colors"
+                  className="inline-flex size-4 items-center justify-center rounded-full transition-colors hover:bg-amber-500/20"
                 >
                   <HugeiconsIcon
                     icon={Cancel01Icon}
@@ -1156,7 +1175,9 @@ function VendorCard({
         <button
           type="button"
           onClick={onAction}
-          aria-label={action === 'add' ? `Add ${vendor.name}` : `Remove ${vendor.name}`}
+          aria-label={
+            action === 'add' ? `Add ${vendor.name}` : `Remove ${vendor.name}`
+          }
           className={cn(
             'absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full shadow-sm transition-colors',
             action === 'add'
