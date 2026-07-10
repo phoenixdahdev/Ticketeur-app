@@ -50,8 +50,7 @@ export function LoginForm() {
 
       if (error) {
         toast.error('Sign in failed', {
-          description:
-            error.message ?? 'Check your credentials and try again.',
+          description: error.message ?? 'Check your credentials and try again.',
         })
         return
       }
@@ -63,6 +62,10 @@ export function LoginForm() {
 
       toast.success('Welcome back')
       router.push('/post-login')
+      // Refresh so server components (notably the session-aware site header)
+      // re-render with the new session instead of the cached logged-out view.
+      // Without this the header only updates after a manual page reload.
+      router.refresh()
     })
   }
 
@@ -137,9 +140,7 @@ export function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  aria-label={
-                    showPassword ? 'Hide password' : 'Show password'
-                  }
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-1 transition-colors"
                 >
                   <HugeiconsIcon
@@ -155,12 +156,7 @@ export function LoginForm() {
         />
       </FieldGroup>
 
-      <Button
-        type="submit"
-        size="xl"
-        className="w-full"
-        disabled={isPending}
-      >
+      <Button type="submit" size="xl" className="w-full" disabled={isPending}>
         {isPending ? 'Signing in…' : 'Sign In'}
       </Button>
 

@@ -182,20 +182,45 @@ export function UsersContent() {
     })
   )
 
+  // Vendor approval lives on the moderation router (same call the overview
+  // moderation queue uses), so it can be actioned inline from user management.
+  const approveMutation = useMutation(
+    trpc.admin.moderation.approveVendor.mutationOptions({
+      onSuccess: () => {
+        toast.success('Vendor approved', {
+          description: 'They can now be assigned to events.',
+        })
+        invalidateUsers()
+      },
+      onError: (e) =>
+        toast.error('Could not approve', { description: e.message }),
+    })
+  )
+
   const isPending =
     suspendMutation.isPending ||
     disableMutation.isPending ||
     reactivateMutation.isPending ||
-    removeMutation.isPending
+    removeMutation.isPending ||
+    approveMutation.isPending
 
   const dialog = useActionDialog()
 
-  async function handleAction(
-    action: 'suspend' | 'disable' | 'reactivate' | 'remove',
-    target: UserRow
-  ) {
+  async function handleAction(action: UserAction, target: UserRow) {
     if (isPending) return
 
+    if (action === 'approve') {
+      const ok = await dialog.confirm({
+        title: `Approve ${target.name}?`,
+        description:
+          'Their vendor profile is approved — they can be assigned to events and will be emailed.',
+        confirmLabel: 'Approve',
+        tone: 'success',
+      })
+      if (!ok) return
+      approveMutation.mutate({ id: target.id })
+      return
+    }
     if (action === 'suspend') {
       const reason = await dialog.prompt({
         title: `Suspend ${target.name}`,
@@ -268,7 +293,7 @@ export function UsersContent() {
         <div
           role="tablist"
           aria-label="Filter users by role"
-          className="border-border/60 -mx-1 flex items-center gap-1 overflow-x-auto border-b px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="border-border/60 -mx-1 flex [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b px-1 [&::-webkit-scrollbar]:hidden"
         >
           {TABS.map((t) => {
             const active = params.tab === t.value
@@ -323,7 +348,7 @@ export function UsersContent() {
       </div>
 
       <div className="border-border/60 bg-background flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm shadow-black/[0.02]">
-        <div className="min-h-0 w-full flex-1 overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="min-h-0 w-full flex-1 [scrollbar-width:none] overflow-auto [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[760px] table-auto">
             <thead className="bg-primary/5">
               <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
@@ -431,7 +456,9 @@ function SortableHeader({
         }
         className={cn(
           'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
-          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+          active
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-foreground'
         )}
       >
         <span>{children}</span>
@@ -447,7 +474,7 @@ function SortableHeader({
   )
 }
 
-type UserAction = 'suspend' | 'disable' | 'reactivate' | 'remove'
+type UserAction = 'suspend' | 'disable' | 'reactivate' | 'remove' | 'approve'
 
 function UserRowView({
   user,
@@ -461,10 +488,7 @@ function UserRowView({
   return (
     <tr className="hover:bg-muted/40 text-sm transition-colors">
       <td className="px-5 py-4">
-        <Link
-          href={`/users/${user.id}`}
-          className="flex items-center gap-3"
-        >
+        <Link href={`/users/${user.id}`} className="flex items-center gap-3">
           <Avatar className="border-border/60 size-10 shrink-0 border">
             {user.avatarUrl ? (
               <AvatarImage asChild src={user.avatarUrl} alt="">
@@ -489,7 +513,7 @@ function UserRowView({
           </div>
         </Link>
       </td>
-      <td className="text-foreground px-5 py-4 font-semibold uppercase whitespace-nowrap">
+      <td className="text-foreground px-5 py-4 font-semibold whitespace-nowrap uppercase">
         {user.role}
       </td>
       <td className="text-muted-foreground px-5 py-4 whitespace-nowrap">
@@ -552,11 +576,7 @@ function RowActions({
           disabled={busy}
           onClick={() => onAction('reactivate')}
         >
-          <HugeiconsIcon
-            icon={Tick02Icon}
-            className="size-4"
-            strokeWidth={2}
-          />
+          <HugeiconsIcon icon={Tick02Icon} className="size-4" strokeWidth={2} />
         </ActionPill>
         <ActionPill
           tone="muted"
@@ -575,6 +595,16 @@ function RowActions({
   }
   return (
     <div className="flex items-center gap-1.5">
+      {user.role === 'vendor' && user.status === 'pending' ? (
+        <ActionPill
+          tone="success"
+          label="Approve"
+          disabled={busy}
+          onClick={() => onAction('approve')}
+        >
+          <HugeiconsIcon icon={Tick02Icon} className="size-4" strokeWidth={2} />
+        </ActionPill>
+      ) : null}
       <ActionPill
         tone="warning"
         label="Suspend"

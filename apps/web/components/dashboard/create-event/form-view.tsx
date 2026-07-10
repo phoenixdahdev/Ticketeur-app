@@ -66,6 +66,12 @@ export function FormView({
   onBannerChange,
   onPreview,
   onSaveDraft,
+  heading = 'Create New Event',
+  subheading = 'Set up your event details, ticketing, and manage vendors.',
+  primaryLabel = 'Publish Event',
+  secondaryLabel = 'Save to Draft',
+  showVendors = true,
+  submitting = false,
 }: {
   values: CreateEventValues
   onChange: (next: CreateEventValues) => void
@@ -73,6 +79,13 @@ export function FormView({
   onBannerChange: (next: string | null) => void
   onPreview: () => void
   onSaveDraft: () => void
+  heading?: string
+  subheading?: string
+  primaryLabel?: string
+  // Pass null to hide the secondary (draft) action entirely.
+  secondaryLabel?: string | null
+  showVendors?: boolean
+  submitting?: boolean
 }) {
   const form = useForm<CreateEventValues>({
     resolver: zodResolver(createEventSchema),
@@ -95,15 +108,15 @@ export function FormView({
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden"
       noValidate
     >
       <header className="flex shrink-0 flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
-          Create New Event
+          {heading}
         </h1>
         <p className="text-muted-foreground text-sm md:text-base">
-          Set up your event details, ticketing, and manage vendors.
+          {subheading}
         </p>
       </header>
 
@@ -204,9 +217,7 @@ export function FormView({
         action={
           <button
             type="button"
-            onClick={() =>
-              tiers.append({ name: '', quantity: 100, price: 0 })
-            }
+            onClick={() => tiers.append({ name: '', quantity: 100, price: 0 })}
             className="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline"
           >
             <HugeiconsIcon
@@ -219,113 +230,131 @@ export function FormView({
         }
       >
         <div className="flex flex-col gap-4">
-          {tiers.fields.map((f, i) => (
-            <div
-              key={f.id}
-              className="border-border/60 grid grid-cols-1 items-end gap-3 rounded-xl border p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
-            >
-              <Controller
-                name={`tiers.${i}.name`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Ticket Name
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      value={field.value ?? ''}
-                      placeholder="Enter ticket name"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name={`tiers.${i}.quantity`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Quantity
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={field.value ?? ''}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === '' ? '' : Number(e.target.value)
-                        )
-                      }
-                      onBlur={field.onBlur}
-                      aria-invalid={fieldState.invalid}
-                      placeholder="100"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name={`tiers.${i}.price`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Price (₦)
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={100}
-                      value={field.value ?? ''}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === '' ? '' : Number(e.target.value)
-                        )
-                      }
-                      onBlur={field.onBlur}
-                      aria-invalid={fieldState.invalid}
-                      placeholder="0"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => tiers.remove(i)}
-                aria-label="Remove tier"
-                disabled={tiers.fields.length <= 1}
-                className="text-destructive hover:bg-destructive/10 inline-flex size-10 items-center justify-center self-end rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+          {tiers.fields.map((f, i) => {
+            // Tickets already sold for this tier (edit mode). Sold tiers can't
+            // be removed and can't shrink below what's already been sold.
+            const sold = f.sold ?? 0
+            return (
+              <div
+                key={f.id}
+                className="border-border/60 grid grid-cols-1 items-end gap-3 rounded-xl border p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
               >
-                <HugeiconsIcon
-                  icon={Delete02Icon}
-                  className="size-4"
-                  strokeWidth={1.8}
+                <Controller
+                  name={`tiers.${i}.name`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Ticket Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        value={field.value ?? ''}
+                        placeholder="Enter ticket name"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
                 />
-              </button>
-            </div>
-          ))}
+                <Controller
+                  name={`tiers.${i}.quantity`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Quantity{sold > 0 ? ` (${sold} sold)` : ''}
+                      </FieldLabel>
+                      <Input
+                        type="number"
+                        min={Math.max(1, sold)}
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? '' : Number(e.target.value)
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="100"
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name={`tiers.${i}.price`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Price (₦)
+                      </FieldLabel>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={100}
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? '' : Number(e.target.value)
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="0"
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => tiers.remove(i)}
+                  aria-label="Remove tier"
+                  disabled={tiers.fields.length <= 1 || sold > 0}
+                  title={
+                    sold > 0
+                      ? 'This tier has sold tickets and cannot be removed'
+                      : undefined
+                  }
+                  className="text-destructive hover:bg-destructive/10 inline-flex size-10 items-center justify-center self-end rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <HugeiconsIcon
+                    icon={Delete02Icon}
+                    className="size-4"
+                    strokeWidth={1.8}
+                  />
+                </button>
+              </div>
+            )
+          })}
         </div>
       </Section>
 
-      <VendorsEditor form={form} />
+      {showVendors ? <VendorsEditor form={form} /> : null}
 
       <div className="flex shrink-0 flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-center md:gap-4">
-        <Button type="submit" size="xl" className="w-full md:w-56">
-          Publish Event
-        </Button>
         <Button
-          type="button"
+          type="submit"
           size="xl"
-          variant="outline"
-          className="w-full md:w-44"
-          onClick={saveDraft}
+          className="w-full md:w-56"
+          disabled={submitting}
         >
-          Save to Draft
+          {primaryLabel}
         </Button>
+        {secondaryLabel !== null ? (
+          <Button
+            type="button"
+            size="xl"
+            variant="outline"
+            className="w-full md:w-44"
+            onClick={saveDraft}
+            disabled={submitting}
+          >
+            {secondaryLabel}
+          </Button>
+        ) : null}
       </div>
     </form>
   )
@@ -383,7 +412,9 @@ function DateField({
   const date = form.watch('date')
   const endDate = form.watch('endDate')
   const isRange = endDate !== null && endDate !== ''
-  const [kind, setKind] = useState<'single' | 'range'>(isRange ? 'range' : 'single')
+  const [kind, setKind] = useState<'single' | 'range'>(
+    isRange ? 'range' : 'single'
+  )
 
   function setSingle() {
     setKind('single')
@@ -844,9 +875,7 @@ function VendorsEditor({
     const needle = search.trim().toLowerCase()
     return registeredVendors
       .filter((v) => !assigned.includes(v.id))
-      .filter(
-        (v) => category === 'All Categories' || v.category === category
-      )
+      .filter((v) => category === 'All Categories' || v.category === category)
       .filter(
         (v) =>
           !needle ||
@@ -984,7 +1013,7 @@ function VendorsEditor({
             {externalInvites.map((inv) => (
               <li
                 key={inv.email}
-                className="bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium"
+                className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
               >
                 <span className="font-semibold">{inv.businessName}</span>
                 <span className="text-amber-800/80 dark:text-amber-200/70">
@@ -994,7 +1023,7 @@ function VendorsEditor({
                   type="button"
                   onClick={() => removeInvite(inv.email)}
                   aria-label={`Remove invite for ${inv.email}`}
-                  className="hover:bg-amber-500/20 inline-flex size-4 items-center justify-center rounded-full transition-colors"
+                  className="inline-flex size-4 items-center justify-center rounded-full transition-colors hover:bg-amber-500/20"
                 >
                   <HugeiconsIcon
                     icon={Cancel01Icon}
@@ -1156,7 +1185,9 @@ function VendorCard({
         <button
           type="button"
           onClick={onAction}
-          aria-label={action === 'add' ? `Add ${vendor.name}` : `Remove ${vendor.name}`}
+          aria-label={
+            action === 'add' ? `Add ${vendor.name}` : `Remove ${vendor.name}`
+          }
           className={cn(
             'absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full shadow-sm transition-colors',
             action === 'add'

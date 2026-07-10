@@ -1,9 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { AuthShell } from '@/components/auth/auth-shell'
 import { SignupForm } from '@/components/auth/signup-form'
 import { resolveSignupRole } from '@/lib/signup-roles'
+import { getSession } from '@/lib/auth'
+import { getPostLoginPath } from '@/lib/post-login-redirect'
 
 export const metadata: Metadata = {
   title: 'Sign Up',
@@ -20,6 +23,19 @@ export default async function SignupPage(props: PageProps<'/signup'>) {
   // An invite forces the role to vendor regardless of any other query.
   const invite = pickFirst(searchParams.invite)
   const isVendorInvite = invite === 'vendor'
+
+  // Already-authenticated users shouldn't be creating another account. Send
+  // them to their dashboard/home. The vendor-invite flow is exempt: it may be
+  // completing an invited account's setup.
+  if (!isVendorInvite) {
+    const session = await getSession()
+    if (session) {
+      const role =
+        (session.user as unknown as { role?: string | null }).role ?? null
+      redirect(getPostLoginPath(role))
+    }
+  }
+
   const roleParam = isVendorInvite ? 'vendor' : searchParams.role
   const config = resolveSignupRole(roleParam)
   const initialEmail = pickFirst(searchParams.email) ?? ''

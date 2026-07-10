@@ -36,11 +36,7 @@ import { Button } from '@ticketur/ui/components/button'
 import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
 import { useTRPC } from '@/lib/trpc'
-import {
-  STATUS_LABEL,
-  STATUS_TONE,
-  type EventStatus,
-} from '@/lib/org-events'
+import { STATUS_LABEL, STATUS_TONE, type EventStatus } from '@/lib/org-events'
 import {
   eventCode,
   formatEventDate,
@@ -105,7 +101,8 @@ export function EventDetail({ id }: { id: string }) {
           queryKey: trpc.org.dashboard.stats.queryKey(),
         })
       },
-      onError: (e) => toast.error('Could not archive', { description: e.message }),
+      onError: (e) =>
+        toast.error('Could not archive', { description: e.message }),
     })
   )
 
@@ -121,7 +118,27 @@ export function EventDetail({ id }: { id: string }) {
         })
         router.push('/org/events')
       },
-      onError: (e) => toast.error('Could not delete', { description: e.message }),
+      onError: (e) =>
+        toast.error('Could not delete', { description: e.message }),
+    })
+  )
+
+  const publish = useMutation(
+    trpc.org.events.publish.mutationOptions({
+      onSuccess: () => {
+        toast.success('Event submitted for review')
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.byId.queryKey({ id }),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.events.list.queryKey(),
+        })
+        queryClient.invalidateQueries({
+          queryKey: trpc.org.dashboard.stats.queryKey(),
+        })
+      },
+      onError: (e) =>
+        toast.error('Could not publish', { description: e.message }),
     })
   )
 
@@ -142,12 +159,16 @@ export function EventDetail({ id }: { id: string }) {
   const status = event.status as EventStatus
   const showStats = status === 'upcoming' || status === 'archived'
   const showStepper = status === 'in-review'
-  const showEdit = status === 'draft'
+  // Editable until the event is frozen (archived/suspended). Published events
+  // stay editable so organizers can correct details.
+  const showEdit =
+    status === 'draft' || status === 'in-review' || status === 'upcoming'
+  const showPublish = status === 'draft'
   const pct = total > 0 ? Math.min(100, Math.round((sold / total) * 100)) : 0
   const code = eventCode(event.id)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
       <header className="flex shrink-0 flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
         <div className="flex flex-col gap-1.5">
           <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
@@ -195,6 +216,21 @@ export function EventDetail({ id }: { id: string }) {
               Edit Event
             </Link>
           ) : null}
+          {showPublish ? (
+            <button
+              type="button"
+              disabled={publish.isPending}
+              onClick={() => publish.mutate({ id: event.id })}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700 disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                className="size-4"
+                strokeWidth={2}
+              />
+              Publish
+            </button>
+          ) : null}
           {status === 'upcoming' ? (
             <button
               type="button"
@@ -216,9 +252,7 @@ export function EventDetail({ id }: { id: string }) {
               disabled={remove.isPending}
               onClick={() => {
                 if (
-                  confirm(
-                    `Delete "${event.title}"? This cannot be undone.`
-                  )
+                  confirm(`Delete "${event.title}"? This cannot be undone.`)
                 ) {
                   remove.mutate({ id: event.id })
                 }
@@ -457,7 +491,9 @@ function ReviewStepper() {
         />
         <StepperConnector filled={false} />
         <StepperStep
-          bullet={<span className="bg-muted-foreground/40 size-1.5 rounded-full" />}
+          bullet={
+            <span className="bg-muted-foreground/40 size-1.5 rounded-full" />
+          }
           label="Approved"
           tone="muted"
         />
@@ -524,13 +560,7 @@ function DetailItem({
   )
 }
 
-function FeatureCard({
-  icon,
-  label,
-}: {
-  icon: IconSvgElement
-  label: string
-}) {
+function FeatureCard({ icon, label }: { icon: IconSvgElement; label: string }) {
   return (
     <div className="bg-primary/5 border-primary/10 flex flex-col items-center justify-center gap-2 rounded-xl border px-3 py-4">
       <span className="bg-background text-primary flex size-9 items-center justify-center rounded-full">

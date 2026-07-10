@@ -48,14 +48,18 @@ export const ORG_SIDEBAR_CONFIG: SidebarConfig = {
     { href: '/org/dashboard', label: 'Overview', icon: DashboardSquare02Icon },
     { href: '/org/events', label: 'My Events', icon: Calendar03Icon },
   ],
-  profileHref: '/account',
+  profileHref: '/org/profile',
   profileLabel: 'Account Settings',
 }
 
 export const VENDOR_SIDEBAR_CONFIG: SidebarConfig = {
   homeHref: '/vendor/dashboard',
   navLinks: [
-    { href: '/vendor/dashboard', label: 'Overview', icon: DashboardSquare02Icon },
+    {
+      href: '/vendor/dashboard',
+      label: 'Overview',
+      icon: DashboardSquare02Icon,
+    },
     { href: '/vendor/events', label: 'Events', icon: Calendar03Icon },
   ],
   profileHref: '/vendor/profile',
@@ -142,7 +146,11 @@ export function Sidebar({
                     <motion.span
                       layoutId="org-sidebar-indicator"
                       className="bg-primary/10 absolute inset-0 rounded-xl"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   ) : null}
                   <span className="relative flex items-center gap-3">

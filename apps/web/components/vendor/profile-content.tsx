@@ -32,11 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@ticketur/ui/components/select'
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from '@ticketur/ui/components/field'
+import { Field, FieldError, FieldLabel } from '@ticketur/ui/components/field'
 
 import {
   VENDOR_BUSINESS_CATEGORIES,
@@ -64,10 +60,11 @@ export function VendorProfileContent({
   const profileQuery = useQuery(trpc.vendor.profile.get.queryOptions())
 
   // Reset form once the server returns the persisted profile so we don't
-  // overwrite freshly typed input.
+  // overwrite freshly typed input. Skip while the form is dirty so a
+  // background refetch can't clobber edits the user is mid-way through.
   useEffect(() => {
     const data = profileQuery.data
-    if (!data) return
+    if (!data || form.formState.isDirty) return
     form.reset({
       businessName: data.businessName ?? '',
       businessLocation: data.businessLocation ?? '',
@@ -92,6 +89,11 @@ export function VendorProfileContent({
         toast.success('Profile saved', {
           description: 'Your vendor profile has been updated.',
         })
+        // Adopt the just-saved values as the new pristine baseline immediately,
+        // so the form reflects the full saved state without waiting on (or
+        // racing) the refetch below. Without this, the reset-on-refetch effect
+        // could momentarily show stale values.
+        form.reset(form.getValues())
         queryClient.invalidateQueries({
           queryKey: trpc.vendor.profile.get.queryKey(),
         })
@@ -112,7 +114,7 @@ export function VendorProfileContent({
     <form
       onSubmit={form.handleSubmit(onSubmit)}
       noValidate
-      className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden"
     >
       <header className="flex shrink-0 flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
@@ -184,7 +186,7 @@ function BusinessIdentityCard({
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="bg-zinc-900 relative flex size-30 items-center justify-center overflow-hidden rounded-2xl text-white disabled:opacity-70"
+              className="relative flex size-30 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900 text-white disabled:opacity-70"
               aria-label="Update logo"
               aria-busy={uploading}
             >
@@ -604,7 +606,7 @@ function ProductsShowcaseCard({
         {showcase.map((src, idx) => (
           <div
             key={`${src.slice(0, 24)}-${idx}`}
-            className="bg-zinc-900 group relative aspect-square overflow-hidden rounded-xl"
+            className="group relative aspect-square overflow-hidden rounded-xl bg-zinc-900"
           >
             <Image
               src={src}
