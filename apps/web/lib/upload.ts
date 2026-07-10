@@ -15,6 +15,7 @@ export type UploadKind =
   | 'vendor-logo'
   | 'vendor-banner'
   | 'vendor-showcase'
+  | 'org-logo'
 
 export type UploadProgress = {
   loaded: number

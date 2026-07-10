@@ -27,6 +27,12 @@ const ticketTierInput = z.object({
   priceMinor: z.number().int().min(0),
 })
 
+// On edit, existing tiers carry their `id` so we can reconcile against
+// already-sold counts; new tiers added in the form come through without one.
+const updateTicketTierInput = ticketTierInput.extend({
+  id: z.string().optional(),
+})
+
 const createEventInput = z.object({
   title: z.string().trim().min(1),
   description: z.string().trim().min(10),
@@ -53,8 +59,31 @@ const createEventInput = z.object({
   status: eventStatusEnum.default('in-review'),
 })
 
+// Editing never changes an event's status directly (publishing is a separate
+// action) or its vendor roster, so this is the create shape minus those,
+// plus the event id and tier ids.
+const updateEventInput = z
+  .object({
+    id: z.string(),
+    title: z.string().trim().min(1),
+    description: z.string().trim().min(10),
+    date: z.string().min(1),
+    endDate: z.string().nullable().optional(),
+    time: z.string().min(1),
+    location: z.string().trim().min(1),
+    bannerUrl: z.string().nullable().optional(),
+    features: z.array(z.string().trim()).default([]),
+    tiers: z.array(updateTicketTierInput).min(1),
+  })
+  .refine((v) => !v.endDate || v.endDate >= v.date, {
+    path: ['endDate'],
+    message: 'End date must be on or after the start date',
+  })
+
 const listInput = z.object({
-  tab: z.enum(['all', 'upcoming', 'in-review', 'draft', 'archived']).default('all'),
+  tab: z
+    .enum(['all', 'upcoming', 'in-review', 'draft', 'archived'])
+    .default('all'),
   q: z.string().default(''),
   sort: z.enum(['name', 'date', 'location', 'status', 'sales']).default('date'),
   dir: z.enum(['asc', 'desc']).default('desc'),
@@ -82,7 +111,9 @@ export const eventsRouter = createTRPCRouter({
           description: input.description,
           eventDate: input.date,
           endDate:
-            input.endDate && input.endDate !== input.date ? input.endDate : null,
+            input.endDate && input.endDate !== input.date
+              ? input.endDate
+              : null,
           eventTime: input.time,
           location: input.location,
           bannerUrl: input.bannerUrl ?? null,
@@ -243,17 +274,206 @@ export const eventsRouter = createTRPCRouter({
       return { id: eventId }
     }),
 
-  archive: organizerProcedure
-    .input(z.object({ id: z.string() }))
+  update: organizerProcedure
+    .input(updateEventInput)
     .mutation(async ({ ctx, input }) => {
       const found = await ctx.db
-        .select({ id: events.id, organizerId: events.organizerId, title: events.title })
+        .select({
+          id: events.id,
+          organizerId: events.organizerId,
+          status: events.status,
+        })
         .from(events)
         .where(eq(events.id, input.id))
         .limit(1)
       const ev = found[0]
       if (!ev) throw new TRPCError({ code: 'NOT_FOUND' })
-      if (ev.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'admin') {
+      if (
+        ev.organizerId !== ctx.session.user.id &&
+        ctx.session.user.role !== 'admin'
+      ) {
+        throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+      // Archived/suspended events are frozen — no edits once they leave the
+      // organizer's control.
+      if (ev.status === 'archived' || ev.status === 'suspended') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This event can no longer be edited.',
+        })
+      }
+
+      await ctx.db.transaction(async (tx) => {
+        // Reconcile tiers against what's already been sold. Read the tiers
+        // inside the transaction with a row lock (`FOR UPDATE`) so a concurrent
+        // purchase can't bump `sold` between our validation and the write.
+        // Tiers are matched by id; anything without a known id is a new tier.
+        const existingTiers = await tx
+          .select()
+          .from(ticketTiers)
+          .where(eq(ticketTiers.eventId, ev.id))
+          .for('update')
+        const existingById = new Map(existingTiers.map((t) => [t.id, t]))
+        const keptIds = new Set(
+          input.tiers
+            .map((t) => t.id)
+            .filter((id): id is string => Boolean(id) && existingById.has(id!))
+        )
+
+        // A tier that has sold tickets can neither be removed…
+        for (const t of existingTiers) {
+          if (!keptIds.has(t.id) && t.sold > 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Cannot remove "${t.name}" — it already has ${t.sold} ticket(s) sold.`,
+            })
+          }
+        }
+        // …nor have its capacity dropped below what's already been sold.
+        for (const t of input.tiers) {
+          const current = t.id ? existingById.get(t.id) : undefined
+          if (current && t.quantity < current.sold) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `"${t.name}" already has ${current.sold} sold; quantity can't be lower.`,
+            })
+          }
+        }
+
+        await tx
+          .update(events)
+          .set({
+            title: input.title,
+            description: input.description,
+            eventDate: input.date,
+            endDate:
+              input.endDate && input.endDate !== input.date
+                ? input.endDate
+                : null,
+            eventTime: input.time,
+            location: input.location,
+            bannerUrl: input.bannerUrl ?? null,
+            features: input.features,
+            updatedAt: new Date(),
+          })
+          .where(eq(events.id, ev.id))
+
+        const removeIds = existingTiers
+          .filter((t) => !keptIds.has(t.id))
+          .map((t) => t.id)
+        if (removeIds.length > 0) {
+          await tx.delete(ticketTiers).where(inArray(ticketTiers.id, removeIds))
+        }
+
+        for (const [idx, tier] of input.tiers.entries()) {
+          if (tier.id && existingById.has(tier.id)) {
+            await tx
+              .update(ticketTiers)
+              .set({
+                name: tier.name,
+                quantity: tier.quantity,
+                priceMinor: tier.priceMinor,
+                sortOrder: idx,
+              })
+              .where(eq(ticketTiers.id, tier.id))
+          } else {
+            await tx.insert(ticketTiers).values({
+              id: newId('tier'),
+              eventId: ev.id,
+              name: tier.name,
+              quantity: tier.quantity,
+              priceMinor: tier.priceMinor,
+              sortOrder: idx,
+            })
+          }
+        }
+      })
+
+      await logActivity(ctx, {
+        organizerId: ev.organizerId,
+        type: 'event.updated',
+        eventId: ev.id,
+        payload: { title: input.title },
+      })
+
+      return { id: ev.id }
+    }),
+
+  publish: organizerProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const found = await ctx.db
+        .select({
+          id: events.id,
+          organizerId: events.organizerId,
+          title: events.title,
+          status: events.status,
+        })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      const ev = found[0]
+      if (!ev) throw new TRPCError({ code: 'NOT_FOUND' })
+      if (
+        ev.organizerId !== ctx.session.user.id &&
+        ctx.session.user.role !== 'admin'
+      ) {
+        throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+      if (ev.status !== 'draft') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only draft events can be published.',
+        })
+      }
+
+      // An event needs at least one ticket tier before it can go live.
+      const [tierCount] = await ctx.db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(ticketTiers)
+        .where(eq(ticketTiers.eventId, ev.id))
+      if ((tierCount?.count ?? 0) === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Add at least one ticket tier before publishing.',
+        })
+      }
+
+      // Publishing submits the event into the admin review queue, mirroring
+      // the "submit for review" path used when creating an event.
+      await ctx.db
+        .update(events)
+        .set({ status: 'in-review', updatedAt: new Date() })
+        .where(eq(events.id, ev.id))
+
+      await logActivity(ctx, {
+        organizerId: ev.organizerId,
+        type: 'event.published',
+        eventId: ev.id,
+        payload: { title: ev.title },
+      })
+
+      return { id: ev.id, status: 'in-review' as const }
+    }),
+
+  archive: organizerProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const found = await ctx.db
+        .select({
+          id: events.id,
+          organizerId: events.organizerId,
+          title: events.title,
+        })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      const ev = found[0]
+      if (!ev) throw new TRPCError({ code: 'NOT_FOUND' })
+      if (
+        ev.organizerId !== ctx.session.user.id &&
+        ctx.session.user.role !== 'admin'
+      ) {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }
 
@@ -276,13 +496,20 @@ export const eventsRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const found = await ctx.db
-        .select({ id: events.id, organizerId: events.organizerId, title: events.title })
+        .select({
+          id: events.id,
+          organizerId: events.organizerId,
+          title: events.title,
+        })
         .from(events)
         .where(eq(events.id, input.id))
         .limit(1)
       const ev = found[0]
       if (!ev) throw new TRPCError({ code: 'NOT_FOUND' })
-      if (ev.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'admin') {
+      if (
+        ev.organizerId !== ctx.session.user.id &&
+        ctx.session.user.role !== 'admin'
+      ) {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }
 
@@ -310,8 +537,11 @@ export const eventsRouter = createTRPCRouter({
     }
 
     // Aggregate sold/total per event
-    const soldExpr = sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as('sold')
-    const totalExpr = sql<number>`COALESCE(SUM(${ticketTiers.quantity}), 0)::int`.as('total')
+    const soldExpr = sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as(
+      'sold'
+    )
+    const totalExpr =
+      sql<number>`COALESCE(SUM(${ticketTiers.quantity}), 0)::int`.as('total')
 
     const orderBy = (() => {
       const dir = input.dir === 'asc' ? sql`ASC` : sql`DESC`
@@ -372,7 +602,10 @@ export const eventsRouter = createTRPCRouter({
         .limit(1)
       const ev = found[0]
       if (!ev) return null
-      if (ev.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'admin') {
+      if (
+        ev.organizerId !== ctx.session.user.id &&
+        ctx.session.user.role !== 'admin'
+      ) {
         return null
       }
 

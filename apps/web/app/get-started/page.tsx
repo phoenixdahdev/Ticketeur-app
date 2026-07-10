@@ -1,13 +1,18 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { RoleCard, type RoleCardProps } from '@/components/auth/role-card'
 import { AuthHeader } from '@/components/layout/auth-header'
+import { getSession } from '@/lib/auth'
+import { getPostLoginPath } from '@/lib/post-login-redirect'
 
 export const metadata: Metadata = {
   title: 'Get Started',
   description: 'Choose how you want to join Ticketeur.',
 }
+
+export const dynamic = 'force-dynamic'
 
 const ROLES: Array<Omit<RoleCardProps, 'index'>> = [
   {
@@ -35,7 +40,16 @@ const ROLES: Array<Omit<RoleCardProps, 'index'>> = [
   },
 ]
 
-export default function GetStartedPage() {
+export default async function GetStartedPage() {
+  // An already-authenticated user has no role to choose — send them straight
+  // to their dashboard/home instead of the role-selection screen.
+  const session = await getSession()
+  if (session) {
+    const role =
+      (session.user as unknown as { role?: string | null }).role ?? null
+    redirect(getPostLoginPath(role))
+  }
+
   return (
     <div className="dark:bg-background flex min-h-svh flex-col bg-[#fafafa]">
       <AuthHeader />

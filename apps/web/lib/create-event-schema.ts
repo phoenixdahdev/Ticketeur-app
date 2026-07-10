@@ -14,6 +14,14 @@ export const FEATURE_OPTIONS = [
 ] as const
 
 export const ticketTierSchema = z.object({
+  // Present only when editing an existing event — carries the tier's id so the
+  // server can reconcile edits against already-sold tickets. Absent for new
+  // tiers (both on create and when adding a tier during an edit).
+  id: z.string().optional(),
+  // Tickets already sold for this tier (edit mode only). Lets the form guard
+  // against removing a sold tier or dropping quantity below what's sold; the
+  // server enforces the same rules authoritatively.
+  sold: z.number().int().min(0).optional(),
   name: z.string().trim().min(1, 'Tier name required'),
   quantity: z.number().int().min(1, 'Min 1 ticket'),
   price: z.number().min(0, 'Price must be 0 or more'),
@@ -45,10 +53,10 @@ export const createEventSchema = z
     assignedVendorIds: z.array(z.string()),
     externalInvites: z.array(externalVendorSchema),
   })
-  .refine(
-    (v) => !v.endDate || v.endDate >= v.date,
-    { path: ['endDate'], message: 'End date must be on or after the start date' }
-  )
+  .refine((v) => !v.endDate || v.endDate >= v.date, {
+    path: ['endDate'],
+    message: 'End date must be on or after the start date',
+  })
 
 export type TicketTierValues = z.infer<typeof ticketTierSchema>
 export type ExternalVendorValues = z.infer<typeof externalVendorSchema>

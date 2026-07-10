@@ -41,11 +41,11 @@ export function ForgotPassword() {
         redirectTo: '/reset-password',
       })
 
+      // Always show the same neutral confirmation — surfacing the server error
+      // (e.g. "user not found") would let anyone probe which emails have an
+      // account. A reset email is only actually sent when the account exists.
       if (error) {
-        toast.error('Could not send reset link', {
-          description: error.message ?? 'Please try again.',
-        })
-        return
+        console.error('Password reset request failed', error)
       }
 
       setEmail(data.email)
@@ -61,8 +61,8 @@ export function ForgotPassword() {
           </h1>
           <p className="text-muted-foreground text-base leading-6">
             We&apos;ve sent a password reset link to{' '}
-            <span className="text-foreground font-medium">{email}</span>.
-            Please follow the instructions to reset your password.
+            <span className="text-foreground font-medium">{email}</span>. Please
+            follow the instructions to reset your password.
           </p>
         </header>
 
@@ -80,7 +80,12 @@ export function ForgotPassword() {
           <Button size="xl" className="w-full" asChild>
             <a href="mailto:">Open Email App</a>
           </Button>
-          <Button variant="outline-primary" size="xl" className="w-full" asChild>
+          <Button
+            variant="outline-primary"
+            size="xl"
+            className="w-full"
+            asChild
+          >
             <Link href="/login">Back to Sign In</Link>
           </Button>
         </div>
@@ -95,8 +100,8 @@ export function ForgotPassword() {
           Forgot password?
         </h1>
         <p className="text-muted-foreground text-base leading-6">
-          Enter the email address linked to your account and we&apos;ll send
-          you a reset link.
+          Enter the email address linked to your account and we&apos;ll send you
+          a reset link.
         </p>
       </header>
 

@@ -14,8 +14,26 @@ const UPLOAD_KINDS = {
   'vendor-logo': {
     folder: 'vendors/logos',
     maxBytes: 2 * 1024 * 1024,
-    allow: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/svg+xml'],
+    allow: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/avif',
+      'image/svg+xml',
+    ],
     requireVendor: true,
+  },
+  'org-logo': {
+    folder: 'organizers/logos',
+    maxBytes: 2 * 1024 * 1024,
+    allow: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/avif',
+      'image/svg+xml',
+    ],
+    requireOrganizer: true,
   },
   'vendor-banner': {
     folder: 'vendors/banners',
