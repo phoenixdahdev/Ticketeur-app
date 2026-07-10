@@ -61,6 +61,7 @@ export function EditEventContent({ id }: { id: string }) {
       features: event.features,
       tiers: tiers.map((t) => ({
         id: t.id,
+        sold: t.sold,
         name: t.name,
         quantity: t.quantity,
         price: t.priceMinor / 100,

@@ -230,95 +230,105 @@ export function FormView({
         }
       >
         <div className="flex flex-col gap-4">
-          {tiers.fields.map((f, i) => (
-            <div
-              key={f.id}
-              className="border-border/60 grid grid-cols-1 items-end gap-3 rounded-xl border p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
-            >
-              <Controller
-                name={`tiers.${i}.name`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Ticket Name
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      value={field.value ?? ''}
-                      placeholder="Enter ticket name"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name={`tiers.${i}.quantity`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Quantity
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={field.value ?? ''}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === '' ? '' : Number(e.target.value)
-                        )
-                      }
-                      onBlur={field.onBlur}
-                      aria-invalid={fieldState.invalid}
-                      placeholder="100"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name={`tiers.${i}.price`}
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel className="text-xs font-semibold">
-                      Price (₦)
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={100}
-                      value={field.value ?? ''}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === '' ? '' : Number(e.target.value)
-                        )
-                      }
-                      onBlur={field.onBlur}
-                      aria-invalid={fieldState.invalid}
-                      placeholder="0"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => tiers.remove(i)}
-                aria-label="Remove tier"
-                disabled={tiers.fields.length <= 1}
-                className="text-destructive hover:bg-destructive/10 inline-flex size-10 items-center justify-center self-end rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+          {tiers.fields.map((f, i) => {
+            // Tickets already sold for this tier (edit mode). Sold tiers can't
+            // be removed and can't shrink below what's already been sold.
+            const sold = f.sold ?? 0
+            return (
+              <div
+                key={f.id}
+                className="border-border/60 grid grid-cols-1 items-end gap-3 rounded-xl border p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
               >
-                <HugeiconsIcon
-                  icon={Delete02Icon}
-                  className="size-4"
-                  strokeWidth={1.8}
+                <Controller
+                  name={`tiers.${i}.name`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Ticket Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        value={field.value ?? ''}
+                        placeholder="Enter ticket name"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
                 />
-              </button>
-            </div>
-          ))}
+                <Controller
+                  name={`tiers.${i}.quantity`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Quantity{sold > 0 ? ` (${sold} sold)` : ''}
+                      </FieldLabel>
+                      <Input
+                        type="number"
+                        min={Math.max(1, sold)}
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? '' : Number(e.target.value)
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="100"
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name={`tiers.${i}.price`}
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel className="text-xs font-semibold">
+                        Price (₦)
+                      </FieldLabel>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={100}
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === '' ? '' : Number(e.target.value)
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="0"
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => tiers.remove(i)}
+                  aria-label="Remove tier"
+                  disabled={tiers.fields.length <= 1 || sold > 0}
+                  title={
+                    sold > 0
+                      ? 'This tier has sold tickets and cannot be removed'
+                      : undefined
+                  }
+                  className="text-destructive hover:bg-destructive/10 inline-flex size-10 items-center justify-center self-end rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <HugeiconsIcon
+                    icon={Delete02Icon}
+                    className="size-4"
+                    strokeWidth={1.8}
+                  />
+                </button>
+              </div>
+            )
+          })}
         </div>
       </Section>
 
