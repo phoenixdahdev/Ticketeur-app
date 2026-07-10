@@ -311,7 +311,9 @@ export const adminEventsRouter = createTRPCRouter({
     }),
 
   // Permanently delete an event. Ticket tiers, vendor links, orders, etc. are
-  // removed via ON DELETE CASCADE on their event_id foreign keys.
+  // removed via ON DELETE CASCADE on their event_id foreign keys — so an event
+  // with sold tickets can't be deleted (it would wipe paid orders and break
+  // attendees' ticket access). Suspend it instead to pull it from the site.
   remove: adminProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
@@ -323,6 +325,21 @@ export const adminEventsRouter = createTRPCRouter({
       if (!ev) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
       }
+
+      const [soldRow] = await ctx.db
+        .select({
+          sold: sql<number>`coalesce(sum(${ticketTiers.sold}), 0)::int`,
+        })
+        .from(ticketTiers)
+        .where(eq(ticketTiers.eventId, ev.id))
+      if ((soldRow?.sold ?? 0) > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'This event has sold tickets and cannot be deleted. Suspend it instead.',
+        })
+      }
+
       await ctx.db.delete(events).where(eq(events.id, ev.id))
       return { ok: true as const }
     }),

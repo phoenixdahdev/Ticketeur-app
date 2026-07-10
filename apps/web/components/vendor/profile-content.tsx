@@ -60,10 +60,11 @@ export function VendorProfileContent({
   const profileQuery = useQuery(trpc.vendor.profile.get.queryOptions())
 
   // Reset form once the server returns the persisted profile so we don't
-  // overwrite freshly typed input.
+  // overwrite freshly typed input. Skip while the form is dirty so a
+  // background refetch can't clobber edits the user is mid-way through.
   useEffect(() => {
     const data = profileQuery.data
-    if (!data) return
+    if (!data || form.formState.isDirty) return
     form.reset({
       businessName: data.businessName ?? '',
       businessLocation: data.businessLocation ?? '',

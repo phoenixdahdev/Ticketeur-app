@@ -51,10 +51,12 @@ export function OrgProfileContent() {
   const profileQuery = useQuery(trpc.org.profile.get.queryOptions())
   const email = profileQuery.data?.email ?? ''
 
-  // Populate the form once the server returns the persisted profile.
+  // Populate the form once the server returns the persisted profile. Skip
+  // while the form is dirty so a background refetch can't clobber edits the
+  // user is in the middle of typing.
   useEffect(() => {
     const data = profileQuery.data
-    if (!data) return
+    if (!data || form.formState.isDirty) return
     form.reset({
       name: data.name ?? '',
       orgName: data.orgName ?? '',
