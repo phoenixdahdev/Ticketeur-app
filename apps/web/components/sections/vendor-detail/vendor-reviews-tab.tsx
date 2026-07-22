@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -33,7 +32,6 @@ type ReviewRow =
 
 export function VendorReviewsTab({ vendorId }: { vendorId: string }) {
   const trpc = useTRPC()
-  const router = useRouter()
   const session = useSession()
   const user = session.data?.user ?? null
 
@@ -59,16 +57,10 @@ export function VendorReviewsTab({ vendorId }: { vendorId: string }) {
   const currentPage = Math.min(page, totalPages)
 
   // Shared by the "Tap to Rate" quick-stars and the plain "Write a review"
-  // button. Not signed in? Bounce to login and come straight back here
-  // instead of silently opening a modal that would just fail on submit —
-  // mirrors the page-level auth-guard convention in
-  // app/(app)/account/tickets/page.tsx.
+  // button. No account needed — signed-out visitors get name/email fields
+  // in the modal instead of being bounced to login.
   function openWriteReview(rating: number) {
     setQuickRating(rating)
-    if (!user) {
-      router.push(`/login?redirect=/vendors/${vendorId}?tab=reviews`)
-      return
-    }
     setInitialRating(rating)
     setModalOpen(true)
   }
@@ -159,6 +151,7 @@ export function VendorReviewsTab({ vendorId }: { vendorId: string }) {
         open={modalOpen}
         vendorId={vendorId}
         initialRating={initialRating}
+        user={user ? { name: user.name, email: user.email } : null}
         onClose={closeWriteReview}
       />
     </div>

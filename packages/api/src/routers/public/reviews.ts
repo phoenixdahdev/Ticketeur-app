@@ -1,11 +1,22 @@
-import { desc, eq, sql } from 'drizzle-orm'
+import { TRPCError } from '@trpc/server'
+import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { user, vendorReviews } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
+import { newId } from '../../lib/ids'
 
 const RATING_VALUES = [1, 2, 3, 4, 5] as const
+
+const submitInput = z.object({
+  vendorId: z.string(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(1500).default(''),
+  // Only read when there's no session — a guest's identity for this review.
+  reviewerName: z.string().trim().min(1).max(120).optional(),
+  reviewerEmail: z.email('Enter a valid email').optional(),
+})
 
 export const publicReviewsRouter = createTRPCRouter({
   listByVendor: publicProcedure
@@ -23,10 +34,12 @@ export const publicReviewsRouter = createTRPCRouter({
           rating: vendorReviews.rating,
           comment: vendorReviews.comment,
           createdAt: vendorReviews.createdAt,
-          reviewerName: user.name,
+          // Signed-in reviewer → their account name; guest → the name they
+          // typed in the modal.
+          reviewerName: sql<string>`coalesce(${user.name}, ${vendorReviews.guestName})`,
         })
         .from(vendorReviews)
-        .innerJoin(user, eq(user.id, vendorReviews.reviewerId))
+        .leftJoin(user, eq(user.id, vendorReviews.reviewerId))
         .where(eq(vendorReviews.vendorId, input.vendorId))
         .orderBy(desc(vendorReviews.createdAt))
         .limit(input.pageSize)
@@ -76,6 +89,71 @@ export const publicReviewsRouter = createTRPCRouter({
             ) / total
 
       return { average, total, distribution }
+    }),
+
+  // Anyone can review a vendor — signed in or not. Signed-in reviewers are
+  // capped at one review per vendor (upsert by reviewerId, identity from the
+  // session — the posted name/email, if any, is ignored). Guests must supply
+  // a name + email, which becomes their identity for the same one-review-
+  // per-vendor cap (upsert by vendorId + guestEmail).
+  submit: publicProcedure
+    .input(submitInput)
+    .mutation(async ({ ctx, input }) => {
+      const [vendor] = await ctx.db
+        .select({ id: user.id })
+        .from(user)
+        .where(and(eq(user.id, input.vendorId), eq(user.role, 'vendor')))
+        .limit(1)
+
+      if (!vendor) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Vendor not found' })
+      }
+
+      const reviewerId = ctx.session?.user.id ?? null
+
+      if (!reviewerId && (!input.reviewerName || !input.reviewerEmail)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Name and email are required',
+        })
+      }
+
+      const identityFilter = reviewerId
+        ? eq(vendorReviews.reviewerId, reviewerId)
+        : and(
+            isNull(vendorReviews.reviewerId),
+            eq(vendorReviews.guestEmail, input.reviewerEmail!)
+          )
+
+      const [existing] = await ctx.db
+        .select({ id: vendorReviews.id })
+        .from(vendorReviews)
+        .where(and(eq(vendorReviews.vendorId, input.vendorId), identityFilter))
+        .limit(1)
+
+      if (existing) {
+        await ctx.db
+          .update(vendorReviews)
+          .set({
+            rating: input.rating,
+            comment: input.comment,
+            ...(reviewerId ? {} : { guestName: input.reviewerName }),
+          })
+          .where(eq(vendorReviews.id, existing.id))
+        return { ok: true, id: existing.id }
+      }
+
+      const id = newId('rev')
+      await ctx.db.insert(vendorReviews).values({
+        id,
+        vendorId: input.vendorId,
+        reviewerId,
+        guestName: reviewerId ? null : input.reviewerName,
+        guestEmail: reviewerId ? null : input.reviewerEmail,
+        rating: input.rating,
+        comment: input.comment,
+      })
+      return { ok: true, id }
     }),
 })
 
