@@ -16,7 +16,7 @@
     "@ticketur/auth": "workspace:*",
     "@ticketur/db": "workspace:*",
     "@ticketur/env": "workspace:*",
-    "@trigger.dev/sdk": "4.5.3",
+    "@trigger.dev/sdk": "4.5.4",
     "@trpc/server": "^11.18.0",
     "@vercel/blob": "^2.6.1",
     "date-fns": "^4.4.0",

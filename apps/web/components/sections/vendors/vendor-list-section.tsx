@@ -1,33 +1,49 @@
 'use client'
 
+import { useState } from 'react'
+import Link from 'next/link'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  parseAsFloat,
   parseAsInteger,
   parseAsString,
   useQueryStates,
 } from 'nuqs'
-import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Cancel01Icon,
+  FilterIcon,
   Search01Icon,
 } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
-import { VendorCard } from '@/components/cards/vendor-card'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@ticketur/ui/components/popover'
+import { VendorMarketplaceCard } from '@/components/cards/vendor-marketplace-card'
+import { MobileFilterDrawer } from '@/components/sections/vendors/mobile-filter-drawer'
+import {
+  VendorFilters,
+  type VendorFiltersValue,
+} from '@/components/sections/vendors/vendor-filters'
 import { useTRPC } from '@/lib/trpc'
 
 const CATEGORY_CHIPS = [
-  { label: 'All Services', value: 'all' },
-  { label: 'Food & Drink', value: 'Food & Drink' },
-  { label: 'Beverages', value: 'Beverages' },
-  { label: 'Apparel', value: 'Apparel' },
-  { label: 'Decor', value: 'Decor' },
+  { label: 'All Categories', value: 'all' },
+  { label: 'Catering', value: 'Catering' },
+  { label: 'AV & Sound', value: 'AV & Sound' },
+  { label: 'Security', value: 'Security' },
+  { label: 'Logistics', value: 'Logistics' },
+  { label: 'Merch', value: 'Merch' },
+  { label: 'Photography', value: 'Photography' },
   { label: 'Entertainment', value: 'Entertainment' },
-  { label: 'Merchandise', value: 'Merchandise' },
+  { label: 'Decor & Floral', value: 'Decor & Floral' },
 ] as const
 
 const PAGE_SIZE = 8
@@ -35,20 +51,40 @@ const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
 
 export function VendorListSection() {
   const trpc = useTRPC()
-  const router = useRouter()
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   const [state, setState] = useQueryStates(
     {
       q: parseAsString.withDefault(''),
       category: parseAsString.withDefault('all'),
+      location: parseAsString.withDefault(''),
+      minRating: parseAsFloat.withDefault(0),
       page: parseAsInteger.withDefault(1),
     },
     { shallow: true, clearOnDefault: true }
   )
 
+  const filterValues: VendorFiltersValue = {
+    minRating: state.minRating,
+    location: state.location,
+  }
+
+  const patchFilters = (patch: Partial<VendorFiltersValue>) => {
+    setState({ ...patch, page: 1 })
+  }
+
+  const clearFilters = () => {
+    setState({ minRating: null, location: null, page: 1 })
+  }
+
+  const activeFilterCount =
+    (state.minRating > 0 ? 1 : 0) + (state.location.trim() !== '' ? 1 : 0)
+
   const listQuery = useQuery(
     trpc.public.vendors.list.queryOptions({
       q: state.q,
       category: state.category,
+      location: state.location,
+      minRating: state.minRating,
       page: state.page,
       pageSize: PAGE_SIZE,
     })
@@ -76,10 +112,10 @@ export function VendorListSection() {
             id="vendor-list-title"
             className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-[40px] md:leading-[1.15]"
           >
-            All Vendors
+            Vendors Marketplace
           </h1>
           <p className="text-base text-muted-foreground">
-            Connect with the industry&rsquo;s finest event professionals. Every
+            Discover and hire verified vendors for your next event. Every
             vendor is curated to ensure your production is world-class.
           </p>
         </motion.div>
@@ -113,6 +149,54 @@ export function VendorListSection() {
           >
             Search
           </Button>
+
+          {/* Desktop: lightweight popover next to search. A full-screen
+              overlay isn't warranted for two fields. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                className="hidden h-12 shrink-0 gap-2 px-6 text-base md:inline-flex"
+              >
+                <HugeiconsIcon icon={FilterIcon} className="size-4" strokeWidth={1.8} />
+                Filter
+                <FilterCountBadge count={activeFilterCount} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-4">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <span className="font-heading text-foreground text-base font-semibold">
+                  Filters
+                </span>
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-primary hover:text-primary-hover text-xs font-medium transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <VendorFilters values={filterValues} onChange={patchFilters} />
+            </PopoverContent>
+          </Popover>
+
+          {/* Mobile: icon-only trigger opens the custom motion bottom-sheet
+              below — never @ticketur/ui's Sheet/Drawer/Dialog. */}
+          <button
+            type="button"
+            aria-label="Filters"
+            onClick={() => setMobileFilterOpen(true)}
+            className="bg-primary text-primary-foreground relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg md:hidden"
+          >
+            <HugeiconsIcon icon={FilterIcon} className="size-5" strokeWidth={1.8} />
+            {activeFilterCount > 0 && (
+              <span className="border-background absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border bg-white text-[10px] font-semibold text-primary">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </motion.div>
 
         <motion.div
@@ -134,7 +218,7 @@ export function VendorListSection() {
                   })
                 }
                 className={cn(
-                  'relative shrink-0 rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                  'relative shrink-0 rounded-full border px-4 py-2 text-xs font-medium tracking-wide whitespace-nowrap uppercase transition-colors md:text-sm',
                   active
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border bg-background text-muted-foreground hover:border-primary hover:text-primary'
@@ -145,6 +229,47 @@ export function VendorListSection() {
             )
           })}
         </motion.div>
+
+        <AnimatePresence initial={false}>
+          {(state.minRating > 0 || state.location.trim() !== '') && (
+            <motion.div
+              key="active-vendor-filters"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="flex flex-wrap items-center gap-3 overflow-hidden"
+            >
+              <span className="font-heading text-foreground text-base font-medium md:text-lg">
+                Filters;
+              </span>
+              {state.minRating > 0 && (
+                <FilterChip
+                  label={`Rating: ${state.minRating.toFixed(1)} - 5.0`}
+                  onRemove={() => setState({ minRating: null, page: 1 })}
+                />
+              )}
+              {state.location.trim() !== '' && (
+                <FilterChip
+                  label={`Location: ${state.location}`}
+                  onRemove={() => setState({ location: null, page: 1 })}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!listQuery.isLoading &&
+          (state.q.trim() ? (
+            <p className="font-heading text-foreground text-2xl font-semibold tracking-tight md:text-4xl">
+              Result for &ldquo;{state.q.trim()}&rdquo; ({total} vendor
+              {total === 1 ? '' : 's'} found)
+            </p>
+          ) : (
+            <p className="text-foreground text-lg font-semibold md:text-xl">
+              {total} Vendor{total === 1 ? '' : 's'}
+            </p>
+          ))}
 
         {listQuery.isLoading ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
@@ -180,9 +305,10 @@ export function VendorListSection() {
                     ease: [0.22, 1, 0.36, 1],
                   }}
                 >
-                  <VendorCard
+                  <VendorMarketplaceCard
                     id={vendor.id}
                     name={vendor.businessName ?? 'Vendor'}
+                    category={vendor.businessCategory}
                     description={
                       vendor.tagline ??
                       vendor.businessDescription ??
@@ -190,7 +316,10 @@ export function VendorListSection() {
                       ''
                     }
                     imageUrl={vendor.image ?? VENDOR_PLACEHOLDER}
-                    onClick={() => router.push(`/vendors/${vendor.id}`)}
+                    location={vendor.location}
+                    avgRating={vendor.avgRating}
+                    reviewCount={vendor.reviewCount}
+                    href={`/vendors/${vendor.id}`}
                   />
                 </motion.div>
               ))}
@@ -205,8 +334,67 @@ export function VendorListSection() {
             onChange={(p) => setState({ page: p })}
           />
         )}
+
+        <div className="bg-[#31156b] flex flex-col items-start gap-8 rounded-3xl p-8 md:flex-row md:items-end md:justify-between md:gap-10 md:p-20">
+          <div className="flex flex-col gap-4 text-[#ededed] md:gap-8 md:max-w-[560px]">
+            <h2 className="font-heading text-3xl font-bold md:text-4xl">
+              Are you a Vendor?
+            </h2>
+            <p className="text-sm md:text-base">
+              Join 500+ vetted vendors on Ticketeur and connect with thousands
+              of event organizers looking for your services.
+            </p>
+          </div>
+          <Button size="xl" asChild className="w-full md:w-auto">
+            <Link href="/vendors/apply">Join as a Vendor</Link>
+          </Button>
+        </div>
       </div>
+
+      <MobileFilterDrawer
+        open={mobileFilterOpen}
+        onClose={() => setMobileFilterOpen(false)}
+        values={filterValues}
+        onApply={(next) =>
+          setState({
+            minRating: next.minRating > 0 ? next.minRating : null,
+            location: next.location || null,
+            page: 1,
+          })
+        }
+      />
     </section>
+  )
+}
+
+function FilterCountBadge({ count }: { count: number }) {
+  if (count === 0) return null
+  return (
+    <span className="bg-primary text-primary-foreground inline-flex size-5 items-center justify-center rounded-full text-[11px] font-semibold">
+      {count}
+    </span>
+  )
+}
+
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string
+  onRemove: () => void
+}) {
+  return (
+    <span className="border-border bg-muted/60 text-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove filter: ${label}`}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" strokeWidth={2} />
+      </button>
+    </span>
   )
 }
 

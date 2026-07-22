@@ -7,13 +7,39 @@ import { useTRPC } from '@/lib/trpc'
 import type { VendorRecord } from '@/lib/vendors'
 import { formatEventDateRange } from '@/lib/date'
 
-import { VendorAbout } from '@/components/sections/vendor-detail/vendor-about'
 import { VendorHero } from '@/components/sections/vendor-detail/vendor-hero'
-import { VendorParticipatingEvents } from '@/components/sections/vendor-detail/vendor-participating-events'
+import { VendorProfileTabs } from '@/components/sections/vendor-detail/vendor-profile-tabs'
+import type { VendorEventCard } from '@/components/sections/vendor-detail/vendor-events-tab'
 
 const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
 const BANNER_PLACEHOLDER =
   'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1600&q=80'
+
+function toEventCard(ev: {
+  id: string
+  slug: string
+  eventDate: string
+  endDate: string | null
+  location: string
+  bannerUrl: string | null
+  attendeeCount?: number
+  title: string
+}): VendorEventCard {
+  return {
+    id: ev.id,
+    slug: ev.slug,
+    tag: 'Event',
+    date: formatEventDateRange(ev.eventDate, ev.endDate),
+    title: ev.title,
+    description: '',
+    location: ev.location,
+    attendees:
+      ev.attendeeCount !== undefined && ev.attendeeCount > 0
+        ? `${ev.attendeeCount.toLocaleString()} Attendees`
+        : '',
+    imageUrl: ev.bannerUrl ?? '/hero-bg.png',
+  }
+}
 
 export function VendorDetailContent({ id }: { id: string }) {
   const trpc = useTRPC()
@@ -53,27 +79,31 @@ export function VendorDetailContent({ id }: { id: string }) {
     expertise: data.expertise ?? '—',
     focus: data.focus ?? '—',
     experience: data.experience ?? '—',
-    certified: false,
-    premium: false,
+    certified: data.vendorApprovalStatus === 'approved',
   } as unknown as VendorRecord
-
-  const participatingEvents = data.participatingEvents.map((ev) => ({
-    id: ev.id,
-    slug: ev.slug,
-    tag: 'Event',
-    date: formatEventDateRange(ev.eventDate, ev.endDate),
-    title: ev.title,
-    description: '',
-    location: ev.location,
-    attendees: '',
-    imageUrl: ev.bannerUrl ?? '/hero-bg.png',
-  }))
 
   return (
     <>
-      <VendorHero vendor={vendor} bannerUrl={data.bannerUrl ?? BANNER_PLACEHOLDER} />
-      <VendorAbout vendor={vendor} />
-      <VendorParticipatingEvents events={participatingEvents} />
+      <VendorHero
+        vendor={vendor}
+        bannerUrl={data.bannerUrl ?? BANNER_PLACEHOLDER}
+        avgRating={data.avgRating}
+        reviewCount={data.reviewCount}
+      />
+      <VendorProfileTabs
+        vendorId={id}
+        vendor={vendor}
+        contact={{
+          phone: data.phone,
+          email: data.email,
+          location: data.location ?? 'Location not set',
+          websiteUrl: data.websiteUrl,
+          instagramUrl: data.instagramUrl,
+        }}
+        showcaseImages={data.showcaseImages}
+        upcomingEvents={data.participatingEvents.map(toEventCard)}
+        pastEvents={data.pastEvents.map(toEventCard)}
+      />
     </>
   )
 }
