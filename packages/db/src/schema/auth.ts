@@ -30,6 +30,7 @@ export const user = pgTable('user', {
   // Public profile extras shown on /vendors/[id]
   vendorTagline: text('vendor_tagline'),
   vendorLocation: text('vendor_location'),
+  vendorPhone: text('vendor_phone'),
   vendorBannerUrl: text('vendor_banner_url'),
   vendorInstagramUrl: text('vendor_instagram_url'),
   vendorWebsiteUrl: text('vendor_website_url'),

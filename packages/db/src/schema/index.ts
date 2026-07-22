@@ -28,3 +28,4 @@ export type {
   ReportSubjectType,
   ReportStatus,
 } from './events'
+export { vendorReviews, vendorReviewsRelations } from './reviews'

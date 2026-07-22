@@ -7,18 +7,24 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowLeft02Icon,
   Calendar03Icon,
+  CheckmarkBadge02Icon,
   Location01Icon,
   Ticket01Icon,
 } from '@hugeicons/core-free-icons'
 
+import { StarRating } from '@/components/sections/vendor-detail/star-rating'
 import type { VendorRecord } from '@/lib/vendors'
 
 export function VendorHero({
   vendor,
   bannerUrl,
+  avgRating,
+  reviewCount,
 }: {
   vendor: VendorRecord
   bannerUrl?: string
+  avgRating: number | null
+  reviewCount: number
 }) {
   const banner =
     bannerUrl ??
@@ -69,14 +75,28 @@ export function VendorHero({
             }}
             className="border-border bg-card mx-4 -mt-16 flex flex-col gap-5 rounded-2xl border p-5 shadow-lg md:mx-8 md:-mt-20 md:flex-row md:items-center md:gap-6 md:p-6"
           >
-            <div className="bg-muted relative size-24 shrink-0 overflow-hidden rounded-xl md:size-30">
-              <Image
-                src={vendor.imageUrl}
-                alt={vendor.name}
-                fill
-                sizes="120px"
-                className="object-cover"
-              />
+            <div className="relative shrink-0">
+              <div className="bg-muted relative size-24 overflow-hidden rounded-xl md:size-30">
+                <Image
+                  src={vendor.imageUrl}
+                  alt={vendor.name}
+                  fill
+                  sizes="120px"
+                  className="object-cover"
+                />
+              </div>
+              {vendor.certified && (
+                <div
+                  aria-label="Verified vendor"
+                  className="bg-primary absolute -right-1.5 -bottom-1.5 flex size-7 items-center justify-center rounded-full border-2 border-white dark:border-background"
+                >
+                  <HugeiconsIcon
+                    icon={CheckmarkBadge02Icon}
+                    className="size-4 text-white"
+                    strokeWidth={2}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -92,6 +112,13 @@ export function VendorHero({
                 {vendor.shortDescription}
               </p>
               <ul className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <StarRating value={avgRating ?? 0} size="sm" />
+                  <span className="text-foreground font-medium">
+                    {avgRating ? avgRating.toFixed(1) : 'No ratings yet'}
+                  </span>
+                  {reviewCount > 0 && <span>({reviewCount})</span>}
+                </li>
                 <li className="flex items-center gap-1.5">
                   <HugeiconsIcon
                     icon={Location01Icon}

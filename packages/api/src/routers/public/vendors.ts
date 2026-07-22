@@ -1,7 +1,8 @@
-import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, ilike, lt, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { events, eventVendors, user } from '@ticketur/db'
+import type { Database } from '@ticketur/db'
+import { events, eventVendors, ticketTiers, user, vendorReviews } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 
@@ -15,13 +16,34 @@ const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires
 const listInput = z.object({
   q: z.string().default(''),
   category: z.string().default('all'),
+  location: z.string().default(''),
+  minRating: z.number().min(0).max(5).default(0),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(50).default(12),
 })
 
+// Shared per-vendor rating aggregate, left-joined wherever a vendor row is
+// selected so list/detail screens can show a rating badge without a
+// separate round-trip. Vendors with zero reviews join to nulls.
+function ratingAggSubquery(db: Database) {
+  return db
+    .select({
+      vendorId: vendorReviews.vendorId,
+      avgRating: sql<number>`AVG(${vendorReviews.rating})::float`.as(
+        'avg_rating'
+      ),
+      reviewCount: sql<number>`COUNT(*)::int`.as('review_count'),
+    })
+    .from(vendorReviews)
+    .groupBy(vendorReviews.vendorId)
+    .as('rating_agg')
+}
+
 export const publicVendorsRouter = createTRPCRouter({
   // Approved vendors only.
   list: publicProcedure.input(listInput).query(async ({ ctx, input }) => {
+    const ratingAgg = ratingAggSubquery(ctx.db)
+
     const filters = [
       eq(user.role, 'vendor'),
       eq(user.vendorApprovalStatus, 'approved'),
@@ -32,6 +54,12 @@ export const publicVendorsRouter = createTRPCRouter({
     }
     if (input.category !== 'all') {
       filters.push(eq(user.businessCategory, input.category))
+    }
+    if (input.location.trim().length > 0) {
+      filters.push(ilike(user.vendorLocation, `%${input.location.trim()}%`))
+    }
+    if (input.minRating > 0) {
+      filters.push(gte(ratingAgg.avgRating, input.minRating))
     }
 
     const rows = await ctx.db
@@ -45,8 +73,11 @@ export const publicVendorsRouter = createTRPCRouter({
         image: user.image,
         bannerUrl: user.vendorBannerUrl,
         createdAt: user.createdAt,
+        avgRating: ratingAgg.avgRating,
+        reviewCount: ratingAgg.reviewCount,
       })
       .from(user)
+      .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
       .where(and(...filters))
       .orderBy(asc(user.businessName))
       .limit(input.pageSize)
@@ -55,10 +86,14 @@ export const publicVendorsRouter = createTRPCRouter({
     const totalCountRows = await ctx.db
       .select({ count: sql<number>`COUNT(*)::int` })
       .from(user)
+      .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
       .where(and(...filters))
 
     return {
-      rows,
+      rows: rows.map((row) => ({
+        ...row,
+        reviewCount: row.reviewCount ?? 0,
+      })),
       total: totalCountRows[0]?.count ?? 0,
       page: input.page,
       pageSize: input.pageSize,
@@ -92,6 +127,8 @@ export const publicVendorsRouter = createTRPCRouter({
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      const ratingAgg = ratingAggSubquery(ctx.db)
+
       const found = await ctx.db
         .select({
           id: user.id,
@@ -100,6 +137,8 @@ export const publicVendorsRouter = createTRPCRouter({
           businessDescription: user.businessDescription,
           tagline: user.vendorTagline,
           location: user.vendorLocation,
+          phone: user.vendorPhone,
+          email: user.email,
           image: user.image,
           bannerUrl: user.vendorBannerUrl,
           instagramUrl: user.vendorInstagramUrl,
@@ -108,9 +147,13 @@ export const publicVendorsRouter = createTRPCRouter({
           focus: user.vendorFocus,
           experience: user.vendorExperience,
           showcaseImages: user.vendorShowcaseImages,
+          vendorApprovalStatus: user.vendorApprovalStatus,
           createdAt: user.createdAt,
+          avgRating: ratingAgg.avgRating,
+          reviewCount: ratingAgg.reviewCount,
         })
         .from(user)
+        .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
         .where(
           and(
             eq(user.id, input.id),
@@ -153,11 +196,55 @@ export const publicVendorsRouter = createTRPCRouter({
         .orderBy(asc(events.eventDate))
         .limit(6)
 
+      // Attendee count per event = tickets sold across all of its tiers.
+      const attendeeAgg = ctx.db
+        .select({
+          eventId: ticketTiers.eventId,
+          attendeeCount:
+            sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as(
+              'attendee_count'
+            ),
+        })
+        .from(ticketTiers)
+        .groupBy(ticketTiers.eventId)
+        .as('attendee_agg')
+
+      const past = await ctx.db
+        .select({
+          id: events.id,
+          slug: events.slug,
+          title: events.title,
+          eventDate: events.eventDate,
+          endDate: events.endDate,
+          eventTime: events.eventTime,
+          location: events.location,
+          bannerUrl: events.bannerUrl,
+          status: events.status,
+          attendeeCount: attendeeAgg.attendeeCount,
+        })
+        .from(eventVendors)
+        .innerJoin(events, eq(events.id, eventVendors.eventId))
+        .leftJoin(attendeeAgg, eq(attendeeAgg.eventId, events.id))
+        .where(
+          and(
+            eq(eventVendors.vendorId, vendor.id),
+            lt(events.eventDate, today),
+            ne(events.status, 'suspended')
+          )
+        )
+        .orderBy(desc(events.eventDate))
+        .limit(6)
+
       return {
         ...vendor,
+        reviewCount: vendor.reviewCount ?? 0,
         hostedEvents: hostedRows[0]?.count ?? 0,
         partnerSince: vendor.createdAt.getFullYear(),
         participatingEvents: participating,
+        pastEvents: past.map((event) => ({
+          ...event,
+          attendeeCount: event.attendeeCount ?? 0,
+        })),
         // Today is intentionally returned so the client doesn't have to
         // recompute timezone-sensitive comparisons.
         today,
