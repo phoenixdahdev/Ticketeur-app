@@ -3,93 +3,165 @@
 import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  Calendar03Icon,
+  Call02Icon,
   CheckmarkBadge02Icon,
-  Diamond01Icon,
+  Globe02Icon,
   InformationCircleIcon,
+  InstagramIcon,
+  Location01Icon,
+  Mail02Icon,
 } from '@hugeicons/core-free-icons'
 
 import { MarkdownView } from '@ticketur/ui/components/markdown-view'
 
 import type { VendorRecord } from '@/lib/vendors'
 
-export function VendorAbout({ vendor }: { vendor: VendorRecord }) {
-  return (
-    <section
-      aria-labelledby="vendor-about-title"
-      className="w-full px-5 py-10 md:px-10 md:py-16"
-    >
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6 md:gap-8">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 md:gap-6 md:p-6"
-        >
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon
-              icon={InformationCircleIcon}
-              className="size-5 text-primary"
-              strokeWidth={1.8}
-            />
-            <h2
-              id="vendor-about-title"
-              className="font-heading text-lg font-semibold text-foreground md:text-xl"
-            >
-              About the Vendor
-            </h2>
-          </div>
-          {vendor.fullDescription.length > 0 ? (
-            <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
-              {vendor.fullDescription.join('\n\n')}
-            </MarkdownView>
-          ) : (
-            <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
-              No description provided.
-            </p>
-          )}
-          <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-3 sm:gap-4">
-            <Stat label="Expertise" value={vendor.expertise} />
-            <Stat label="Focus" value={vendor.focus} />
-            <Stat label="Experience" value={vendor.experience} />
-          </div>
-        </motion.div>
+export type VendorContact = {
+  phone: string | null
+  email: string
+  location: string
+  websiteUrl: string | null
+  instagramUrl: string | null
+}
 
-        {(vendor.certified || vendor.premium) && (
+export function VendorAbout({
+  vendor,
+  contact,
+  previousEvents,
+}: {
+  vendor: VendorRecord
+  contact: VendorContact
+  previousEvents: { id: string; title: string }[]
+}) {
+  return (
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+        <div className="flex flex-1 flex-col gap-6 md:gap-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{
-              delay: 0.1,
-              duration: 0.5,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-[#f1ebff] p-5 md:gap-5 md:p-6 dark:border-primary/30 dark:bg-primary/10"
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-5 md:gap-6 md:p-6"
           >
-            <h3 className="font-heading text-lg font-semibold text-foreground">
-              Vendor Quality
-            </h3>
-            <ul className="flex flex-col gap-3">
-              {vendor.certified ? (
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon
+                icon={InformationCircleIcon}
+                className="text-primary size-5"
+                strokeWidth={1.8}
+              />
+              <h2 className="font-heading text-foreground text-lg font-semibold md:text-xl">
+                About the Vendor
+              </h2>
+            </div>
+            {vendor.fullDescription.length > 0 ? (
+              <MarkdownView className="text-muted-foreground prose-p:text-muted-foreground">
+                {vendor.fullDescription.join('\n\n')}
+              </MarkdownView>
+            ) : (
+              <p className="text-muted-foreground text-sm leading-relaxed md:text-base">
+                No description provided.
+              </p>
+            )}
+            <div className="border-border grid grid-cols-1 gap-3 border-t pt-4 sm:grid-cols-3 sm:gap-4">
+              <Stat label="Expertise" value={vendor.expertise} />
+              <Stat label="Focus" value={vendor.focus} />
+              <Stat label="Experience" value={vendor.experience} />
+            </div>
+          </motion.div>
+
+          {vendor.certified && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.1,
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="border-primary/20 dark:border-primary/30 dark:bg-primary/10 flex flex-col gap-4 rounded-2xl border bg-[#f1ebff] p-5 md:gap-5 md:p-6"
+            >
+              <h3 className="font-heading text-foreground text-lg font-semibold">
+                Vendor Quality
+              </h3>
+              <ul className="flex flex-col gap-3">
                 <QualityItem
                   icon={CheckmarkBadge02Icon}
                   title="Certified Partner"
                   description="Fully vetted and verified by the Ticketeur platform."
                 />
-              ) : null}
-              {vendor.premium ? (
-                <QualityItem
-                  icon={Diamond01Icon}
-                  title="Premium Tier"
-                  description="Consistent delivery of high-quality event experiences."
-                />
-              ) : null}
-            </ul>
-          </motion.div>
-        )}
+              </ul>
+            </motion.div>
+          )}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="border-border bg-card flex w-full flex-col gap-4 rounded-2xl border p-5 md:w-[320px] md:shrink-0 md:gap-5 md:p-6"
+        >
+          <h3 className="font-heading text-foreground text-lg font-semibold">
+            Contact Information
+          </h3>
+          <ul className="flex flex-col gap-3.5">
+            {contact.phone && (
+              <ContactRow icon={Call02Icon} label={contact.phone} />
+            )}
+            <ContactRow icon={Mail02Icon} label={contact.email} />
+            <ContactRow icon={Location01Icon} label={contact.location} />
+            {contact.websiteUrl && (
+              <ContactRow
+                icon={Globe02Icon}
+                label={contact.websiteUrl.replace(/^https?:\/\//, '')}
+                href={contact.websiteUrl}
+              />
+            )}
+          </ul>
+
+          {contact.instagramUrl && (
+            <div className="border-border flex flex-col gap-3 border-t pt-4">
+              <span className="text-muted-foreground text-xs font-medium">
+                Social Media
+              </span>
+              <ContactRow
+                icon={InstagramIcon}
+                label={contact.instagramUrl.replace(/^https?:\/\//, '')}
+                href={contact.instagramUrl}
+              />
+            </div>
+          )}
+        </motion.div>
       </div>
-    </section>
+
+      {previousEvents.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:p-6"
+        >
+          <h3 className="font-heading text-foreground text-lg font-semibold">
+            Previous Events
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {previousEvents.map((event) => (
+              <li
+                key={event.id}
+                className="border-primary/20 bg-primary/5 text-foreground flex items-center gap-2.5 rounded-lg border p-3.5 text-sm font-medium"
+              >
+                <HugeiconsIcon
+                  icon={Calendar03Icon}
+                  className="text-muted-foreground size-4 shrink-0"
+                  strokeWidth={1.6}
+                />
+                {event.title}
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
+    </div>
   )
 }
 
@@ -115,13 +187,50 @@ function QualityItem({
 }) {
   return (
     <li className="flex items-start gap-3">
-      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+      <div className="bg-primary/15 text-primary mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full">
         <HugeiconsIcon icon={icon} className="size-4" strokeWidth={2} />
       </div>
       <div className="flex flex-col gap-0.5">
-        <span className="font-semibold text-foreground">{title}</span>
-        <span className="text-sm text-muted-foreground">{description}</span>
+        <span className="text-foreground font-semibold">{title}</span>
+        <span className="text-muted-foreground text-sm">{description}</span>
       </div>
+    </li>
+  )
+}
+
+function ContactRow({
+  icon,
+  label,
+  href,
+}: {
+  icon: Parameters<typeof HugeiconsIcon>[0]['icon']
+  label: string
+  href?: string
+}) {
+  const content = (
+    <>
+      <HugeiconsIcon
+        icon={icon}
+        className="text-muted-foreground size-4.5 shrink-0"
+        strokeWidth={1.6}
+      />
+      <span className="truncate">{label}</span>
+    </>
+  )
+  return (
+    <li className="text-foreground flex items-center gap-2.5 text-sm">
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-primary flex min-w-0 items-center gap-2.5 transition-colors"
+        >
+          {content}
+        </a>
+      ) : (
+        content
+      )}
     </li>
   )
 }
