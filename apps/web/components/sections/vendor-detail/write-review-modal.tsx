@@ -10,25 +10,33 @@ import { Cancel01Icon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@ticketur/ui/components/button'
 import { Textarea } from '@ticketur/ui/components/textarea'
+import { Input } from '@ticketur/ui/components/input'
+import { Field, FieldLabel } from '@ticketur/ui/components/field'
 
 import { useTRPC } from '@/lib/trpc'
 import { InteractiveStarRating } from '@/components/sections/vendor-detail/star-rating'
 
-// Figma copy says "Maximum of 250 words" — the account.reviews.submit
+// Figma copy says "Maximum of 250 words" — the public.reviews.submit
 // mutation enforces 1500 characters server-side. We show the word-count
 // hint for the human-readable guidance but hard-cap (and count) characters,
 // since that's the limit actually enforced.
 const COMMENT_MAX_CHARS = 1500
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function WriteReviewModal({
   open,
   vendorId,
   initialRating = 0,
+  user,
   onClose,
 }: {
   open: boolean
   vendorId: string
   initialRating?: number
+  // Signed in? Pass their identity — submitted silently, no fields shown.
+  // Signed out (null)? The modal collects a name + email of its own.
+  user: { name: string; email: string } | null
   onClose: () => void
 }) {
   const trpc = useTRPC()
@@ -37,6 +45,8 @@ export function WriteReviewModal({
   const [mounted, setMounted] = useState(false)
   const [rating, setRating] = useState(initialRating)
   const [comment, setComment] = useState('')
+  const [guestName, setGuestName] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
 
   useEffect(() => setMounted(true), [])
 
@@ -47,6 +57,8 @@ export function WriteReviewModal({
     if (open) {
       setRating(initialRating)
       setComment('')
+      setGuestName('')
+      setGuestEmail('')
     }
   }, [open, initialRating])
 
@@ -90,7 +102,7 @@ export function WriteReviewModal({
   }, [open, onClose])
 
   const submit = useMutation(
-    trpc.account.reviews.submit.mutationOptions({
+    trpc.public.reviews.submit.mutationOptions({
       onSuccess: () => {
         toast.success('Review submitted', {
           description: 'Thanks for sharing your experience.',
@@ -111,9 +123,23 @@ export function WriteReviewModal({
     })
   )
 
+  const trimmedGuestName = guestName.trim()
+  const trimmedGuestEmail = guestEmail.trim()
+  const guestDetailsValid = user
+    ? true
+    : trimmedGuestName.length > 0 && EMAIL_PATTERN.test(trimmedGuestEmail)
+  const canSubmit = rating >= 1 && guestDetailsValid && !submit.isPending
+
   function handleSubmit() {
-    if (rating < 1 || submit.isPending) return
-    submit.mutate({ vendorId, rating, comment })
+    if (!canSubmit) return
+    submit.mutate({
+      vendorId,
+      rating,
+      comment,
+      ...(user
+        ? {}
+        : { reviewerName: trimmedGuestName, reviewerEmail: trimmedGuestEmail }),
+    })
   }
 
   // This tab renders inside the vendor profile tab shell's animated
@@ -194,6 +220,35 @@ export function WriteReviewModal({
                 />
               </div>
 
+              {!user && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="write-review-guest-name">
+                      Your Name
+                    </FieldLabel>
+                    <Input
+                      id="write-review-guest-name"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="Jane Doe"
+                      maxLength={120}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="write-review-guest-email">
+                      Your Email
+                    </FieldLabel>
+                    <Input
+                      id="write-review-guest-email"
+                      type="email"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      placeholder="jane@example.com"
+                    />
+                  </Field>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="write-review-comment"
@@ -223,7 +278,7 @@ export function WriteReviewModal({
                 type="button"
                 size="xl"
                 className="w-full"
-                disabled={rating < 1 || submit.isPending}
+                disabled={!canSubmit}
                 onClick={handleSubmit}
               >
                 {submit.isPending ? 'Submitting…' : 'Submit Review'}
