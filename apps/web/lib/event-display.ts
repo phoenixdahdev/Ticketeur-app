@@ -10,11 +10,17 @@ export function initialsFromTitle(title: string): string {
 }
 
 // Range-aware: pass an end ISO for multi-day events, or null/undefined for single.
-export function formatEventDate(start: string, end?: string | null): string {
+// A null/empty start (TBD / postponed event) renders as "TBD".
+export function formatEventDate(
+  start: string | null | undefined,
+  end?: string | null
+): string {
   return formatEventDateRange(start, end ?? null)
 }
 
-export function formatWeekday(iso: string): string {
+// Weekday for a date, or empty string when there's no date (TBD) — callers
+// that compose "weekday, date" should omit the comma when this is empty.
+export function formatWeekday(iso: string | null | undefined): string {
   const d = toDate(iso)
   if (!d) return ''
   return format(d, 'EEEE')

@@ -37,7 +37,8 @@ const PUBLIC_BASE = 'https://www.useticketeur.com'
 
 // Pre-formatted date string for emails. Single-day → "MMMM d, yyyy".
 // Multi-day → "MMMM d, yyyy – MMMM d, yyyy".
-function formatRange(start: string, end: string | null) {
+function formatRange(start: string | null, end: string | null) {
+  if (!start) return 'TBD'
   const startDate = new Date(`${start}T00:00:00`)
   if (Number.isNaN(startDate.getTime())) return start
   const startStr = format(startDate, 'MMMM d, yyyy')

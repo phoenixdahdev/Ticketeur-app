@@ -358,7 +358,7 @@ function SortableHeader({
 type EventRowData = {
   id: string
   title: string
-  eventDate: string
+  eventDate: string | null
   endDate: string | null
   location: string
   status: EventStatus

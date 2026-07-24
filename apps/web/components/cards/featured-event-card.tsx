@@ -16,7 +16,7 @@ export type FeaturedEventCardProps = {
   id?: string
   title: string
   price: string
-  date: string | Date
+  date: string | Date | null
   endDate?: string | Date | null
   location: string
   imageUrl: string

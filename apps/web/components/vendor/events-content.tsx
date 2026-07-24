@@ -41,7 +41,7 @@ const PAGE_SIZE = 4
 type ServerEvent = {
   id: string
   title: string
-  eventDate: string
+  eventDate: string | null
   endDate: string | null
   eventTime: string
   location: string
@@ -64,10 +64,11 @@ const STATUS_TONE: Record<DerivedStatus, string> = {
 }
 
 function deriveStatus(
-  eventDate: string,
+  eventDate: string | null,
   endDate: string | null,
   serverStatus: string
 ): DerivedStatus {
+  if (!eventDate) return 'upcoming' // TBD / postponed
   const today = new Date().toISOString().slice(0, 10)
   const lastDay = endDate ?? eventDate
   // Multi-day events are "live" while today falls inside the run.

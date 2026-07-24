@@ -126,7 +126,7 @@ function pad2(n: number) {
 type ServerEvent = {
   id: string
   title: string
-  eventDate: string
+  eventDate: string | null
   endDate: string | null
   eventTime: string
   location: string
@@ -135,24 +135,22 @@ type ServerEvent = {
 }
 
 function serverToCard(ev: ServerEvent): VendorEvent {
-  const d = new Date(`${ev.eventDate}T00:00:00`)
-  const formattedDate = Number.isNaN(d.getTime())
-    ? ev.eventDate
-    : formatEventDateRange(ev.eventDate, ev.endDate)
+  const d = ev.eventDate ? new Date(`${ev.eventDate}T00:00:00`) : null
+  const valid = d !== null && !Number.isNaN(d.getTime())
   const today = new Date().toISOString().slice(0, 10)
-  // Use end_date when present so multi-day events stay "upcoming" until they finish.
+  // Use end_date when present so multi-day events stay "upcoming" until they
+  // finish. A TBD event (no date) is treated as upcoming.
   const lastDay = ev.endDate ?? ev.eventDate
-  const computedStatus =
-    lastDay < today ? 'past' : ev.status === 'upcoming' ? 'upcoming' : 'upcoming'
+  const computedStatus = lastDay && lastDay < today ? 'past' : 'upcoming'
   return {
     id: ev.id,
     title: ev.title,
-    date: formattedDate,
-    dateMs: Number.isNaN(d.getTime()) ? 0 : d.getTime(),
+    date: formatEventDateRange(ev.eventDate, ev.endDate),
+    dateMs: valid ? d!.getTime() : 0,
     time: ev.eventTime,
     location: ev.location,
     venue: ev.location,
-    weekday: Number.isNaN(d.getTime()) ? '' : formatWeekday(ev.eventDate),
+    weekday: valid ? formatWeekday(ev.eventDate) : '',
     category: 'MUSIC',
     status: computedStatus as VendorEvent['status'],
     image: ev.bannerUrl ?? '/hero-bg.png',

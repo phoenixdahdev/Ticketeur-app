@@ -41,7 +41,8 @@ const startInput = z.object({
   buyerPhone: z.string().trim().min(7, 'Phone required'),
 })
 
-function formatEventDate(start: string, end: string | null) {
+function formatEventDate(start: string | null, end: string | null) {
+  if (!start) return 'TBD'
   const startDate = new Date(`${start}T00:00:00`)
   if (Number.isNaN(startDate.getTime())) return start
   const startStr = format(startDate, 'MMMM d, yyyy')

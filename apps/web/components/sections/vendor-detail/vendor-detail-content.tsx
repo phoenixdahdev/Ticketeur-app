@@ -18,7 +18,7 @@ const BANNER_PLACEHOLDER =
 function toEventCard(ev: {
   id: string
   slug: string
-  eventDate: string
+  eventDate: string | null
   endDate: string | null
   location: string
   bannerUrl: string | null

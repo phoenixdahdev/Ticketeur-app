@@ -298,7 +298,9 @@ export function EventDetail({ id }: { id: string }) {
             primary={
               event.endDate && event.endDate !== event.eventDate
                 ? formatEventDate(event.eventDate, event.endDate)
-                : `${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`
+                : event.eventDate
+                  ? `${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`
+                  : 'TBD'
             }
           />
           <DetailItem icon={Clock01Icon} primary={event.eventTime} />

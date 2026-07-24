@@ -35,8 +35,10 @@ export const events = pgTable(
     // generated from the title at creation time. See packages/api/src/lib/slug.ts.
     slug: text('slug').notNull().unique(),
     description: text('description').notNull().default(''),
-    // ISO date string (YYYY-MM-DD) — separate from time so the form can edit each independently
-    eventDate: text('event_date').notNull(),
+    // ISO date string (YYYY-MM-DD) — separate from time so the form can edit each independently.
+    // NULL means the date is "TBD" (event postponed without a new date yet). The app
+    // treats a null date as an upcoming/visible event; formatters render it as "TBD".
+    eventDate: text('event_date'),
     // Multi-day events: ISO date for the last day. NULL means single-day,
     // in which case the event runs only on `eventDate`.
     endDate: text('end_date'),

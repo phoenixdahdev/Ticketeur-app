@@ -59,7 +59,8 @@ const STATUS_HERO_LABEL: Record<DerivedStatus, string> = {
   past: 'PAST EVENT',
 }
 
-function deriveStatus(eventDate: string, serverStatus: string): DerivedStatus {
+function deriveStatus(eventDate: string | null, serverStatus: string): DerivedStatus {
+  if (!eventDate) return 'upcoming' // TBD / postponed
   const today = new Date().toISOString().slice(0, 10)
   if (eventDate === today) return 'live'
   if (eventDate < today) return 'past'
@@ -161,7 +162,9 @@ export function VendorEventDetail({ id }: { id: string }) {
               primary={
                 event.endDate && event.endDate !== event.eventDate
                   ? formatEventDate(event.eventDate, event.endDate)
-                  : `${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`
+                  : event.eventDate
+                    ? `${formatWeekday(event.eventDate)}, ${formatEventDate(event.eventDate)}`
+                    : 'TBD'
               }
             />
             <DetailItem icon={Clock01Icon} primary={event.eventTime} />

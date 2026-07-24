@@ -15,7 +15,7 @@ export type EventCardProps = {
   title: string
   category: string
   price: string
-  date: string | Date
+  date: string | Date | null
   endDate?: string | Date | null
   location: string
   imageUrl: string
