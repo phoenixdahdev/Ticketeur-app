@@ -54,7 +54,9 @@ export function EditEventContent({ id }: { id: string }) {
     return {
       title: event.title,
       description: event.description,
-      date: event.eventDate,
+      // A postponed/TBD event has no date; the edit form needs a string, so
+      // show it empty (the organizer picks a date to re-announce it).
+      date: event.eventDate ?? '',
       endDate: event.endDate,
       time: event.eventTime,
       location: event.location,

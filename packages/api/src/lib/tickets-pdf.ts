@@ -70,7 +70,8 @@ export async function generateAndStoreTicketsPdf({
   return blob.url
 }
 
-function formatDate(start: string, end: string | null) {
+function formatDate(start: string | null, end: string | null) {
+  if (!start) return 'TBD'
   const startDate = new Date(`${start}T00:00:00`)
   if (Number.isNaN(startDate.getTime())) return start
   const startStr = format(startDate, 'EEEE, MMMM d, yyyy')

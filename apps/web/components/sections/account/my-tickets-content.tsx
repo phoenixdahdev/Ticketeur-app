@@ -25,7 +25,8 @@ const PLACEHOLDER = '/hero-bg.png'
 
 type Standing = 'upcoming' | 'today' | 'past'
 
-function eventStanding(eventDate: string): Standing {
+function eventStanding(eventDate: string | null): Standing {
+  if (!eventDate) return 'upcoming' // TBD / postponed — treat as upcoming
   const today = new Date().toISOString().slice(0, 10)
   if (eventDate === today) return 'today'
   if (eventDate < today) return 'past'

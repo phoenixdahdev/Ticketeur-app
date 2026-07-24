@@ -36,7 +36,7 @@ export const vendorDashboardRouter = createTRPCRouter({
     const counts = await ctx.db
       .select({
         total: sql<number>`COUNT(*)::int`,
-        upcoming: sql<number>`COUNT(*) FILTER (WHERE COALESCE(${events.endDate}, ${events.eventDate}) >= ${today} AND ${events.status} = 'upcoming')::int`,
+        upcoming: sql<number>`COUNT(*) FILTER (WHERE (${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}) AND ${events.status} = 'upcoming')::int`,
         past: sql<number>`COUNT(*) FILTER (WHERE COALESCE(${events.endDate}, ${events.eventDate}) < ${today})::int`,
       })
       .from(eventVendors)
@@ -89,7 +89,7 @@ export const vendorDashboardRouter = createTRPCRouter({
       .where(
         and(
           eq(eventVendors.vendorId, vendorId),
-          sql`COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}`
+          sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
         )
       )
       .orderBy(asc(events.eventDate))

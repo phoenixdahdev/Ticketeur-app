@@ -108,7 +108,7 @@ export async function generateMetadata({
       images: [imageUrl],
     },
     other: {
-      'event:start_date': event.eventDate,
+      ...(event.eventDate ? { 'event:start_date': event.eventDate } : {}),
       'event:start_time': event.eventTime,
       'event:location': event.location,
     },

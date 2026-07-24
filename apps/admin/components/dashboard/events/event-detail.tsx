@@ -237,9 +237,11 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
               ? formatEventDateRange(event.date, event.endDate)
               : formatShortDate(event.date)}
           </span>
-          <span className="text-muted-foreground text-xs">
-            ({daysUntil(event.date)} days remaining)
-          </span>
+          {daysUntil(event.date) !== null && (
+            <span className="text-muted-foreground text-xs">
+              ({daysUntil(event.date)} days remaining)
+            </span>
+          )}
         </div>
       </section>
 

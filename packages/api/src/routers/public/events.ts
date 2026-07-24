@@ -14,7 +14,8 @@ const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires
 // happening" if its end_date (or event_date for single-day) is today or
 // later. Caller passes an ISO YYYY-MM-DD `today`.
 function stillRunning(today: string) {
-  return sql`COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}`
+  // A TBD event (null date) is treated as upcoming — keep it visible.
+  return sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
 }
 
 const listInput = z.object({

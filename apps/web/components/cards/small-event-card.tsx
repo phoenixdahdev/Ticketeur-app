@@ -17,7 +17,7 @@ export type SmallEventCardProps = {
   category: string
   status?: SmallEventStatus
   price: string
-  date: string | Date
+  date: string | Date | null
   endDate?: string | Date | null
   location: string
   imageUrl: string

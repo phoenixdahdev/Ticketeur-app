@@ -42,7 +42,8 @@ function getBaseUrl() {
   )
 }
 
-function eventStanding(eventDate: string): 'upcoming' | 'today' | 'past' {
+function eventStanding(eventDate: string | null): 'upcoming' | 'today' | 'past' {
+  if (!eventDate) return 'upcoming' // TBD / postponed — treat as upcoming
   const today = new Date().toISOString().slice(0, 10)
   if (eventDate === today) return 'today'
   if (eventDate < today) return 'past'

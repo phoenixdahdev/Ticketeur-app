@@ -26,7 +26,10 @@ export const vendorEventsRouter = createTRPCRouter({
     const filters = [eq(eventVendors.vendorId, vendorId)]
     // Multi-day events: still upcoming while today <= end_date (or event_date if no end).
     if (input.tab === 'upcoming') {
-      filters.push(sql`COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}`)
+      // TBD events (null date) count as upcoming.
+      filters.push(
+        sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
+      )
     }
     if (input.tab === 'past') {
       filters.push(sql`COALESCE(${events.endDate}, ${events.eventDate}) < ${today}`)
