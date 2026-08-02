@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  AnimatePresence,
-  motion,
-  type Variants,
-} from 'motion/react'
+import { AnimatePresence, motion, type Variants } from 'motion/react'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
@@ -141,19 +137,15 @@ export function UserMenu({
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.92 }}
         transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-        className="focus-visible:ring-primary/40 rounded-full outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-offset-2"
+        className="focus-visible:ring-primary/40 rounded-full transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       >
         <Avatar
           className={cn(
             'size-10 border-2 transition-colors md:size-11',
-            open
-              ? 'border-primary'
-              : 'border-border/60 hover:border-primary/60'
+            open ? 'border-primary' : 'border-border/60 hover:border-primary/60'
           )}
         >
-          {user.image ? (
-            <AvatarImage src={user.image} alt={user.name} />
-          ) : null}
+          {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
           <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
             {getInitials(user.name)}
           </AvatarFallback>
@@ -231,7 +223,7 @@ export function UserMenu({
                 type="button"
                 role="menuitem"
                 onClick={handleSignOut}
-                className="text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10 focus-visible:ring-destructive/40 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2"
+                className="text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10 focus-visible:ring-destructive/40 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
               >
                 <HugeiconsIcon
                   icon={Logout02Icon}
@@ -267,7 +259,7 @@ function MenuLink({
         href={href}
         role="menuitem"
         onClick={onClick}
-        className="text-foreground hover:bg-muted focus-visible:bg-muted focus-visible:ring-primary/40 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2"
+        className="text-foreground hover:bg-muted focus-visible:bg-muted focus-visible:ring-primary/40 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
       >
         <HugeiconsIcon
           icon={icon}

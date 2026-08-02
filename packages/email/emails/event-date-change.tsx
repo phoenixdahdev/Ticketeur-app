@@ -37,10 +37,10 @@ export default function EventDateChangeEmail({
       }
     >
       <Container className="mx-auto my-0 max-w-150 px-10">
-        <Text className="text-brand m-0 mb-2 text-xs font-bold uppercase tracking-widest">
+        <Text className="text-brand m-0 mb-2 text-xs font-bold tracking-widest uppercase">
           🛎️ Special announcement
         </Text>
-        <Heading className="m-0 mb-4 text-2xl font-bold uppercase tracking-wide text-gray-900">
+        <Heading className="m-0 mb-4 text-2xl font-bold tracking-wide text-gray-900 uppercase">
           The date has changed
         </Heading>
 
@@ -50,8 +50,8 @@ export default function EventDateChangeEmail({
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
           The date for <strong>{eventTitle}</strong> has been updated. Please
-          note the new date below — <strong>your ticket stays valid</strong>,
-          so there&apos;s nothing you need to do.
+          note the new date below — <strong>your ticket stays valid</strong>, so
+          there&apos;s nothing you need to do.
         </Text>
 
         <Section className="bg-brand-light mb-6 rounded-lg px-5 py-4">
@@ -63,7 +63,7 @@ export default function EventDateChangeEmail({
             </Row>
           ) : null}
           <Row>
-            <Text className="text-brand-dark m-0 mt-1 text-base font-bold leading-6">
+            <Text className="text-brand-dark m-0 mt-1 text-base leading-6 font-bold">
               New date: {newDate}
             </Text>
           </Row>
@@ -104,10 +104,10 @@ export default function EventDateChangeEmail({
           can&apos;t wait to see you there.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           See you soon,
         </Text>
-        <Text className="m-0 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

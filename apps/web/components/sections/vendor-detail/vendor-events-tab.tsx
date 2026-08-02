@@ -120,9 +120,9 @@ function EventListItem({
     >
       <Link
         href={`/events/${event.slug}`}
-        className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-lg md:flex-row md:items-center md:gap-5 md:p-5"
+        className="group border-border bg-card hover:border-primary/40 flex flex-col gap-4 rounded-2xl border p-4 transition-all hover:shadow-lg md:flex-row md:items-center md:gap-5 md:p-5"
       >
-        <div className="relative aspect-[160/120] w-full shrink-0 overflow-hidden rounded-xl bg-muted md:aspect-auto md:h-[120px] md:w-[180px]">
+        <div className="bg-muted relative aspect-[160/120] w-full shrink-0 overflow-hidden rounded-xl md:aspect-auto md:h-[120px] md:w-[180px]">
           <Image
             src={event.imageUrl}
             alt={event.title}
@@ -141,19 +141,17 @@ function EventListItem({
             >
               {event.tag}
             </span>
-            <span className="text-xs font-medium text-muted-foreground md:text-sm">
+            <span className="text-muted-foreground text-xs font-medium md:text-sm">
               {event.date}
             </span>
           </div>
-          <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary md:text-xl">
+          <h3 className="font-heading text-foreground group-hover:text-primary text-lg font-semibold tracking-tight transition-colors md:text-xl">
             {event.title}
           </h3>
           {event.description && (
-            <p className="text-sm text-muted-foreground">
-              {event.description}
-            </p>
+            <p className="text-muted-foreground text-sm">{event.description}</p>
           )}
-          <ul className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground md:text-sm">
+          <ul className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-1 text-xs md:text-sm">
             <li className="flex items-center gap-1.5">
               <HugeiconsIcon
                 icon={Location01Icon}

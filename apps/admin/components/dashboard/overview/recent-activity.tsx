@@ -97,7 +97,7 @@ export function RecentActivity() {
               )}
               <div className="flex min-w-0 flex-1 flex-col">
                 <p className="text-foreground text-sm">{renderMessage(item)}</p>
-                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">
+                <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
                   {relativeTime(item.timestamp)}
                 </p>
               </div>

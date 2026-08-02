@@ -142,7 +142,9 @@ export async function fulfillOrder({
           .update(orders)
           .set({ status: 'failed' })
           .where(eq(orders.id, order.id))
-        throw new Error('Stock no longer available for one of the selected tiers')
+        throw new Error(
+          'Stock no longer available for one of the selected tiers'
+        )
       }
 
       for (let i = 0; i < item.quantity; i += 1) {
@@ -175,8 +177,7 @@ export async function fulfillOrder({
         ...order,
         status: 'paid' as const,
         paidAt,
-        flwTransactionId:
-          flwTransactionId ?? order.flwTransactionId ?? null,
+        flwTransactionId: flwTransactionId ?? order.flwTransactionId ?? null,
       },
       justFulfilled: true,
     }

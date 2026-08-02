@@ -38,12 +38,19 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as ChargeCompletedEvent
   } catch {
-    return NextResponse.json({ ok: false, error: 'invalid json' }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: 'invalid json' },
+      { status: 400 }
+    )
   }
 
   // We only act on completed charges. Other webhook event types (refunds,
   // disputes etc.) are acknowledged with 200 so Flutterwave doesn't retry.
-  if (body.event !== 'charge.completed' || !body.data?.id || !body.data.tx_ref) {
+  if (
+    body.event !== 'charge.completed' ||
+    !body.data?.id ||
+    !body.data.tx_ref
+  ) {
     return NextResponse.json({ ok: true, ignored: true })
   }
 
@@ -51,10 +58,16 @@ export async function POST(req: Request) {
   // alone are not authoritative. This guards against spoofed payloads.
   const tx = await verifyTransaction(body.data.id)
   if (!tx || tx.status !== 'successful') {
-    return NextResponse.json({ ok: false, reason: 'verify failed' }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, reason: 'verify failed' },
+      { status: 400 }
+    )
   }
   if (tx.tx_ref !== body.data.tx_ref) {
-    return NextResponse.json({ ok: false, reason: 'tx_ref mismatch' }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, reason: 'tx_ref mismatch' },
+      { status: 400 }
+    )
   }
 
   // Find the matching order by tx_ref (we set this when starting checkout).
@@ -64,7 +77,10 @@ export async function POST(req: Request) {
     .where(eq(orders.flwTxRef, tx.tx_ref))
     .limit(1)
   if (!order) {
-    return NextResponse.json({ ok: false, reason: 'no matching order' }, { status: 404 })
+    return NextResponse.json(
+      { ok: false, reason: 'no matching order' },
+      { status: 404 }
+    )
   }
 
   try {
@@ -73,7 +89,10 @@ export async function POST(req: Request) {
       flwTransactionId: String(tx.id),
     })
     if (!result) {
-      return NextResponse.json({ ok: false, reason: 'order missing' }, { status: 404 })
+      return NextResponse.json(
+        { ok: false, reason: 'order missing' },
+        { status: 404 }
+      )
     }
 
     // Email + PDF only when this call did the pending→paid transition.

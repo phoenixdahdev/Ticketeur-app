@@ -1,10 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  Calendar03Icon,
-  Location01Icon,
-} from '@hugeicons/core-free-icons'
+import { Calendar03Icon, Location01Icon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@ticketur/ui/lib/utils'
 
@@ -35,7 +32,7 @@ export function VendorEventCard({ event }: { event: VendorEvent }) {
           <h3 className="text-foreground text-base font-bold tracking-tight">
             {event.title}
           </h3>
-          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:text-sm">
+          <div className="text-muted-foreground flex flex-col gap-1.5 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:text-sm">
             <span className="inline-flex items-center gap-1.5">
               <HugeiconsIcon
                 icon={Calendar03Icon}

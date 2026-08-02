@@ -104,13 +104,22 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
 
       {/* Stat cards */}
       <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <SimpleStat label="Total Events Organized" value={formatNumber(user.totalEvents)} />
+        <SimpleStat
+          label="Total Events Organized"
+          value={formatNumber(user.totalEvents)}
+        />
         <SimpleStat
           label="Active/Archived/Flagged"
           value={`${user.activeCount}/${user.archivedCount}/${user.flaggedCount}`}
         />
-        <SimpleStat label="Total Ticket sold" value={formatNumber(user.totalSold)} />
-        <SimpleStat label="Total Revenue" value={formatNaira(user.totalRevenue)} />
+        <SimpleStat
+          label="Total Ticket sold"
+          value={formatNumber(user.totalSold)}
+        />
+        <SimpleStat
+          label="Total Revenue"
+          value={formatNaira(user.totalRevenue)}
+        />
       </section>
 
       {/* Event portfolio */}
@@ -122,7 +131,7 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
           <div
             role="tablist"
             aria-label="Filter events"
-            className="bg-muted/50 -mx-1 flex shrink-0 items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] sm:mx-0 [&::-webkit-scrollbar]:hidden"
+            className="bg-muted/50 -mx-1 flex shrink-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto rounded-full p-1 sm:mx-0 [&::-webkit-scrollbar]:hidden"
           >
             {TABS.map((t) => {
               const active = tab === t.value
@@ -159,7 +168,7 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
         </div>
 
         <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <table className="w-full min-w-[760px] table-auto">
               <thead className="bg-primary/5">
                 <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
@@ -184,7 +193,10 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
                   events.map((row) => {
                     const pct =
                       row.total > 0
-                        ? Math.min(100, Math.round((row.sold / row.total) * 100))
+                        ? Math.min(
+                            100,
+                            Math.round((row.sold / row.total) * 100)
+                          )
                         : 0
                     return (
                       <tr key={row.id} className="text-sm">
@@ -219,7 +231,8 @@ export function OrganizerDetailView({ user }: { user: OrganizerDetail }) {
                           <div className="flex min-w-[160px] flex-col gap-1.5">
                             <div className="text-muted-foreground flex items-center justify-between text-xs">
                               <span>
-                                {formatNumber(row.sold)}/{formatNumber(row.total)} sold
+                                {formatNumber(row.sold)}/
+                                {formatNumber(row.total)} sold
                               </span>
                               <span className="text-foreground font-semibold">
                                 {pct}%

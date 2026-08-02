@@ -8,11 +8,7 @@ import {
   Text,
 } from 'react-email'
 
-import {
-  BRAND_NAME,
-  BRAND_NAME_UPPER,
-  BRAND_URL,
-} from '../components/brand'
+import { BRAND_NAME, BRAND_NAME_UPPER, BRAND_URL } from '../components/brand'
 import EmailContainer from '../components/container'
 
 interface VendorApprovedEmailProps {
@@ -29,7 +25,9 @@ export default function VendorApprovedEmail({
   return (
     <EmailContainer
       preview={
-        <Preview>{businessName} is now approved on {BRAND_NAME}</Preview>
+        <Preview>
+          {businessName} is now approved on {BRAND_NAME}
+        </Preview>
       }
     >
       <Container className="mx-auto my-0 max-w-150 px-10">
@@ -43,9 +41,9 @@ export default function VendorApprovedEmail({
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
           Good news — your vendor profile for <strong>{businessName}</strong>{' '}
-          has been approved by our team. Organizers can now invite you to
-          their events and you&apos;ll appear on the {BRAND_NAME} public
-          vendor directory.
+          has been approved by our team. Organizers can now invite you to their
+          events and you&apos;ll appear on the {BRAND_NAME} public vendor
+          directory.
         </Text>
 
         <Section className="mb-8">
@@ -60,11 +58,11 @@ export default function VendorApprovedEmail({
         </Section>
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
-          Make sure your showcase, social links, and description are
-          up-to-date to put your best foot forward.
+          Make sure your showcase, social links, and description are up-to-date
+          to put your best foot forward.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

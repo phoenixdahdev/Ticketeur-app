@@ -27,8 +27,8 @@ export default function VendorEventNotFound() {
           We couldn&apos;t find that engagement
         </h1>
         <p className="text-muted-foreground mx-auto max-w-md text-base leading-7">
-          The event you&apos;re looking for may have ended, been removed or
-          you no longer have access to it.
+          The event you&apos;re looking for may have ended, been removed or you
+          no longer have access to it.
         </p>
       </div>
 

@@ -110,7 +110,7 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
         <div className="absolute right-5 bottom-5 left-5 flex flex-col gap-2 md:right-8 md:bottom-8 md:left-8">
           <span
             className={cn(
-              'inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white',
+              'inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-white uppercase',
               HERO_STATUS_TONE[event.status]
             )}
           >
@@ -119,7 +119,7 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
           <h2 className="font-heading text-2xl font-bold text-white drop-shadow md:text-4xl">
             {event.title}
           </h2>
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
+          <p className="text-xs font-semibold tracking-wide text-white/80 uppercase">
             ID: {event.reference}
           </p>
         </div>
@@ -128,7 +128,9 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
       {/* Description + details */}
       <section className="border-border/60 bg-background flex flex-col gap-5 rounded-2xl border p-5 md:p-6">
         <div className="flex flex-col gap-2">
-          <h3 className="text-foreground text-base font-semibold">Description</h3>
+          <h3 className="text-foreground text-base font-semibold">
+            Description
+          </h3>
           <p className="text-muted-foreground text-sm md:text-base">
             {event.description}
           </p>
@@ -152,7 +154,9 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
         </div>
         {event.features.length > 0 ? (
           <div className="flex flex-col gap-3">
-            <h3 className="text-foreground text-base font-semibold">Features</h3>
+            <h3 className="text-foreground text-base font-semibold">
+              Features
+            </h3>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
               {event.features.map((label) => (
                 <div
@@ -247,7 +251,9 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
 
       {/* Ticket Tier Sales */}
       <section className="border-border/60 bg-background flex flex-col gap-3 rounded-2xl border p-5 md:p-6">
-        <h3 className="text-foreground text-base font-semibold">Ticket Tier Sales</h3>
+        <h3 className="text-foreground text-base font-semibold">
+          Ticket Tier Sales
+        </h3>
         <ul className="divide-border/60 divide-y">
           {event.tiers.map((tier) => (
             <li
@@ -276,7 +282,7 @@ export function AdminEventDetailView({ event }: { event: AdminEventDetail }) {
                 </span>
                 <span
                   className={cn(
-                    'text-xs font-bold uppercase tracking-wide',
+                    'text-xs font-bold tracking-wide uppercase',
                     TIER_TONE[tier.status]
                   )}
                 >

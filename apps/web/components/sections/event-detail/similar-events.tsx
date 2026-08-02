@@ -33,11 +33,14 @@ export function SimilarEvents({ eventId }: { eventId: string }) {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-muted h-72 animate-pulse rounded-2xl" />
+              <div
+                key={i}
+                className="bg-muted h-72 animate-pulse rounded-2xl"
+              />
             ))}
           </div>
         ) : (
-          <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-8 [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 [scrollbar-width:none] gap-4 overflow-x-auto px-5 pb-4 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-8 [&::-webkit-scrollbar]:hidden">
             {events.map((event, i) => (
               <motion.div
                 key={event.id}

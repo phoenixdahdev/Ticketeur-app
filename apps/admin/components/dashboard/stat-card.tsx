@@ -32,7 +32,7 @@ export function StatCard({
   return (
     <div className="border-border/60 bg-background relative flex flex-col gap-4 rounded-2xl border p-5 shadow-sm shadow-black/[0.02]">
       {badge ? (
-        <span className="bg-destructive text-destructive-foreground absolute top-3 right-3 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+        <span className="bg-destructive text-destructive-foreground absolute top-3 right-3 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase">
           {badge}
         </span>
       ) : null}

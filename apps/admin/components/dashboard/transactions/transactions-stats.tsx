@@ -20,7 +20,7 @@ export function TransactionsStats() {
   return (
     <section
       aria-label="Financial overview"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-2xl"
+      className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2"
     >
       <StatCard
         label="Total Revenue"

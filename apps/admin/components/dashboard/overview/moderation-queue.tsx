@@ -7,11 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  Delete02Icon,
-  ViewIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons'
+import { Delete02Icon, ViewIcon, Tick02Icon } from '@hugeicons/core-free-icons'
 
 import type { RouterOutputs } from '@ticketur/api'
 
@@ -216,10 +212,7 @@ export function ModerationQueue() {
       {isLoading ? (
         <div className="flex flex-col gap-3 py-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-muted h-14 animate-pulse rounded-xl"
-            />
+            <div key={i} className="bg-muted h-14 animate-pulse rounded-xl" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -231,7 +224,7 @@ export function ModerationQueue() {
           {items.map((item) => (
             <li
               key={`${item.kind}-${item.id}`}
-              className="border-border/60 flex items-center gap-3 border-b py-3 last:border-b-0 last:pb-0 first:pt-0"
+              className="border-border/60 flex items-center gap-3 border-b py-3 first:pt-0 last:border-b-0 last:pb-0"
             >
               {item.imageUrl ? (
                 <Image

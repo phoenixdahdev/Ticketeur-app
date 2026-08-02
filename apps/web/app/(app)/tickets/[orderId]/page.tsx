@@ -42,7 +42,9 @@ function getBaseUrl() {
   )
 }
 
-function eventStanding(eventDate: string | null): 'upcoming' | 'today' | 'past' {
+function eventStanding(
+  eventDate: string | null
+): 'upcoming' | 'today' | 'past' {
   if (!eventDate) return 'upcoming' // TBD / postponed — treat as upcoming
   const today = new Date().toISOString().slice(0, 10)
   if (eventDate === today) return 'today'
@@ -73,8 +75,8 @@ export default async function OrderTicketsPage({
           We haven&apos;t confirmed this purchase yet
         </h1>
         <p className="text-muted-foreground text-sm leading-7">
-          If you just paid, please give it a moment and refresh. If the
-          problem persists, contact support.
+          If you just paid, please give it a moment and refresh. If the problem
+          persists, contact support.
         </p>
         <Button asChild size="xl">
           <Link href={`/events/${head.event.slug}`}>Back to event</Link>
@@ -170,7 +172,7 @@ export default async function OrderTicketsPage({
               unoptimized={head.event.bannerUrl.startsWith('data:')}
             />
           ) : (
-            <div className="bg-linear-to-br from-primary/30 via-primary/15 to-background absolute inset-0" />
+            <div className="from-primary/30 via-primary/15 to-background absolute inset-0 bg-linear-to-br" />
           )}
           <div
             aria-hidden
@@ -197,7 +199,7 @@ export default async function OrderTicketsPage({
           </div>
         </div>
 
-        <dl className="grid grid-cols-1 divide-y border-t md:grid-cols-3 md:divide-x md:divide-y-0 md:border-t border-border/60 divide-border/60">
+        <dl className="border-border/60 divide-border/60 grid grid-cols-1 divide-y border-t md:grid-cols-3 md:divide-x md:divide-y-0 md:border-t">
           <KeyDetail
             icon={Calendar03Icon}
             label="Date"
@@ -238,7 +240,10 @@ export default async function OrderTicketsPage({
               tierName={t.tierName}
               holderName={head.order.buyerName || 'Guest'}
               eventTitle={head.event.title}
-              eventDate={formatEventDate(head.event.eventDate, head.event.endDate)}
+              eventDate={formatEventDate(
+                head.event.eventDate,
+                head.event.endDate
+              )}
               eventTime={head.event.eventTime}
             />
           ))}
@@ -297,15 +302,9 @@ export default async function OrderTicketsPage({
         </div>
 
         <div className="border-border/60 flex flex-col gap-1.5 border-t pt-4 text-sm">
-          <Row
-            label="Subtotal"
-            value={formatNaira(head.order.subtotalMinor)}
-          />
+          <Row label="Subtotal" value={formatNaira(head.order.subtotalMinor)} />
           {head.order.feeMinor > 0 ? (
-            <Row
-              label="Service fee"
-              value={formatNaira(head.order.feeMinor)}
-            />
+            <Row label="Service fee" value={formatNaira(head.order.feeMinor)} />
           ) : null}
           <div className="flex items-baseline justify-between gap-3 pt-1">
             <span className="font-heading text-foreground text-base font-semibold">
@@ -330,7 +329,9 @@ export default async function OrderTicketsPage({
           />
         </span>
         <div className="flex flex-col gap-1">
-          <p className="text-foreground font-semibold">On the day of the event</p>
+          <p className="text-foreground font-semibold">
+            On the day of the event
+          </p>
           <p className="text-muted-foreground leading-6">
             Bring a valid ID and have this page (or the PDF) ready to scan at
             the gate. Each QR code is single-entry — keep them for yourself.

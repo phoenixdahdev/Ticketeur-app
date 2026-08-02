@@ -167,11 +167,11 @@ export function VendorAbout({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl bg-[#f1ebff] px-4 py-3 dark:bg-primary/10">
-      <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+    <div className="dark:bg-primary/10 flex flex-col gap-1 rounded-xl bg-[#f1ebff] px-4 py-3">
+      <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         {label}
       </span>
-      <span className="font-semibold text-foreground">{value}</span>
+      <span className="text-foreground font-semibold">{value}</span>
     </div>
   )
 }

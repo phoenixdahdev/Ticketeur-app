@@ -42,7 +42,10 @@ export const protectedProcedure = t.procedure.use(requireSession)
 const requireOrganizer = requireSession.unstable_pipe(({ ctx, next }) => {
   const role = ctx.session.user.role ?? 'attendee'
   if (role !== 'organizer' && role !== 'admin') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Organizer role required' })
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Organizer role required',
+    })
   }
   return next({ ctx })
 })

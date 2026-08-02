@@ -36,9 +36,10 @@ export const publicEventsRouter = createTRPCRouter({
     // Note: events table has no category column yet; reserved for future use.
     void input.category
 
-    const minPriceExpr = sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
-      'minPrice'
-    )
+    const minPriceExpr =
+      sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
+        'minPrice'
+      )
 
     const rows = await ctx.db
       .select({
@@ -78,9 +79,10 @@ export const publicEventsRouter = createTRPCRouter({
   featured: publicProcedure.query(async ({ ctx }) => {
     const today = new Date().toISOString().slice(0, 10)
 
-    const minPriceExpr = sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
-      'minPrice'
-    )
+    const minPriceExpr =
+      sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
+        'minPrice'
+      )
 
     const rows = await ctx.db
       .select({
@@ -98,7 +100,11 @@ export const publicEventsRouter = createTRPCRouter({
       .innerJoin(user, eq(user.id, events.organizerId))
       .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
       .where(
-        and(eq(events.status, 'upcoming'), stillRunning(today), notCurrentlyBanned)
+        and(
+          eq(events.status, 'upcoming'),
+          stillRunning(today),
+          notCurrentlyBanned
+        )
       )
       .groupBy(events.id)
       .orderBy(desc(events.createdAt))
@@ -113,9 +119,10 @@ export const publicEventsRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const today = new Date().toISOString().slice(0, 10)
-      const minPriceExpr = sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
-        'minPrice'
-      )
+      const minPriceExpr =
+        sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
+          'minPrice'
+        )
 
       const rows = await ctx.db
         .select({

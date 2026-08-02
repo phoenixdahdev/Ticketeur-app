@@ -1,9 +1,4 @@
-import {
-  differenceInCalendarDays,
-  format,
-  isValid,
-  parseISO,
-} from 'date-fns'
+import { differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
 // Shown when an event has no date yet (postponed / TBD — eventDate is null).
 export const TBD_LABEL = 'TBD'
@@ -15,32 +10,42 @@ export function toDate(value: string | Date | null | undefined): Date | null {
   return isValid(parsed) ? parsed : null
 }
 
-export function formatShortDate(value: string | Date | null | undefined): string {
+export function formatShortDate(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'MMM d, yyyy')
 }
 
-export function formatLongDate(value: string | Date | null | undefined): string {
+export function formatLongDate(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'MMMM d, yyyy')
 }
 
-export function formatWeekdayDate(value: string | Date | null | undefined): string {
+export function formatWeekdayDate(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'EEE, MMM d, yyyy')
 }
 
-export function formatMonthDay(value: string | Date | null | undefined): string {
+export function formatMonthDay(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'MMM d')
 }
 
 // Returns null when there is no date (TBD) so callers can hide any countdown.
-export function daysUntil(value: string | Date | null | undefined): number | null {
+export function daysUntil(
+  value: string | Date | null | undefined
+): number | null {
   const date = toDate(value)
   if (!date) return null
   return Math.max(0, differenceInCalendarDays(date, new Date()))

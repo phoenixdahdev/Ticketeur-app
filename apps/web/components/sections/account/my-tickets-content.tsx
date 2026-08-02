@@ -34,8 +34,7 @@ function eventStanding(eventDate: string | null): Standing {
 }
 
 const STANDING_TONE: Record<Standing, string> = {
-  upcoming:
-    'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  upcoming: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
   today: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
   past: 'bg-zinc-500/15 text-zinc-700 dark:text-zinc-300',
 }
@@ -48,17 +47,13 @@ const STANDING_LABEL: Record<Standing, string> = {
 
 export function MyTicketsContent() {
   const trpc = useTRPC()
-  const { data, isLoading } = useQuery(
-    trpc.account.tickets.list.queryOptions()
-  )
+  const { data, isLoading } = useQuery(trpc.account.tickets.list.queryOptions())
 
   const orders = data ?? []
   const upcoming = orders.filter(
     (o) => eventStanding(o.event.eventDate) !== 'past'
   )
-  const past = orders.filter(
-    (o) => eventStanding(o.event.eventDate) === 'past'
-  )
+  const past = orders.filter((o) => eventStanding(o.event.eventDate) === 'past')
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-5 py-8 md:gap-8 md:px-10 md:py-12">
@@ -133,7 +128,7 @@ function TicketRow({ order }: { order: OrderRow }) {
     <Link
       href={`/tickets/${order.id}`}
       className={cn(
-        'group border-border bg-card hover:border-primary/40 hover:shadow-md focus-visible:ring-primary/40 flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all outline-none focus-visible:ring-2 sm:flex-row',
+        'group border-border bg-card hover:border-primary/40 focus-visible:ring-primary/40 flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all outline-none hover:shadow-md focus-visible:ring-2 sm:flex-row',
         !isPaid && 'opacity-70'
       )}
     >
@@ -189,7 +184,10 @@ function TicketRow({ order }: { order: OrderRow }) {
         </div>
 
         <ul className="text-muted-foreground flex flex-wrap gap-x-5 gap-y-1.5 text-xs sm:text-sm">
-          <Meta icon={Calendar03Icon} value={formatEventDate(order.event.eventDate, order.event.endDate)} />
+          <Meta
+            icon={Calendar03Icon}
+            value={formatEventDate(order.event.eventDate, order.event.endDate)}
+          />
           <Meta icon={Clock01Icon} value={order.event.eventTime} />
           <Meta icon={Location01Icon} value={order.event.location} />
         </ul>

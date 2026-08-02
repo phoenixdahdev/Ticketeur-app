@@ -67,7 +67,10 @@ export function AttendeeDetailView({ user }: { user: AttendeeDetail }) {
             </div>
 
             <div className="flex flex-col gap-3 md:flex-row md:gap-10">
-              <DetailField label="Date Joined" value={formatDate(user.joinedAt)} />
+              <DetailField
+                label="Date Joined"
+                value={formatDate(user.joinedAt)}
+              />
               <DetailField
                 label="Event Attended"
                 value={user.eventsAttended.toString()}
@@ -91,7 +94,7 @@ export function AttendeeDetailView({ user }: { user: AttendeeDetail }) {
           Ticket History
         </h3>
         <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <table className="w-full min-w-[680px] table-auto">
               <thead className="bg-primary/5">
                 <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
@@ -149,13 +152,7 @@ export function AttendeeDetailView({ user }: { user: AttendeeDetail }) {
   )
 }
 
-function DetailField({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
+function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-foreground text-sm font-semibold">{label}</span>

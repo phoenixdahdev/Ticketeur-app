@@ -40,12 +40,12 @@ export function VendorsTab({ vendors }: { vendors: EventVendor[] }) {
           Participating Vendors
         </h2>
         <p className="text-muted-foreground text-sm md:text-base">
-          Explore our curated selection of vendors at this event. Tap any
-          vendor to see their full profile.
+          Explore our curated selection of vendors at this event. Tap any vendor
+          to see their full profile.
         </p>
       </div>
 
-      <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-6 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 [scrollbar-width:none] gap-4 overflow-x-auto px-5 pb-4 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-6 [&::-webkit-scrollbar]:hidden">
         {vendors.map((vendor, i) => {
           const name = vendor.businessName ?? 'Vendor'
           const description =

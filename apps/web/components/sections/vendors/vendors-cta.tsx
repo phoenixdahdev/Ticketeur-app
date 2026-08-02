@@ -20,11 +20,11 @@ export function VendorsCta() {
       >
         <h2
           id="vendors-cta-title"
-          className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-[40px] md:leading-[1.15]"
+          className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-[40px] md:leading-[1.15]"
         >
           Ready to take your business to the next stage?
         </h2>
-        <p className="max-w-[680px] text-base leading-relaxed text-muted-foreground md:text-lg">
+        <p className="text-muted-foreground max-w-[680px] text-base leading-relaxed md:text-lg">
           Apply today to join our elite vendor community and get discovered by
           top-tier event organisers.
         </p>

@@ -39,8 +39,11 @@ export const dashboardRouter = createTRPCRouter({
   topEvents: organizerProcedure.query(async ({ ctx }) => {
     const organizerId = ctx.session.user.id
 
-    const soldExpr = sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as('sold')
-    const totalExpr = sql<number>`COALESCE(SUM(${ticketTiers.quantity}), 0)::int`.as('total')
+    const soldExpr = sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as(
+      'sold'
+    )
+    const totalExpr =
+      sql<number>`COALESCE(SUM(${ticketTiers.quantity}), 0)::int`.as('total')
 
     const rows = await ctx.db
       .select({

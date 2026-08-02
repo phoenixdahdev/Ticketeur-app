@@ -49,7 +49,7 @@ export function ModerationTabs() {
       <div
         role="tablist"
         aria-label="Moderation queue"
-        className="bg-background -mx-1 flex shrink-0 items-center gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none] sm:mx-0 [&::-webkit-scrollbar]:hidden"
+        className="bg-background -mx-1 flex shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto px-1 py-1 sm:mx-0 [&::-webkit-scrollbar]:hidden"
       >
         {TABS.map((t) => {
           const active = tab === t

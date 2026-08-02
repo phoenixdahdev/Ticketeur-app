@@ -104,10 +104,7 @@ export default function PrivacyPage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-black/50"
-        />
+        <div aria-hidden className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 mx-auto flex w-full max-w-360 flex-col items-center gap-3 px-6 py-20 text-center md:py-24">
           <h1 className="font-heading text-4xl leading-tight font-bold tracking-tight text-white sm:text-5xl md:text-[56px] md:leading-[1.2]">
             Privacy Policy
@@ -121,9 +118,9 @@ export default function PrivacyPage() {
       <article className="mx-auto w-full max-w-[823px] px-6 py-16 md:py-20">
         <p className="font-heading text-foreground/90 text-lg leading-7 md:text-xl md:leading-8">
           This Privacy Policy explains how we collect, use, disclose, and
-          safeguard your information when you use our platform (&ldquo;Service&rdquo;).
-          By accessing or using the Service, you agree to the terms outlined in
-          this policy.
+          safeguard your information when you use our platform
+          (&ldquo;Service&rdquo;). By accessing or using the Service, you agree
+          to the terms outlined in this policy.
         </p>
 
         <div className="mt-10 flex flex-col gap-8">

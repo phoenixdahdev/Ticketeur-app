@@ -33,7 +33,7 @@ export function VendorOverviewContent({
   const upcoming = (upcomingQuery.data ?? []).map(serverToCard)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
           Hello, {vendorName}
@@ -76,7 +76,9 @@ export function VendorOverviewContent({
           icon={UserCircle02Icon}
           tone="purple"
           pill={
-            (stats?.profileCompletion ?? 0) >= 100 ? 'Up to date' : 'Update Required'
+            (stats?.profileCompletion ?? 0) >= 100
+              ? 'Up to date'
+              : 'Update Required'
           }
           pillTone={(stats?.profileCompletion ?? 0) >= 100 ? 'green' : 'red'}
           progress={stats?.profileCompletion ?? 0}

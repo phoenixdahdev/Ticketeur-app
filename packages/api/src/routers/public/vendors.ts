@@ -2,7 +2,13 @@ import { and, asc, desc, eq, gte, ilike, lt, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { Database } from '@ticketur/db'
-import { events, eventVendors, ticketTiers, user, vendorReviews } from '@ticketur/db'
+import {
+  events,
+  eventVendors,
+  ticketTiers,
+  user,
+  vendorReviews,
+} from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 
@@ -40,7 +46,6 @@ function ratingAggSubquery(db: Database) {
 }
 
 export const publicVendorsRouter = createTRPCRouter({
-  // Approved vendors only.
   list: publicProcedure.input(listInput).query(async ({ ctx, input }) => {
     const ratingAgg = ratingAggSubquery(ctx.db)
 
@@ -101,6 +106,8 @@ export const publicVendorsRouter = createTRPCRouter({
   }),
 
   featured: publicProcedure.query(async ({ ctx }) => {
+    const ratingAgg = ratingAggSubquery(ctx.db)
+
     const rows = await ctx.db
       .select({
         id: user.id,
@@ -108,9 +115,13 @@ export const publicVendorsRouter = createTRPCRouter({
         businessCategory: user.businessCategory,
         businessDescription: user.businessDescription,
         tagline: user.vendorTagline,
+        location: user.vendorLocation,
         image: user.image,
+        avgRating: ratingAgg.avgRating,
+        reviewCount: ratingAgg.reviewCount,
       })
       .from(user)
+      .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
       .where(
         and(
           eq(user.role, 'vendor'),
@@ -121,7 +132,10 @@ export const publicVendorsRouter = createTRPCRouter({
       .orderBy(desc(user.createdAt))
       .limit(4)
 
-    return rows
+    return rows.map((row) => ({
+      ...row,
+      reviewCount: row.reviewCount ?? 0,
+    }))
   }),
 
   byId: publicProcedure

@@ -44,13 +44,13 @@ export function MarkdownEditor({
       content={value}
       placeholder={placeholder}
       className={cn(
-        'border-input data-[invalid=true]:border-destructive bg-background flex min-h-40 flex-col rounded-md border focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20',
+        'border-input data-[invalid=true]:border-destructive bg-background focus-within:border-primary/60 focus-within:ring-primary/20 flex min-h-40 flex-col rounded-md border focus-within:ring-2',
         className
       )}
       editorProps={{
         attributes: {
           class: cn(
-            'prose prose-sm dark:prose-invert max-w-none px-4 py-3 outline-none focus:outline-none [&_.ProseMirror]:outline-none min-h-32 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:font-bold prose-headings:tracking-tight',
+            'prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:font-bold prose-headings:tracking-tight min-h-32 max-w-none px-4 py-3 outline-none focus:outline-none [&_.ProseMirror]:outline-none',
             contentClassName
           ),
           'aria-invalid': ariaInvalid ? 'true' : 'false',
@@ -61,7 +61,7 @@ export function MarkdownEditor({
       slotBefore={<MarkdownEditorToolbar />}
     >
       <MarkdownEditorBridge value={value} onChange={onChange} />
-      <EditorBubbleMenu className="flex items-center gap-0.5 rounded-md border bg-background p-1 shadow-md">
+      <EditorBubbleMenu className="bg-background flex items-center gap-0.5 rounded-md border p-1 shadow-md">
         <EditorFormatBold hideName />
         <EditorFormatItalic hideName />
         <EditorFormatUnderline hideName />
@@ -107,8 +107,9 @@ function MarkdownEditorBridge({
   const emit = useCallback(() => {
     if (!editor) return
     const md =
-      (editor.storage as { markdown?: { getMarkdown: () => string } }).markdown?.getMarkdown() ??
-      editor.getHTML()
+      (
+        editor.storage as { markdown?: { getMarkdown: () => string } }
+      ).markdown?.getMarkdown() ?? editor.getHTML()
     if (md !== lastEmitted.current) {
       lastEmitted.current = md
       onChange(md)

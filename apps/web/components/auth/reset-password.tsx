@@ -59,8 +59,7 @@ export function ResetPassword() {
   function onSubmit(data: Values) {
     if (!token) {
       toast.error('Reset link is missing or invalid', {
-        description:
-          'Request a new reset email from the forgot-password page.',
+        description: 'Request a new reset email from the forgot-password page.',
       })
       return
     }
@@ -85,7 +84,7 @@ export function ResetPassword() {
   if (done) {
     return (
       <>
-        <div className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300 flex size-14 items-center justify-center rounded-full">
+        <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
             className="size-8"
@@ -200,9 +199,7 @@ export function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowConfirm((v) => !v)}
-                    aria-label={
-                      showConfirm ? 'Hide password' : 'Show password'
-                    }
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
                     className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-1 transition-colors"
                   >
                     <HugeiconsIcon

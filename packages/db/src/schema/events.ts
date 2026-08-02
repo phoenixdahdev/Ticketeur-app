@@ -17,11 +17,7 @@ import { user } from './auth'
 // hidden from every public surface (those all filter status = 'upcoming').
 // Admin suspend/unsuspend toggles between 'upcoming' and 'suspended'.
 export type EventStatus =
-  | 'draft'
-  | 'in-review'
-  | 'upcoming'
-  | 'archived'
-  | 'suspended'
+  'draft' | 'in-review' | 'upcoming' | 'archived' | 'suspended'
 
 export const events = pgTable(
   'events',
@@ -76,7 +72,10 @@ export const ticketTiers = pgTable(
     id: text('id').primaryKey(),
     eventId: text('event_id')
       .notNull()
-      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => events.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     name: text('name').notNull(),
     quantity: integer('quantity').notNull(),
     // Stored in minor units (e.g., kobo / cents) to avoid float drift
@@ -105,7 +104,10 @@ export const eventVendors = pgTable(
     id: text('id').primaryKey(),
     eventId: text('event_id')
       .notNull()
-      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => events.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     vendorId: text('vendor_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -142,7 +144,10 @@ export const externalVendorInvites = pgTable(
     id: text('id').primaryKey(),
     eventId: text('event_id')
       .notNull()
-      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => events.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     businessName: text('business_name').notNull(),
     contactName: text('contact_name').notNull(),
     email: text('email').notNull(),
@@ -168,7 +173,8 @@ export const externalVendorInvitesRelations = relations(
 
 // ─── Orders ───────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'pending' | 'paid' | 'refunded' | 'cancelled' | 'failed'
+export type OrderStatus =
+  'pending' | 'paid' | 'refunded' | 'cancelled' | 'failed'
 
 export const orders = pgTable(
   'orders',
@@ -176,7 +182,10 @@ export const orders = pgTable(
     id: text('id').primaryKey(),
     eventId: text('event_id')
       .notNull()
-      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => events.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     // Legacy single-tier pointer. Nullable since a multi-tier order carries
     // its lines in `order_items` instead; kept (and backfilled) so existing
     // single-tier orders still resolve a tier. New orders leave this null.
@@ -245,7 +254,10 @@ export const orderItems = pgTable(
     id: text('id').primaryKey(),
     orderId: text('order_id')
       .notNull()
-      .references(() => orders.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => orders.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     tierId: text('tier_id')
       .notNull()
       .references(() => ticketTiers.id, {
@@ -282,10 +294,16 @@ export const tickets = pgTable(
     id: text('id').primaryKey(),
     orderId: text('order_id')
       .notNull()
-      .references(() => orders.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => orders.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     eventId: text('event_id')
       .notNull()
-      .references(() => events.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => events.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
     tierId: text('tier_id')
       .notNull()
       .references(() => ticketTiers.id, {
@@ -343,7 +361,10 @@ export const activityLog = pgTable(
       onUpdate: 'cascade',
     }),
     type: text('type').$type<ActivityType>().notNull(),
-    payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (t) => [

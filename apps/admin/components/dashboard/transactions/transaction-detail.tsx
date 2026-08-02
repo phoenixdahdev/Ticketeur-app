@@ -46,7 +46,9 @@ export function TransactionDetail({ tx }: { tx: Tx }) {
           <h2 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-3xl">
             {tx.reference}
           </h2>
-          <p className="text-muted-foreground text-sm">{formatPaidAt(tx.date)}</p>
+          <p className="text-muted-foreground text-sm">
+            {formatPaidAt(tx.date)}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 md:gap-10">

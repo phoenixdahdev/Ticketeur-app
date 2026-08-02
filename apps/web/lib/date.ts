@@ -10,13 +10,17 @@ export function toDate(value: string | Date | null | undefined): Date | null {
   return isValid(parsed) ? parsed : null
 }
 
-export function formatLongDate(value: string | Date | null | undefined): string {
+export function formatLongDate(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'MMMM d, yyyy')
 }
 
-export function formatShortDate(value: string | Date | null | undefined): string {
+export function formatShortDate(
+  value: string | Date | null | undefined
+): string {
   const date = toDate(value)
   if (!date) return typeof value === 'string' && value ? value : TBD_LABEL
   return format(date, 'MMM d, yyyy')

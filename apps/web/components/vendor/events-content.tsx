@@ -122,7 +122,7 @@ export function VendorEventsContent() {
           <div
             role="tablist"
             aria-label="Filter events"
-            className="border-border/60 -mx-1 flex items-center gap-1 overflow-x-auto border-b px-1 pb-px [scrollbar-width:none] md:flex-1 [&::-webkit-scrollbar]:hidden"
+            className="border-border/60 -mx-1 flex [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b px-1 pb-px md:flex-1 [&::-webkit-scrollbar]:hidden"
           >
             {TABS.map((t) => {
               const active = params.tab === t.value
@@ -158,7 +158,11 @@ export function VendorEventsContent() {
                     <motion.span
                       layoutId="vendor-events-tab-indicator"
                       className="bg-primary absolute right-0 -bottom-px left-0 h-0.5 rounded-full"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   ) : null}
                 </button>
@@ -185,7 +189,7 @@ export function VendorEventsContent() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
           {listQuery.isLoading ? (
             <div className="border-border/60 bg-background flex flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
               <p className="text-muted-foreground text-sm">Loading events…</p>
@@ -232,7 +236,9 @@ function VendorEventRow({ ev }: { ev: ServerEvent }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span className={cn('text-xs font-bold uppercase', STATUS_TONE[status])}>
+            <span
+              className={cn('text-xs font-bold uppercase', STATUS_TONE[status])}
+            >
               {STATUS_LABEL[status]}
             </span>
             <h3 className="text-foreground text-base font-bold tracking-tight md:text-lg">
@@ -305,9 +311,7 @@ function Pagination({
   return (
     <div className="flex shrink-0 flex-col items-start justify-between gap-4 pt-2 sm:flex-row sm:items-center">
       <p className="text-muted-foreground text-xs sm:text-sm">
-        {total === 0
-          ? 'No events'
-          : `Showing ${rowCount} of ${total} events`}
+        {total === 0 ? 'No events' : `Showing ${rowCount} of ${total} events`}
       </p>
       <nav aria-label="Pagination" className="flex items-center gap-2">
         <PageButton

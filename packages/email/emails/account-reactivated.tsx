@@ -8,11 +8,7 @@ import {
   Text,
 } from 'react-email'
 
-import {
-  BRAND_NAME,
-  BRAND_NAME_UPPER,
-  BRAND_URL,
-} from '../components/brand'
+import { BRAND_NAME, BRAND_NAME_UPPER, BRAND_URL } from '../components/brand'
 import EmailContainer from '../components/container'
 
 interface AccountReactivatedEmailProps {
@@ -51,7 +47,7 @@ export default function AccountReactivatedEmail({
           </Row>
         </Section>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

@@ -77,7 +77,8 @@ export function EventActions({ eventId, eventTitle, status }: Props) {
   async function handleUnsuspend() {
     const ok = await dialog.confirm({
       title: `Restore ${eventTitle}?`,
-      description: 'The event is published and visible on the public site again.',
+      description:
+        'The event is published and visible on the public site again.',
       confirmLabel: 'Restore',
       tone: 'success',
     })

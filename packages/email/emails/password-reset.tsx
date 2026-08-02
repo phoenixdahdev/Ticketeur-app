@@ -1,11 +1,4 @@
-import {
-  Button,
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text,
-} from 'react-email'
+import { Button, Container, Heading, Preview, Section, Text } from 'react-email'
 import { BRAND_NAME, BRAND_NAME_UPPER } from '../components/brand'
 import EmailContainer from '../components/container'
 

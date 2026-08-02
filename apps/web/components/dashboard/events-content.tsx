@@ -37,7 +37,13 @@ import {
 } from '@/lib/org-events'
 import { initialsFromTitle, formatEventDate } from '@/lib/event-display'
 
-const TAB_VALUES = ['all', 'upcoming', 'in-review', 'draft', 'archived'] as const
+const TAB_VALUES = [
+  'all',
+  'upcoming',
+  'in-review',
+  'draft',
+  'archived',
+] as const
 type TabValue = (typeof TAB_VALUES)[number]
 
 const SORT_FIELDS = ['name', 'date', 'location', 'status', 'sales'] as const
@@ -95,7 +101,8 @@ export function EventsContent() {
           queryKey: trpc.org.dashboard.stats.queryKey(),
         })
       },
-      onError: (e) => toast.error('Could not archive', { description: e.message }),
+      onError: (e) =>
+        toast.error('Could not archive', { description: e.message }),
     })
   )
 
@@ -110,7 +117,8 @@ export function EventsContent() {
           queryKey: trpc.org.dashboard.stats.queryKey(),
         })
       },
-      onError: (e) => toast.error('Could not delete', { description: e.message }),
+      onError: (e) =>
+        toast.error('Could not delete', { description: e.message }),
     })
   )
 
@@ -162,7 +170,7 @@ export function EventsContent() {
           <div
             role="tablist"
             aria-label="Filter by status"
-            className="border-border/60 -mx-1 flex items-center gap-1 overflow-x-auto border-b px-1 pb-px [scrollbar-width:none] md:flex-1 [&::-webkit-scrollbar]:hidden"
+            className="border-border/60 -mx-1 flex [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b px-1 pb-px md:flex-1 [&::-webkit-scrollbar]:hidden"
           >
             {TABS.map((t) => {
               const active = params.tab === t.value
@@ -172,9 +180,7 @@ export function EventsContent() {
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  onClick={() =>
-                    void setParams({ tab: t.value, page: 1 })
-                  }
+                  onClick={() => void setParams({ tab: t.value, page: 1 })}
                   className={cn(
                     'relative shrink-0 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors md:text-base',
                     active
@@ -187,7 +193,11 @@ export function EventsContent() {
                     <motion.span
                       layoutId="org-events-tab-indicator"
                       className="bg-primary absolute right-0 -bottom-px left-0 h-0.5 rounded-full"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   ) : null}
                 </button>
@@ -215,7 +225,7 @@ export function EventsContent() {
         </div>
 
         <div className="border-border/60 bg-background flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm shadow-black/[0.02]">
-          <div className="min-h-0 w-full flex-1 overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="min-h-0 w-full flex-1 [scrollbar-width:none] overflow-auto [&::-webkit-scrollbar]:hidden">
             <table className="w-full min-w-[960px] table-auto">
               <thead className="bg-primary/5">
                 <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
@@ -286,9 +296,7 @@ export function EventsContent() {
                     <EventRow
                       key={ev.id}
                       ev={ev}
-                      onArchive={() =>
-                        archiveMutation.mutate({ id: ev.id })
-                      }
+                      onArchive={() => archiveMutation.mutate({ id: ev.id })}
                       onDelete={() => {
                         if (
                           confirm(
@@ -336,10 +344,14 @@ function SortableHeader({
       <button
         type="button"
         onClick={() => onSort(field)}
-        aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        aria-sort={
+          active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
+        }
         className={cn(
           'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
-          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+          active
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-foreground'
         )}
       >
         <span>{children}</span>

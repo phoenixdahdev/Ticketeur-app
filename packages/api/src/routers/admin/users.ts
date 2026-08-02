@@ -134,9 +134,7 @@ export const adminUsersRouter = createTRPCRouter({
     if (tab !== 'all') filters.push(eq(user.role, tab))
     if (q.trim().length > 0) {
       const needle = `%${q.trim()}%`
-      filters.push(
-        or(ilike(user.name, needle), ilike(user.email, needle))!
-      )
+      filters.push(or(ilike(user.name, needle), ilike(user.email, needle))!)
     }
     const where = and(...filters)
 

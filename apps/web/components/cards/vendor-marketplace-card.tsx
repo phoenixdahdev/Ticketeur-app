@@ -65,7 +65,7 @@ export function VendorMarketplaceCard({
               Positioned to straddle the photo/content boundary, matching Figma. */}
           <div
             aria-label="Verified vendor"
-            className="bg-primary absolute -top-[27px] right-1 flex size-8 items-center justify-center rounded-full border-4 border-white shadow-md dark:border-background"
+            className="bg-primary dark:border-background absolute -top-[27px] right-1 flex size-8 items-center justify-center rounded-full border-4 border-white shadow-md"
           >
             <HugeiconsIcon
               icon={CheckmarkBadge02Icon}

@@ -59,7 +59,10 @@ const STATUS_HERO_LABEL: Record<DerivedStatus, string> = {
   past: 'PAST EVENT',
 }
 
-function deriveStatus(eventDate: string | null, serverStatus: string): DerivedStatus {
+function deriveStatus(
+  eventDate: string | null,
+  serverStatus: string
+): DerivedStatus {
   if (!eventDate) return 'upcoming' // TBD / postponed
   const today = new Date().toISOString().slice(0, 10)
   if (eventDate === today) return 'live'
@@ -89,7 +92,7 @@ export function VendorEventDetail({ id }: { id: string }) {
   const status = deriveStatus(event.eventDate, event.status)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
       <header className="flex shrink-0 flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
           All Events
@@ -258,13 +261,7 @@ function DetailItem({
   )
 }
 
-function FeatureCard({
-  icon,
-  label,
-}: {
-  icon: IconSvgElement
-  label: string
-}) {
+function FeatureCard({ icon, label }: { icon: IconSvgElement; label: string }) {
   return (
     <div className="bg-primary/5 border-primary/10 flex flex-col items-center justify-center gap-2 rounded-xl border px-3 py-4">
       <span className="bg-background text-primary flex size-9 items-center justify-center rounded-full">
