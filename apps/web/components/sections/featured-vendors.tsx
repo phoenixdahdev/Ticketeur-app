@@ -6,7 +6,7 @@ import { motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
-import { VendorCard } from '@/components/cards/vendor-card'
+import { VendorMarketplaceCard } from '@/components/cards/vendor-marketplace-card'
 import { useTRPC } from '@/lib/trpc'
 
 const VENDOR_PLACEHOLDER = '/vendor-placeholder.png'
@@ -22,7 +22,7 @@ export function FeaturedVendors() {
       aria-label="Featured Vendors"
       className="border-border bg-background w-full border-t px-5 py-16 md:px-10 md:py-24"
     >
-      <div className="mx-auto max-w-[1440px]">
+      <div className="mx-auto max-w-360">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -30,7 +30,7 @@ export function FeaturedVendors() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="mb-10 flex flex-col items-start justify-between gap-4 md:mb-12 md:flex-row md:items-end"
         >
-          <div className="flex max-w-[560px] flex-col gap-2">
+          <div className="flex max-w-140 flex-col gap-2">
             <h2 className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-[40px] md:leading-[1.15]">
               Our Featured Vendors
             </h2>
@@ -54,7 +54,10 @@ export function FeaturedVendors() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-muted h-64 animate-pulse rounded-2xl" />
+              <div
+                key={i}
+                className="bg-muted h-64 animate-pulse rounded-2xl"
+              />
             ))}
           </div>
         ) : vendors.length === 0 ? (
@@ -75,9 +78,10 @@ export function FeaturedVendors() {
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
-                <VendorCard
+                <VendorMarketplaceCard
                   id={vendor.id}
                   name={vendor.businessName ?? 'Vendor'}
+                  category={vendor.businessCategory ?? null}
                   description={
                     vendor.tagline ??
                     vendor.businessDescription ??
@@ -85,6 +89,9 @@ export function FeaturedVendors() {
                     ''
                   }
                   imageUrl={vendor.image ?? VENDOR_PLACEHOLDER}
+                  location={vendor.location ?? null}
+                  avgRating={vendor.avgRating ?? null}
+                  reviewCount={vendor.reviewCount}
                   href={`/vendors/${vendor.id}`}
                 />
               </motion.div>

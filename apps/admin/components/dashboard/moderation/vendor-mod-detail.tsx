@@ -90,11 +90,7 @@ export function VendorModDetail({ vendor }: { vendor: PendingVendor }) {
         </div>
       </section>
 
-      <ApproveRejectActions
-        kind="vendor"
-        id={vendor.id}
-        name={vendor.name}
-      />
+      <ApproveRejectActions kind="vendor" id={vendor.id} name={vendor.name} />
     </div>
   )
 }

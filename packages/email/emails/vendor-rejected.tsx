@@ -1,10 +1,4 @@
-import {
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text,
-} from 'react-email'
+import { Container, Heading, Preview, Section, Text } from 'react-email'
 
 import { BRAND_NAME, BRAND_NAME_UPPER } from '../components/brand'
 import EmailContainer from '../components/container'
@@ -39,8 +33,8 @@ export default function VendorRejectedEmail({
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
           After reviewing your vendor profile for{' '}
-          <strong>{businessName}</strong>, our team wasn&apos;t able to
-          approve your application at this time.
+          <strong>{businessName}</strong>, our team wasn&apos;t able to approve
+          your application at this time.
         </Text>
 
         {reason ? (
@@ -52,11 +46,11 @@ export default function VendorRejectedEmail({
         ) : null}
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
-          You can update your business details, showcase, and links and reply
-          to this email to ask the team to take another look.
+          You can update your business details, showcase, and links and reply to
+          this email to ask the team to take another look.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Trust &amp; Safety Team
         </Text>
       </Container>

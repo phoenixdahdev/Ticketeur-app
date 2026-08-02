@@ -32,7 +32,9 @@ export const vendorEventsRouter = createTRPCRouter({
       )
     }
     if (input.tab === 'past') {
-      filters.push(sql`COALESCE(${events.endDate}, ${events.eventDate}) < ${today}`)
+      filters.push(
+        sql`COALESCE(${events.endDate}, ${events.eventDate}) < ${today}`
+      )
     }
     if (input.q.trim().length > 0) {
       filters.push(ilike(events.title, `%${input.q.trim()}%`))

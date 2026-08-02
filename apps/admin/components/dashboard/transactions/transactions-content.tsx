@@ -119,7 +119,7 @@ export function TransactionsContent() {
       </div>
 
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[860px] table-auto">
             <thead className="bg-primary/5">
               <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
@@ -212,7 +212,9 @@ export function TransactionsContent() {
                         </div>
                       </Link>
                     </td>
-                    <td className="text-foreground px-5 py-4">{tx.eventName}</td>
+                    <td className="text-foreground px-5 py-4">
+                      {tx.eventName}
+                    </td>
                     <td className="text-foreground px-5 py-4 whitespace-nowrap">
                       {tx.tier} ({tx.qty})
                     </td>
@@ -268,7 +270,9 @@ function SortableHeader({
         }
         className={cn(
           'inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors',
-          active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+          active
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-foreground'
         )}
       >
         <span>{children}</span>

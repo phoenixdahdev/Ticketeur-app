@@ -6,7 +6,10 @@ import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import { cn } from '@ticketur/ui/lib/utils'
 
 import type { VendorRecord } from '@/lib/vendors'
-import { VendorAbout, type VendorContact } from '@/components/sections/vendor-detail/vendor-about'
+import {
+  VendorAbout,
+  type VendorContact,
+} from '@/components/sections/vendor-detail/vendor-about'
 import { VendorPortfolioTab } from '@/components/sections/vendor-detail/vendor-portfolio-tab'
 import { VendorReviewsTab } from '@/components/sections/vendor-detail/vendor-reviews-tab'
 import {
@@ -53,7 +56,7 @@ export function VendorProfileTabs({
       <div className="mx-auto max-w-[1440px] pt-6 md:pt-8">
         <div
           role="tablist"
-          className="border-border overflow-x-auto border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="border-border [scrollbar-width:none] overflow-x-auto border-b [&::-webkit-scrollbar]:hidden"
         >
           <div className="flex items-center gap-6 md:gap-8">
             {TABS.map((t) => {

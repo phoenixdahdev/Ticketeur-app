@@ -48,13 +48,7 @@ export function EventsStats() {
   )
 }
 
-function FlaggedStat({
-  value,
-  loading,
-}: {
-  value: string
-  loading?: boolean
-}) {
+function FlaggedStat({ value, loading }: { value: string; loading?: boolean }) {
   return (
     <div className="border-border/60 bg-background flex flex-col gap-4 rounded-2xl border p-5 shadow-sm shadow-black/[0.02]">
       <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">

@@ -117,7 +117,9 @@ export function EventModDetail({ event }: { event: PendingEvent }) {
       </section>
 
       <section className="border-border/60 bg-background flex flex-col gap-4 rounded-2xl border p-5 md:p-6">
-        <h3 className="text-foreground text-base font-semibold">Event Details</h3>
+        <h3 className="text-foreground text-base font-semibold">
+          Event Details
+        </h3>
         <div className="flex flex-wrap gap-3">
           <DetailPill
             icon={Calendar03Icon}
@@ -188,7 +190,7 @@ export function EventModDetail({ event }: { event: PendingEvent }) {
                   </span>
                   <span
                     className={cn(
-                      'text-xs font-bold uppercase tracking-wide',
+                      'text-xs font-bold tracking-wide uppercase',
                       TIER_STATUS_TONE[tier.status]
                     )}
                   >
@@ -289,9 +291,7 @@ export function EventModDetail({ event }: { event: PendingEvent }) {
                       : 'text-rose-600'
                   )}
                 >
-                  {event.organizer.status === 'active'
-                    ? 'Active'
-                    : 'Suspended'}
+                  {event.organizer.status === 'active' ? 'Active' : 'Suspended'}
                 </span>
                 <span className="text-muted-foreground/40">•</span>
                 <span className="text-foreground text-xs font-semibold">
@@ -311,13 +311,7 @@ export function EventModDetail({ event }: { event: PendingEvent }) {
   )
 }
 
-function DetailPill({
-  icon,
-  text,
-}: {
-  icon: IconSvgElement
-  text: string
-}) {
+function DetailPill({ icon, text }: { icon: IconSvgElement; text: string }) {
   return (
     <span className="border-primary/30 bg-primary/5 text-foreground inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm">
       <HugeiconsIcon

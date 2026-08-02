@@ -1,11 +1,4 @@
-import {
-  Button,
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text,
-} from 'react-email'
+import { Button, Container, Heading, Preview, Section, Text } from 'react-email'
 
 import { BRAND_NAME, BRAND_NAME_UPPER } from '../components/brand'
 import EmailContainer from '../components/container'
@@ -64,10 +57,10 @@ export default function VendorInviteEmail({
           email.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           Welcome to {BRAND_NAME_UPPER},
         </Text>
-        <Text className="m-0 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

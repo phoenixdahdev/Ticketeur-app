@@ -109,12 +109,9 @@ export async function verifyTransaction(
   transactionId: string | number
 ): Promise<FlutterwaveTransaction | null> {
   const secret = requireSecret()
-  const res = await fetch(
-    `${BASE_URL}/transactions/${transactionId}/verify`,
-    {
-      headers: { Authorization: `Bearer ${secret}` },
-    }
-  )
+  const res = await fetch(`${BASE_URL}/transactions/${transactionId}/verify`, {
+    headers: { Authorization: `Bearer ${secret}` },
+  })
   const json = (await res.json()) as FlutterwaveVerifyResponse
   if (!res.ok || json.status !== 'success' || !json.data) {
     return null

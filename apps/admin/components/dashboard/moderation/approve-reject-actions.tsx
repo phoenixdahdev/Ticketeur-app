@@ -119,8 +119,7 @@ export function ApproveRejectActions({
 
   async function handleApprove() {
     const ok = await dialog.confirm({
-      title:
-        kind === 'vendor' ? `Approve ${name}?` : `Approve "${name}"?`,
+      title: kind === 'vendor' ? `Approve ${name}?` : `Approve "${name}"?`,
       description:
         kind === 'vendor'
           ? 'They will be notified by email and become bookable for events.'
@@ -135,8 +134,7 @@ export function ApproveRejectActions({
 
   async function handleReject() {
     const reason = await dialog.prompt({
-      title:
-        kind === 'vendor' ? `Reject ${name}?` : `Reject "${name}"?`,
+      title: kind === 'vendor' ? `Reject ${name}?` : `Reject "${name}"?`,
       description:
         kind === 'vendor'
           ? 'They will be emailed the reason and can update + resubmit their profile.'

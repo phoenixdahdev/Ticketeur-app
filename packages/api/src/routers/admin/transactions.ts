@@ -1,22 +1,8 @@
 import { z } from 'zod'
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  ilike,
-  or,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 
-import {
-  events,
-  orderItems,
-  orders,
-  user,
-} from '@ticketur/db'
+import { events, orderItems, orders, user } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
 

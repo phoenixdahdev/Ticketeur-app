@@ -133,10 +133,10 @@ export default function TermsPage() {
 
       <article className="mx-auto w-full max-w-[823px] px-6 py-16 md:py-20">
         <p className="font-heading text-foreground/90 text-lg leading-7 md:text-xl md:leading-8">
-          These Terms and Conditions (&ldquo;Terms&rdquo;) govern your access
-          to and use of the Ticketeur platform (the &ldquo;Service&rdquo;).
-          Please read them carefully — by using the Service you agree to be
-          bound by these Terms.
+          These Terms and Conditions (&ldquo;Terms&rdquo;) govern your access to
+          and use of the Ticketeur platform (the &ldquo;Service&rdquo;). Please
+          read them carefully — by using the Service you agree to be bound by
+          these Terms.
         </p>
 
         <div className="mt-10 flex flex-col gap-8">

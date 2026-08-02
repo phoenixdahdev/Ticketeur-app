@@ -1,18 +1,6 @@
-import {
-  and,
-  count,
-  desc,
-  eq,
-  ne,
-  sql,
-} from 'drizzle-orm'
+import { and, count, desc, eq, ne, sql } from 'drizzle-orm'
 
-import {
-  events,
-  orders,
-  reports,
-  user,
-} from '@ticketur/db'
+import { events, orders, reports, user } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
 
@@ -124,34 +112,28 @@ export const adminOverviewRouter = createTRPCRouter({
     }
 
     const merged: Item[] = [
-      ...userRows.map(
-        (u): Item => ({
-          id: `u-${u.id}`,
-          kind: 'user-joined',
-          message: `${u.name} joined the platform`,
-          avatarUrl: u.image ?? null,
-          timestamp: u.createdAt.toISOString(),
-        })
-      ),
-      ...vendorRows.map(
-        (v): Item => ({
-          id: `v-${v.id}`,
-          kind: 'vendor-registered',
-          message: `${v.businessName ?? v.name} registered as a Vendor`,
-          highlight: 'Vendor',
-          avatarUrl: v.image ?? null,
-          timestamp: v.createdAt.toISOString(),
-        })
-      ),
-      ...eventRows.map(
-        (e): Item => ({
-          id: `e-${e.id}`,
-          kind: 'event-listed',
-          message: `${e.organizerOrgName ?? e.organizerName} listed an event`,
-          avatarUrl: e.organizerImage ?? null,
-          timestamp: e.createdAt.toISOString(),
-        })
-      ),
+      ...userRows.map((u): Item => ({
+        id: `u-${u.id}`,
+        kind: 'user-joined',
+        message: `${u.name} joined the platform`,
+        avatarUrl: u.image ?? null,
+        timestamp: u.createdAt.toISOString(),
+      })),
+      ...vendorRows.map((v): Item => ({
+        id: `v-${v.id}`,
+        kind: 'vendor-registered',
+        message: `${v.businessName ?? v.name} registered as a Vendor`,
+        highlight: 'Vendor',
+        avatarUrl: v.image ?? null,
+        timestamp: v.createdAt.toISOString(),
+      })),
+      ...eventRows.map((e): Item => ({
+        id: `e-${e.id}`,
+        kind: 'event-listed',
+        message: `${e.organizerOrgName ?? e.organizerName} listed an event`,
+        avatarUrl: e.organizerImage ?? null,
+        timestamp: e.createdAt.toISOString(),
+      })),
     ]
 
     merged.sort((a, b) => b.timestamp.localeCompare(a.timestamp))

@@ -27,6 +27,7 @@ import { getPostLoginPath } from '@/lib/post-login-redirect'
 
 const NAV_LINKS = [
   { href: '/events', label: 'Find Events' },
+  { href: '/vendors/list', label: 'Find Vendors' },
   { href: '/organizers', label: 'For Organizers' },
   { href: '/vendors', label: 'For Vendors' },
 ] as const

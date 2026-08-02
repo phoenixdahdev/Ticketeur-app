@@ -116,11 +116,11 @@ export default function TicketConfirmationEmail({
 
         <Heading
           as="h3"
-          className="m-0 text-base font-semibold leading-6 text-gray-900"
+          className="m-0 text-base leading-6 font-semibold text-gray-900"
         >
           Enjoy the experience,
         </Heading>
-        <Text className="m-0 text-base font-semibold leading-6 text-gray-900">
+        <Text className="m-0 text-base leading-6 font-semibold text-gray-900">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>
@@ -144,7 +144,7 @@ function DetailRow({
       </Column>
       <Column
         align="right"
-        className="text-sm font-semibold leading-5 text-gray-900"
+        className="text-sm leading-5 font-semibold text-gray-900"
       >
         {value}
       </Column>

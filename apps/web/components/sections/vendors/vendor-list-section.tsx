@@ -110,13 +110,13 @@ export function VendorListSection() {
         >
           <h1
             id="vendor-list-title"
-            className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-[40px] md:leading-[1.15]"
+            className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-[40px] md:leading-[1.15]"
           >
             Vendors Marketplace
           </h1>
-          <p className="text-base text-muted-foreground">
-            Discover and hire verified vendors for your next event. Every
-            vendor is curated to ensure your production is world-class.
+          <p className="text-muted-foreground text-base">
+            Discover and hire verified vendors for your next event. Every vendor
+            is curated to ensure your production is world-class.
           </p>
         </motion.div>
 
@@ -126,20 +126,18 @@ export function VendorListSection() {
           transition={{ delay: 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col gap-3 md:flex-row md:items-center"
         >
-          <label className="flex h-12 flex-1 items-center gap-2 rounded-lg border border-border bg-background px-4 focus-within:border-primary">
+          <label className="border-border bg-background focus-within:border-primary flex h-12 flex-1 items-center gap-2 rounded-lg border px-4">
             <HugeiconsIcon
               icon={Search01Icon}
-              className="size-4 shrink-0 text-muted-foreground"
+              className="text-muted-foreground size-4 shrink-0"
               strokeWidth={1.6}
             />
             <input
               type="search"
               value={state.q}
-              onChange={(e) =>
-                setState({ q: e.target.value || null, page: 1 })
-              }
+              onChange={(e) => setState({ q: e.target.value || null, page: 1 })}
               placeholder="Search by name or service specialization..."
-              className="w-full min-w-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground md:text-base"
+              className="text-foreground placeholder:text-muted-foreground w-full min-w-0 bg-transparent text-sm outline-none md:text-base"
             />
           </label>
           <Button
@@ -158,7 +156,11 @@ export function VendorListSection() {
                 type="button"
                 className="hidden h-12 shrink-0 gap-2 px-6 text-base md:inline-flex"
               >
-                <HugeiconsIcon icon={FilterIcon} className="size-4" strokeWidth={1.8} />
+                <HugeiconsIcon
+                  icon={FilterIcon}
+                  className="size-4"
+                  strokeWidth={1.8}
+                />
                 Filter
                 <FilterCountBadge count={activeFilterCount} />
               </Button>
@@ -190,9 +192,13 @@ export function VendorListSection() {
             onClick={() => setMobileFilterOpen(true)}
             className="bg-primary text-primary-foreground relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg md:hidden"
           >
-            <HugeiconsIcon icon={FilterIcon} className="size-5" strokeWidth={1.8} />
+            <HugeiconsIcon
+              icon={FilterIcon}
+              className="size-5"
+              strokeWidth={1.8}
+            />
             {activeFilterCount > 0 && (
-              <span className="border-background absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border bg-white text-[10px] font-semibold text-primary">
+              <span className="border-background text-primary absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border bg-white text-[10px] font-semibold">
                 {activeFilterCount}
               </span>
             )}
@@ -203,7 +209,7 @@ export function VendorListSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.18, duration: 0.35 }}
-          className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+          className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden"
         >
           {CATEGORY_CHIPS.map((chip) => {
             const active = state.category === chip.value
@@ -274,15 +280,18 @@ export function VendorListSection() {
         {listQuery.isLoading ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-muted h-64 animate-pulse rounded-2xl" />
+              <div
+                key={i}
+                className="bg-muted h-64 animate-pulse rounded-2xl"
+              />
             ))}
           </div>
         ) : pageItems.length === 0 ? (
-          <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
-            <p className="font-heading text-lg font-semibold text-foreground">
+          <div className="border-border bg-muted/20 flex min-h-65 flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+            <p className="font-heading text-foreground text-lg font-semibold">
               No vendors match your search
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               Try clearing the search or picking a different category.
             </p>
           </div>
@@ -335,8 +344,8 @@ export function VendorListSection() {
           />
         )}
 
-        <div className="bg-[#31156b] flex flex-col items-start gap-8 rounded-3xl p-8 md:flex-row md:items-end md:justify-between md:gap-10 md:p-20">
-          <div className="flex flex-col gap-4 text-[#ededed] md:gap-8 md:max-w-[560px]">
+        <div className="flex flex-col items-start gap-8 rounded-3xl bg-[#31156b] p-8 md:flex-row md:items-end md:justify-between md:gap-10 md:p-20">
+          <div className="flex flex-col gap-4 text-[#ededed] md:max-w-[560px] md:gap-8">
             <h2 className="font-heading text-3xl font-bold md:text-4xl">
               Are you a Vendor?
             </h2>
@@ -392,7 +401,11 @@ function FilterChip({
         aria-label={`Remove filter: ${label}`}
         className="text-muted-foreground hover:text-foreground transition-colors"
       >
-        <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" strokeWidth={2} />
+        <HugeiconsIcon
+          icon={Cancel01Icon}
+          className="size-3.5"
+          strokeWidth={2}
+        />
       </button>
     </span>
   )
@@ -428,7 +441,7 @@ function Pagination({
         p === '…' ? (
           <span
             key={`dots-${i}`}
-            className="px-1 text-sm text-muted-foreground"
+            className="text-muted-foreground px-1 text-sm"
           >
             …
           </span>

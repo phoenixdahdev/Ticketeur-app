@@ -125,7 +125,11 @@ export function AdminSidebar({
                     <motion.span
                       layoutId="admin-sidebar-indicator"
                       className="bg-primary/10 absolute inset-0 rounded-xl"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   ) : null}
                   <span className="relative flex items-center gap-3">

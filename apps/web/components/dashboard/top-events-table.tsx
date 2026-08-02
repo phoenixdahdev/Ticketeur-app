@@ -85,7 +85,8 @@ export function TopEventsTable() {
                       <div className="flex flex-col gap-1.5">
                         <div className="text-muted-foreground flex items-center justify-between text-xs">
                           <span>
-                            {formatNumber(ev.sold)} / {formatNumber(ev.total)} sold
+                            {formatNumber(ev.sold)} / {formatNumber(ev.total)}{' '}
+                            sold
                           </span>
                           <span className="text-foreground font-semibold">
                             {pct}%
@@ -153,7 +154,9 @@ export function TopEventsTable() {
                       <span>
                         {formatNumber(ev.sold)} / {formatNumber(ev.total)} sold
                       </span>
-                      <span className="text-foreground font-semibold">{pct}%</span>
+                      <span className="text-foreground font-semibold">
+                        {pct}%
+                      </span>
                     </div>
                     <div className="bg-muted relative h-1.5 w-full overflow-hidden rounded-full">
                       <div

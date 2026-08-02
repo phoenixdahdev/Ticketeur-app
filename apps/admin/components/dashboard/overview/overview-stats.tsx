@@ -22,9 +22,7 @@ function formatNaira(minor: number) {
 
 export function OverviewStats() {
   const trpc = useTRPC()
-  const { data, isLoading } = useQuery(
-    trpc.admin.overview.stats.queryOptions()
-  )
+  const { data, isLoading } = useQuery(trpc.admin.overview.stats.queryOptions())
 
   return (
     <section

@@ -27,9 +27,8 @@ export default function EventNotFound() {
           We couldn&apos;t find that event
         </h1>
         <p className="text-muted-foreground mx-auto max-w-md text-base leading-7">
-          The event you&apos;re looking for may have ended, been removed, or
-          the link could be wrong. Browse what&apos;s coming up next on
-          Ticketeur.
+          The event you&apos;re looking for may have ended, been removed, or the
+          link could be wrong. Browse what&apos;s coming up next on Ticketeur.
         </p>
       </div>
 

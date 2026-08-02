@@ -39,7 +39,10 @@ export const vendorReviews = pgTable(
   },
   (t) => [
     index('vendor_reviews_vendor_idx').on(t.vendorId),
-    unique('vendor_reviews_vendor_reviewer_unique').on(t.vendorId, t.reviewerId),
+    unique('vendor_reviews_vendor_reviewer_unique').on(
+      t.vendorId,
+      t.reviewerId
+    ),
     uniqueIndex('vendor_reviews_vendor_guest_email_unique')
       .on(t.vendorId, t.guestEmail)
       .where(sql`${t.reviewerId} is null`),

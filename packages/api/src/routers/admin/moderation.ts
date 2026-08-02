@@ -1,14 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  ne,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, count, desc, eq, ne, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { tasks } from '@trigger.dev/sdk'
 import { addDays, format } from 'date-fns'
@@ -176,42 +168,36 @@ export const adminModerationRouter = createTRPCRouter({
     }
 
     const items: Item[] = [
-      ...vendorRows.map(
-        (v): Item => ({
-          kind: 'vendor',
-          href: `/moderation/vendor/${v.id}`,
-          id: v.id,
-          title: v.businessName ?? v.name,
-          reasonLabel: 'Request:',
-          reasonValue: 'Vendor Approval',
-          imageUrl: v.image ?? null,
-          timestamp: v.createdAt.toISOString(),
-        })
-      ),
-      ...eventRows.map(
-        (e): Item => ({
-          kind: 'event',
-          href: `/moderation/event/${e.id}`,
-          id: e.id,
-          title: e.title,
-          reasonLabel: 'Request:',
-          reasonValue: 'Event Approval',
-          imageUrl: e.bannerUrl ?? null,
-          timestamp: e.createdAt.toISOString(),
-        })
-      ),
-      ...reportRows.map(
-        (r): Item => ({
-          kind: 'report',
-          href: '/moderation?tab=flagged',
-          id: r.id,
-          title: r.reason,
-          reasonLabel: 'Flagged for:',
-          reasonValue: r.detail || r.reason,
-          imageUrl: null,
-          timestamp: r.createdAt.toISOString(),
-        })
-      ),
+      ...vendorRows.map((v): Item => ({
+        kind: 'vendor',
+        href: `/moderation/vendor/${v.id}`,
+        id: v.id,
+        title: v.businessName ?? v.name,
+        reasonLabel: 'Request:',
+        reasonValue: 'Vendor Approval',
+        imageUrl: v.image ?? null,
+        timestamp: v.createdAt.toISOString(),
+      })),
+      ...eventRows.map((e): Item => ({
+        kind: 'event',
+        href: `/moderation/event/${e.id}`,
+        id: e.id,
+        title: e.title,
+        reasonLabel: 'Request:',
+        reasonValue: 'Event Approval',
+        imageUrl: e.bannerUrl ?? null,
+        timestamp: e.createdAt.toISOString(),
+      })),
+      ...reportRows.map((r): Item => ({
+        kind: 'report',
+        href: '/moderation?tab=flagged',
+        id: r.id,
+        title: r.reason,
+        reasonLabel: 'Flagged for:',
+        reasonValue: r.detail || r.reason,
+        imageUrl: null,
+        timestamp: r.createdAt.toISOString(),
+      })),
     ]
 
     items.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
@@ -264,10 +250,7 @@ export const adminModerationRouter = createTRPCRouter({
         showcase: (row.vendorShowcaseImages ?? []) as string[],
         registeredAt: row.createdAt.toISOString(),
         approvalStatus: (row.vendorApprovalStatus ?? null) as
-          | 'pending'
-          | 'approved'
-          | 'rejected'
-          | null,
+          'pending' | 'approved' | 'rejected' | null,
       }
     }),
 
@@ -341,8 +324,7 @@ export const adminModerationRouter = createTRPCRouter({
               image: organizer.image ?? null,
               joinedAt: organizer.createdAt.toISOString(),
               status: (organizer.banned ? 'suspended' : 'active') as
-                | 'active'
-                | 'suspended',
+                'active' | 'suspended',
             }
           : null,
         tiers: tierRows.map((t) => ({
@@ -353,9 +335,7 @@ export const adminModerationRouter = createTRPCRouter({
           total: t.quantity,
           price: t.priceMinor,
           status: (t.sold >= t.quantity ? 'sold-out' : 'active') as
-            | 'sold-out'
-            | 'active'
-            | 'early',
+            'sold-out' | 'active' | 'early',
         })),
         vendors: vendorRows.map((v) => ({
           id: v.id,
@@ -378,13 +358,7 @@ export const adminModerationRouter = createTRPCRouter({
           businessName: user.businessName,
         })
         .from(user)
-        .where(
-          and(
-            eq(user.id, input.id),
-            eq(user.role, 'vendor'),
-            NOT_ADMIN
-          )
-        )
+        .where(and(eq(user.id, input.id), eq(user.role, 'vendor'), NOT_ADMIN))
         .limit(1)
 
       if (!target) {
@@ -425,13 +399,7 @@ export const adminModerationRouter = createTRPCRouter({
           businessName: user.businessName,
         })
         .from(user)
-        .where(
-          and(
-            eq(user.id, input.id),
-            eq(user.role, 'vendor'),
-            NOT_ADMIN
-          )
-        )
+        .where(and(eq(user.id, input.id), eq(user.role, 'vendor'), NOT_ADMIN))
         .limit(1)
 
       if (!target) {

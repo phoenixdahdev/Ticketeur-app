@@ -27,9 +27,9 @@ export default function VendorNotFound() {
           We couldn&apos;t find that vendor
         </h1>
         <p className="text-muted-foreground mx-auto max-w-md text-base leading-7">
-          This vendor profile may have been removed, isn&apos;t verified yet,
-          or the link could be wrong. Browse the full directory to discover
-          others on Ticketeur.
+          This vendor profile may have been removed, isn&apos;t verified yet, or
+          the link could be wrong. Browse the full directory to discover others
+          on Ticketeur.
         </p>
       </div>
 

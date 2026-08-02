@@ -53,7 +53,7 @@ export function PreviewView({
   )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
       <header className="flex shrink-0 flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
           Review Event Details
@@ -74,7 +74,7 @@ export function PreviewView({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="bg-linear-to-br from-zinc-700 to-zinc-900 absolute inset-0" />
+              <div className="absolute inset-0 bg-linear-to-br from-zinc-700 to-zinc-900" />
             )}
           </div>
           <FieldRow label="Event Title" value={values.title || '—'} />

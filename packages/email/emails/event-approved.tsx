@@ -30,7 +30,9 @@ export default function EventApprovedEmail({
 }: Partial<EventApprovedEmailProps>) {
   return (
     <EmailContainer
-      preview={<Preview>{`${eventTitle} is now live on ${BRAND_NAME}`}</Preview>}
+      preview={
+        <Preview>{`${eventTitle} is now live on ${BRAND_NAME}`}</Preview>
+      }
     >
       <Container className="mx-auto my-0 max-w-150 px-10">
         <Heading className="m-0 mb-4 text-2xl font-bold text-gray-900">
@@ -42,8 +44,8 @@ export default function EventApprovedEmail({
         </Text>
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
-          Good news — <strong>{eventTitle}</strong> has been approved and is
-          now visible to attendees on {BRAND_NAME}.
+          Good news — <strong>{eventTitle}</strong> has been approved and is now
+          visible to attendees on {BRAND_NAME}.
         </Text>
 
         {eventDate || eventLocation ? (
@@ -87,10 +89,10 @@ export default function EventApprovedEmail({
           </Row>
         </Section>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           Cheers,
         </Text>
-        <Text className="m-0 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

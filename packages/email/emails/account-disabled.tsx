@@ -1,10 +1,4 @@
-import {
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text,
-} from 'react-email'
+import { Container, Heading, Preview, Section, Text } from 'react-email'
 
 import { BRAND_NAME, BRAND_NAME_UPPER } from '../components/brand'
 import EmailContainer from '../components/container'
@@ -49,7 +43,7 @@ export default function AccountDisabledEmail({
           team will review your case.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Trust &amp; Safety Team
         </Text>
       </Container>

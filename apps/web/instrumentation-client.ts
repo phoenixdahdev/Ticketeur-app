@@ -30,7 +30,10 @@ export function onRouterTransitionStart(
   }
 }
 
-function reportClientError(error: unknown, source: 'error' | 'unhandledrejection') {
+function reportClientError(
+  error: unknown,
+  source: 'error' | 'unhandledrejection'
+) {
   // Replace with a remote sink when one is wired up.
   console.error(`[web] client ${source}`, error)
 }

@@ -1,10 +1,4 @@
-import {
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text,
-} from 'react-email'
+import { Container, Heading, Preview, Section, Text } from 'react-email'
 
 import { BRAND_NAME, BRAND_NAME_UPPER } from '../components/brand'
 import EmailContainer from '../components/container'
@@ -23,7 +17,9 @@ export default function EventRejectedEmail({
   return (
     <EmailContainer
       preview={
-        <Preview>{eventTitle} wasn&apos;t approved on {BRAND_NAME}</Preview>
+        <Preview>
+          {eventTitle} wasn&apos;t approved on {BRAND_NAME}
+        </Preview>
       }
     >
       <Container className="mx-auto my-0 max-w-150 px-10">
@@ -37,8 +33,8 @@ export default function EventRejectedEmail({
 
         <Text className="m-0 mb-4 text-base leading-6 text-gray-700">
           We reviewed <strong>{eventTitle}</strong> and we&apos;re unable to
-          publish it on {BRAND_NAME} as submitted. The event has been moved
-          back to drafts so you can update and resubmit it.
+          publish it on {BRAND_NAME} as submitted. The event has been moved back
+          to drafts so you can update and resubmit it.
         </Text>
 
         {reason ? (
@@ -54,7 +50,7 @@ export default function EventRejectedEmail({
           again for review.
         </Text>
 
-        <Text className="m-0 mt-6 text-base font-semibold leading-6 text-gray-800">
+        <Text className="m-0 mt-6 text-base leading-6 font-semibold text-gray-800">
           The {BRAND_NAME_UPPER} Team
         </Text>
       </Container>

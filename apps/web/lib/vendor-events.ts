@@ -53,7 +53,13 @@ function mk(
   }
 }
 
-const FEATURE_DEFAULTS = ['Live DJ Sets', 'Laser Show', 'Open VIP Bar', 'Mascots', 'Games']
+const FEATURE_DEFAULTS = [
+  'Live DJ Sets',
+  'Laser Show',
+  'Open VIP Bar',
+  'Mascots',
+  'Games',
+]
 
 export const VENDOR_EVENTS: VendorEvent[] = [
   mk(
@@ -92,7 +98,7 @@ export const VENDOR_EVENTS: VendorEvent[] = [
     'ART',
     'upcoming',
     '/vendor/event-art.jpg',
-    "Visual artists from across the continent showcase original work and limited prints. Live painting demos throughout the day.",
+    'Visual artists from across the continent showcase original work and limited prints. Live painting demos throughout the day.',
     FEATURE_DEFAULTS
   ),
   mk(

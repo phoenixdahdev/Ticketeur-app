@@ -5,10 +5,7 @@ import Image from 'next/image'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  Tick02Icon,
-  CancelCircleIcon,
-} from '@hugeicons/core-free-icons'
+import { Tick02Icon, CancelCircleIcon } from '@hugeicons/core-free-icons'
 
 import type { RouterOutputs } from '@ticketur/api'
 
@@ -104,7 +101,7 @@ export function ModerationEventsTable({
   return (
     <div className="flex flex-col gap-4">
       <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-        <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
           <table className="w-full min-w-[760px] table-auto">
             <thead className="bg-primary/5">
               <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">

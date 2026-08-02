@@ -79,7 +79,11 @@ export default async function CheckoutReturnPage({
   redirect(`/tickets/${order.id}`)
 }
 
-function FailedScreen({ reason }: { reason: 'cancelled' | 'failed' | 'missing' }) {
+function FailedScreen({
+  reason,
+}: {
+  reason: 'cancelled' | 'failed' | 'missing'
+}) {
   const message =
     reason === 'cancelled'
       ? 'Looks like you cancelled the payment. No charge was made.'

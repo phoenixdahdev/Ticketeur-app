@@ -155,9 +155,7 @@ export function VendorDetailView({ user }: { user: VendorDetail }) {
         <LinkCard
           label="Instagram Link"
           value={user.instagramUrl}
-          href={
-            user.instagramUrl ? `https://${user.instagramUrl}` : null
-          }
+          href={user.instagramUrl ? `https://${user.instagramUrl}` : null}
         />
         <LinkCard
           label="Website Link"
@@ -212,7 +210,7 @@ export function VendorDetailView({ user }: { user: VendorDetail }) {
         </div>
 
         <div className="border-border/60 bg-background overflow-hidden rounded-2xl border">
-          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="[scrollbar-width:none] overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <table className="w-full min-w-[600px] table-auto">
               <thead className="bg-primary/5">
                 <tr className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">

@@ -30,13 +30,13 @@ export function EventDetailSkeleton() {
       {/* Tab strip + content */}
       <section className="w-full px-5 md:px-10">
         <div className="mx-auto max-w-[1440px] pt-10 pb-6 md:pt-16 md:pb-10">
-          <div className="border-b border-[#c6c6c6] flex gap-6 md:gap-8 pb-4">
+          <div className="flex gap-6 border-b border-[#c6c6c6] pb-4 md:gap-8">
             <div className="bg-muted h-5 w-16 animate-pulse rounded" />
             <div className="bg-muted h-5 w-16 animate-pulse rounded" />
             <div className="bg-muted h-5 w-16 animate-pulse rounded" />
           </div>
 
-          <div className="pt-8 md:pt-10 flex flex-col gap-8">
+          <div className="flex flex-col gap-8 pt-8 md:pt-10">
             <div className="flex flex-col gap-3">
               <div className="bg-muted h-7 w-48 animate-pulse rounded-md" />
               <div className="bg-muted h-4 w-full animate-pulse rounded" />
@@ -61,7 +61,10 @@ export function EventDetailSkeleton() {
           <div className="bg-muted mb-6 h-7 w-44 animate-pulse rounded-md" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-muted h-72 animate-pulse rounded-2xl" />
+              <div
+                key={i}
+                className="bg-muted h-72 animate-pulse rounded-2xl"
+              />
             ))}
           </div>
         </div>
