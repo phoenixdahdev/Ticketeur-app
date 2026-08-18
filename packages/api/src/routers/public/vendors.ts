@@ -78,7 +78,15 @@ export const publicVendorsRouter = createTRPCRouter({
       .from(user)
       .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
       .where(and(...filters))
-      .orderBy(asc(user.businessName))
+      // Highest-rated first. `NULLS LAST` keeps unreviewed vendors from
+      // floating to the top on DESC (Postgres puts NULLs first by default).
+      // Review count breaks rating ties (more evidence = higher confidence),
+      // then name for stable ordering across identical scores.
+      .orderBy(
+        sql`${ratingAgg.avgRating} desc nulls last`,
+        sql`${ratingAgg.reviewCount} desc nulls last`,
+        asc(user.businessName)
+      )
       .limit(input.pageSize)
       .offset((input.page - 1) * input.pageSize)
 
