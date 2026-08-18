@@ -17,6 +17,7 @@ import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
 import type { EventStatus } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
+import { NOT_DRAFT } from '../../lib/predicates'
 
 const TABS = ['all', 'published', 'archived', 'flagged'] as const
 const SORT_FIELDS = ['date', 'sales', 'name'] as const
@@ -34,7 +35,6 @@ const listSchema = z.object({
 // Drafts are organizer-only; they shouldn't surface in the admin list.
 // We also currently treat "flagged" as a placeholder until the report
 // table lands during the moderation pass.
-const NOT_DRAFT = ne(events.status, 'draft')
 
 function makeReference(id: string) {
   return `#${id.slice(0, 8).toUpperCase()}`

@@ -19,7 +19,6 @@ import { addDays, format } from 'date-fns'
 import {
   events,
   eventVendors,
-  orderItems,
   orders,
   session,
   ticketTiers,
@@ -27,6 +26,7 @@ import {
 } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
+import { NOT_ADMIN, tierSummarySql } from '../../lib/predicates'
 
 const ROLE_TABS = ['all', 'attendee', 'organizer', 'vendor'] as const
 const SORT_FIELDS = ['name', 'role', 'joined', 'status'] as const
@@ -76,7 +76,6 @@ function deriveStatus(
 
 // Always exclude admins from results — admin app should not surface
 // platform admins to itself.
-const NOT_ADMIN = ne(user.role, 'admin')
 
 // Selects an actionable target: not an admin, not the caller themselves.
 async function findActionTarget(
@@ -235,7 +234,7 @@ export const adminUsersRouter = createTRPCRouter({
             date: orders.paidAt,
             createdAt: orders.createdAt,
             // Comma-joined tier names — an order can span several tiers.
-            tier: sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`,
+            tier: tierSummarySql,
             qty: orders.quantity,
             amount: orders.totalMinor,
             thumbnailUrl: events.bannerUrl,

@@ -4,19 +4,8 @@ import { z } from 'zod'
 import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
+import { notCurrentlyBanned, stillRunning } from '../../lib/predicates'
 
-// Active bans hide the user. Permanent bans (banExpires null) and unexpired
-// temp bans hide; expired temp bans fall through. Mirrors the vendor router
-// filter so banned organizers/vendors stop appearing on public surfaces.
-const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires} IS NOT NULL AND ${user.banExpires} < NOW()))`
-
-// Multi-day events stay visible while in progress: an event is "still
-// happening" if its end_date (or event_date for single-day) is today or
-// later. Caller passes an ISO YYYY-MM-DD `today`.
-function stillRunning(today: string) {
-  // A TBD event (null date) is treated as upcoming — keep it visible.
-  return sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
-}
 
 const listInput = z.object({
   q: z.string().default(''),

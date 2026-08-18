@@ -11,12 +11,12 @@ import {
   ticketTiers,
   user,
 } from '@ticketur/db'
-import { env } from '@ticketur/env/core'
 
 import { createTRPCRouter, organizerProcedure } from '../trpc'
 import { newId } from '../lib/ids'
 import { generateUniqueEventSlug } from '../lib/slug'
 import { logActivity } from '../lib/activity'
+import { getBaseUrl } from '../lib/base-url'
 
 const eventStatusEnum = z.enum(['draft', 'in-review', 'upcoming', 'archived'])
 
@@ -246,10 +246,7 @@ export const eventsRouter = createTRPCRouter({
       // Fire invite emails outside the transaction. Failures here must not
       // roll back the event creation — the organizer can resend invites later.
       if (input.externalInvites.length > 0) {
-        const baseUrl =
-          env.BETTER_AUTH_URL ??
-          process.env.NEXT_PUBLIC_APP_URL ??
-          'http://localhost:3000'
+        const baseUrl = getBaseUrl()
 
         for (const inv of input.externalInvites) {
           const signupUrl = `${baseUrl}/signup?role=vendor&invite=vendor&email=${encodeURIComponent(inv.email)}`

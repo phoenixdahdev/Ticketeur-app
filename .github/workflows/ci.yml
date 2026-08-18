@@ -1,0 +1,56 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref so a new push doesn't wait behind stale ones.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.x"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Typecheck needs no runtime config — it never executes module-scope code.
+      # The two Next apps generate their route types first (see each app's
+      # `typecheck` script), which is what makes `PageProps`/`LayoutProps` resolve.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # `next build` runs module-scope code — including the Drizzle client's
+      # `postgres(DATABASE_URL)` call — so these must be present. They are
+      # throwaway placeholders, never real credentials: the build never opens a
+      # DB connection or calls any third-party API. Real values live in the
+      # deploy environment, not here.
+      - name: Build
+        run: pnpm build
+        env:
+          DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+          BETTER_AUTH_SECRET: "ci_placeholder_secret_min_32_chars_long_xxxxx"
+          BETTER_AUTH_URL: "http://localhost:3000"
+          BETTER_AUTH_API_KEY: "ci_placeholder"
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+          RESEND_API_KEY: "re_ci_placeholder"
+          TRIGGER_PROJECT_ID: "proj_ci_placeholder"
+          TRIGGER_SECRET_KEY: "tr_ci_placeholder"

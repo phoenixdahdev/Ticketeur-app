@@ -25,7 +25,7 @@ import {
 import { cn } from '@ticketur/ui/lib/utils'
 import { Button } from '@ticketur/ui/components/button'
 import { Input } from '@ticketur/ui/components/input'
-import { MarkdownEditor } from '@ticketur/ui/components/markdown-editor'
+import dynamic from 'next/dynamic'
 import { Calendar } from '@ticketur/ui/components/calendar'
 import {
   Popover,
@@ -58,6 +58,22 @@ import {
   type ExternalVendorValues,
   type RegisteredVendor,
 } from '@/lib/create-event-schema'
+
+// Lazy-load the markdown editor: it pulls in tiptap + lowlight + tippy, which
+// only organizers creating/editing an event ever need. Keeps that weight out
+// of the initial bundle. ssr:false is safe — this is a client-only form.
+const MarkdownEditor = dynamic(
+  () =>
+    import('@ticketur/ui/components/markdown-editor').then(
+      (m) => m.MarkdownEditor
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="border-input bg-muted/30 h-40 w-full animate-pulse rounded-md border" />
+    ),
+  }
+)
 
 export function FormView({
   values,

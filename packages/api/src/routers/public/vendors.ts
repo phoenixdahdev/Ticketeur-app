@@ -11,13 +11,7 @@ import {
 } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
-
-// A user is hidden from public surfaces only while an active ban applies.
-// Permanent bans (banExpires is null) and unexpired temp bans both hide;
-// already-expired temp bans fall through so vendors reappear automatically
-// without waiting for them to sign in (Better Auth lazily clears those on
-// the next session.create.before hook).
-const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires} IS NOT NULL AND ${user.banExpires} < NOW()))`
+import { notCurrentlyBanned } from '../../lib/predicates'
 
 const listInput = z.object({
   q: z.string().default(''),
@@ -84,7 +78,15 @@ export const publicVendorsRouter = createTRPCRouter({
       .from(user)
       .leftJoin(ratingAgg, eq(ratingAgg.vendorId, user.id))
       .where(and(...filters))
-      .orderBy(asc(user.businessName))
+      // Highest-rated first. `NULLS LAST` keeps unreviewed vendors from
+      // floating to the top on DESC (Postgres puts NULLs first by default).
+      // Review count breaks rating ties (more evidence = higher confidence),
+      // then name for stable ordering across identical scores.
+      .orderBy(
+        sql`${ratingAgg.avgRating} desc nulls last`,
+        sql`${ratingAgg.reviewCount} desc nulls last`,
+        asc(user.businessName)
+      )
       .limit(input.pageSize)
       .offset((input.page - 1) * input.pageSize)
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getBaseUrl } from '@ticketur/api/lib/base-url'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
@@ -7,7 +8,7 @@ import { Button } from '@ticketur/ui/components/button'
 import { db, orders } from '@ticketur/db'
 import { verifyTransaction } from '@ticketur/api/lib/flutterwave'
 
-import { fulfillOrder, notifyOrderFulfilled } from '@/lib/orders'
+import { fulfillOrder, notifyOrderFulfilled } from '@ticketur/api/lib/orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,10 +65,7 @@ export default async function CheckoutReturnPage({
           flwTransactionId: String(tx.id),
         })
         if (result?.justFulfilled) {
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL ??
-            process.env.BETTER_AUTH_URL ??
-            'http://localhost:3000'
+          const baseUrl = getBaseUrl()
           await notifyOrderFulfilled({ orderId: order.id, baseUrl })
         }
       } catch {

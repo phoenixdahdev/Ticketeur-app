@@ -1,8 +1,5 @@
-import { randomUUID } from 'node:crypto'
-
 import { TRPCError } from '@trpc/server'
 import { tasks } from '@trigger.dev/sdk'
-import { format } from 'date-fns'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -11,15 +8,16 @@ import {
   orders,
   orderItems,
   ticketTiers,
-  tickets,
   user,
 } from '@ticketur/db'
-import { env } from '@ticketur/env/core'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 import { newId } from '../../lib/ids'
+import { getBaseUrl } from '../../lib/base-url'
+import { formatEventDateRange } from '../../lib/dates'
 import { createPayment } from '../../lib/flutterwave'
 import { generateAndStoreTicketsPdf } from '../../lib/tickets-pdf'
+import { mintOrderTickets, TicketStockError } from '../../lib/orders'
 import { calculateFeeMinor } from '../../lib/fees'
 
 // A cart is one or more tier lines. The buyer can mix tiers (e.g. a free
@@ -41,24 +39,9 @@ const startInput = z.object({
   buyerPhone: z.string().trim().min(7, 'Phone required'),
 })
 
-function formatEventDate(start: string | null, end: string | null) {
-  if (!start) return 'TBD'
-  const startDate = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(startDate.getTime())) return start
-  const startStr = format(startDate, 'MMMM d, yyyy')
-  if (!end || end === start) return startStr
-  const endDate = new Date(`${end}T00:00:00`)
-  if (Number.isNaN(endDate.getTime())) return startStr
-  // Cross-year is rare for tickets; one safe format covers all cases.
-  return `${startStr} – ${format(endDate, 'MMMM d, yyyy')}`
-}
-
 export const publicCheckoutRouter = createTRPCRouter({
   start: publicProcedure.input(startInput).mutation(async ({ ctx, input }) => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ??
-      env.BETTER_AUTH_URL ??
-      'http://localhost:3000'
+    const baseUrl = getBaseUrl()
 
     // Collapse duplicate tier lines so each tier appears at most once.
     const mergedQty = new Map<string, number>()
@@ -191,44 +174,28 @@ export const publicCheckoutRouter = createTRPCRouter({
       )
 
       if (isFree) {
-        // Per line: bump tier.sold atomically with a conditional update —
-        // guards against two simultaneous free claims racing past the cap —
-        // then mint one ticket row per unit.
-        const ticketRows: {
-          id: string
-          orderId: string
-          eventId: string
-          tierId: string
-          code: string
-        }[] = []
-        for (const l of lines) {
-          const updated = await tx
-            .update(ticketTiers)
-            .set({ sold: sql`${ticketTiers.sold} + ${l.quantity}` })
-            .where(
-              and(
-                eq(ticketTiers.id, l.tier.id),
-                sql`${ticketTiers.sold} + ${l.quantity} <= ${ticketTiers.quantity}`
-              )
-            )
-            .returning({ id: ticketTiers.id })
-          if (updated.length === 0) {
+        // Mint immediately — no payment step. Same guarded path as paid
+        // fulfillment (see mintOrderTickets); a sold-out tier surfaces as a
+        // CONFLICT the buyer can retry.
+        try {
+          await mintOrderTickets(tx, {
+            orderId,
+            eventId: event.id,
+            lines: lines.map((l) => ({
+              tierId: l.tier.id,
+              quantity: l.quantity,
+              tierName: l.tier.name,
+            })),
+          })
+        } catch (err) {
+          if (err instanceof TicketStockError) {
             throw new TRPCError({
               code: 'CONFLICT',
-              message: `${l.tier.name} just sold out — please try again.`,
+              message: `${err.tierName ?? 'A ticket tier'} just sold out — please try again.`,
             })
           }
-          for (let i = 0; i < l.quantity; i += 1) {
-            ticketRows.push({
-              id: `tkt_${randomUUID()}`,
-              orderId,
-              eventId: event.id,
-              tierId: l.tier.id,
-              code: randomUUID().replace(/-/g, ''),
-            })
-          }
+          throw err
         }
-        await tx.insert(tickets).values(ticketRows)
       }
 
       return {
@@ -268,7 +235,7 @@ export const publicCheckoutRouter = createTRPCRouter({
         email: input.buyerEmail,
         firstName,
         eventTitle: result.eventTitle,
-        eventDate: formatEventDate(result.eventDate, result.endDate),
+        eventDate: formatEventDateRange(result.eventDate, result.endDate),
         eventTime: result.eventTime,
         eventLocation: result.eventLocation,
         ticketTier: summaryLabel,

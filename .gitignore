@@ -44,3 +44,4 @@ npm-debug.log*
 .react-email
 docs
 next-env.d.ts
+.env*
