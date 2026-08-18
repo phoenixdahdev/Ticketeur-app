@@ -16,9 +16,9 @@
     "@ticketur/auth": "workspace:*",
     "@ticketur/db": "workspace:*",
     "@ticketur/env": "workspace:*",
-    "@trigger.dev/sdk": "4.5.9",
+    "@trigger.dev/sdk": "4.5.11",
     "@trpc/server": "^11.18.0",
-    "@vercel/blob": "^2.6.1",
+    "@vercel/blob": "^2.8.0",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "pdfkit": "^0.19.1",
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@ticketur/eslint-config": "workspace:*",
     "@ticketur/typescript-config": "workspace:*",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/pdfkit": "^0.17.6",
     "@types/qrcode": "^1.5.6",
     "typescript": "^6.0.3"
