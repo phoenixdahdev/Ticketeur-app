@@ -8,7 +8,7 @@ import {
   verifyTransaction,
 } from '@ticketur/api/lib/flutterwave'
 
-import { fulfillOrder, notifyOrderFulfilled } from '@/lib/orders'
+import { fulfillOrder, notifyOrderFulfilled } from '@ticketur/api/lib/orders'
 
 export const dynamic = 'force-dynamic'
 

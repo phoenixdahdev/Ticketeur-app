@@ -25,7 +25,7 @@ import {
   loadOrderItems,
   loadTicketsForOrder,
   ticketUrl,
-} from '@/lib/orders'
+} from '@ticketur/api/lib/orders'
 import { formatEventDate, formatNaira } from '@/lib/event-display'
 
 export const dynamic = 'force-dynamic'
