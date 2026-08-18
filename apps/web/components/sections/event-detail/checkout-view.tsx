@@ -1,16 +1,14 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { motion } from 'motion/react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowRight01Icon,
-  CheckmarkCircle02Icon,
   InformationCircleIcon,
   Shield01Icon,
-  Tag01Icon,
   UserIcon,
 } from '@hugeicons/core-free-icons'
 
@@ -22,6 +20,8 @@ import { calculateFeeMinor } from '@ticketur/api/lib/fees'
 
 import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
+import { useVoucher } from '@/components/sections/event-detail/use-voucher'
+import { VoucherField } from '@/components/sections/event-detail/voucher-field'
 import { useTRPC } from '@/lib/trpc'
 import { useSession } from '@/lib/auth-client'
 
@@ -49,15 +49,6 @@ export function CheckoutView({
   }>({})
   const [, startTransition] = useTransition()
 
-  // Voucher state. `applied` holds the server-validated discount; we clear it
-  // whenever the cart changes so a stale discount can't linger.
-  const [voucherOpen, setVoucherOpen] = useState(false)
-  const [voucherInput, setVoucherInput] = useState('')
-  const [applied, setApplied] = useState<{
-    code: string
-    discountMinor: number
-  } | null>(null)
-
   const selected = tiers.filter((t) => (quantities[t.id] ?? 0) > 0)
   const subtotal = selected.reduce(
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
@@ -67,9 +58,8 @@ export function CheckoutView({
   // All money math in minor units, mirroring the server: discount comes off the
   // subtotal, the fee is charged on the discounted subtotal, total is the sum.
   const subtotalMinor = Math.round(subtotal * 100)
-  const discountMinor = applied
-    ? Math.min(applied.discountMinor, subtotalMinor)
-    : 0
+  const voucher = useVoucher(event.id, subtotalMinor)
+  const discountMinor = voucher.discountMinor
   const discountedMinor = Math.max(0, subtotalMinor - discountMinor)
   const feeMinor = calculateFeeMinor(discountedMinor)
   const totalMinor = discountedMinor + feeMinor
@@ -77,51 +67,6 @@ export function CheckoutView({
   const discount = discountMinor / 100
   const total = totalMinor / 100
   const isFree = totalMinor === 0 && selected.length > 0
-
-  // Reset an applied voucher if the cart (and thus subtotal) changes.
-  useEffect(() => {
-    setApplied(null)
-  }, [subtotalMinor])
-
-  const validateVoucher = useMutation(
-    trpc.public.vouchers.validate.mutationOptions({
-      onSuccess: (res) => {
-        if (res.ok) {
-          setApplied({ code: res.code, discountMinor: res.discountMinor })
-          setVoucherOpen(false)
-          toast.success(`Voucher ${res.code} applied`)
-        } else {
-          const message =
-            res.reason === 'expired'
-              ? 'This voucher has expired.'
-              : res.reason === 'maxed'
-                ? 'This voucher has reached its redemption limit.'
-                : res.reason === 'not_started'
-                  ? 'This voucher is not active yet.'
-                  : res.reason === 'inactive'
-                    ? 'This voucher is no longer active.'
-                    : 'That code is not valid for this event.'
-          toast.error('Voucher not applied', { description: message })
-        }
-      },
-      onError: (err) =>
-        toast.error('Could not check that voucher', {
-          description: err.message,
-        }),
-    })
-  )
-
-  function onApplyVoucher() {
-    const code = voucherInput.trim()
-    if (!code) return
-    validateVoucher.mutate({ eventId: event.id, code, subtotalMinor })
-  }
-
-  function removeVoucher() {
-    setApplied(null)
-    setVoucherInput('')
-    setVoucherOpen(false)
-  }
 
   const start = useMutation(
     trpc.public.checkout.start.mutationOptions({
@@ -180,7 +125,7 @@ export function CheckoutView({
         buyerName: form.name.trim(),
         buyerEmail: form.email.trim(),
         buyerPhone: form.phone.trim(),
-        ...(applied ? { voucherCode: applied.code } : {}),
+        ...(voucher.code ? { voucherCode: voucher.code } : {}),
       })
     })
   }
@@ -383,69 +328,11 @@ export function CheckoutView({
 
           {selected.length > 0 && subtotal > 0 ? (
             <div className="border-border border-t pt-4">
-              {applied ? (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/40 dark:bg-emerald-500/15">
-                  <div className="flex items-center gap-2">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle02Icon}
-                      className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-                      strokeWidth={2}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
-                        Voucher {applied.code} applied!
-                      </span>
-                      <span className="text-xs text-emerald-900/80 dark:text-emerald-200/80">
-                        You saved ₦{discount.toLocaleString()} 🎉
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeVoucher}
-                    className="text-destructive text-xs font-semibold hover:underline"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : voucherOpen ? (
-                <div className="flex items-start gap-2">
-                  <Input
-                    value={voucherInput}
-                    onChange={(e) => setVoucherInput(e.target.value)}
-                    placeholder="Voucher code"
-                    aria-label="Voucher code"
-                    disabled={validateVoucher.isPending || submitting}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        onApplyVoucher()
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onApplyVoucher}
-                    disabled={!voucherInput.trim() || validateVoucher.isPending}
-                  >
-                    {validateVoucher.isPending ? 'Checking…' : 'Apply'}
-                  </Button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setVoucherOpen(true)}
-                  className="text-primary hover:text-primary-hover inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
-                >
-                  <HugeiconsIcon
-                    icon={Tag01Icon}
-                    className="size-4"
-                    strokeWidth={1.8}
-                  />
-                  Have a voucher?
-                </button>
-              )}
+              <VoucherField
+                voucher={voucher}
+                discount={discount}
+                disabled={submitting}
+              />
             </div>
           ) : null}
 
@@ -453,7 +340,7 @@ export function CheckoutView({
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
             {discount > 0 ? (
               <Row
-                label={`Discount (${applied?.code})`}
+                label={`Discount (${voucher.code})`}
                 value={`−₦${discount.toLocaleString()}.00`}
                 valueClassName="text-emerald-600 dark:text-emerald-400"
               />
