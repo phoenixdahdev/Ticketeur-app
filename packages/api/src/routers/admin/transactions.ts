@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server'
 import { events, orderItems, orders, user } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
+import { PAID, tierSummarySql } from '../../lib/predicates'
 
 const SORT_FIELDS = ['date', 'amount', 'fee'] as const
 const DIR_VALUES = ['asc', 'desc'] as const
@@ -16,12 +17,6 @@ const listSchema = z.object({
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().positive().max(100).default(10),
 })
-
-// Only paid orders count as transactions in the admin view.
-const PAID = eq(orders.status, 'paid')
-
-// Comma-joined tier names for an order (an order can span several tiers).
-const tierSummarySql = sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`
 
 function makeReference(id: string) {
   return `TXN-${id.slice(0, 8).toUpperCase()}`

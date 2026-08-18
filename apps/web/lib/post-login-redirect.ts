@@ -5,7 +5,10 @@ export function getPostLoginPath(role: string | null | undefined): string {
     case 'vendor':
       return '/vendor/dashboard'
     case 'admin':
-      return '/admin/dashboard'
+      // The admin dashboard is a separate app (its own deploy). There is no
+      // admin area in the web app, so send admins to the public home instead
+      // of a route that 404s here.
+      return '/'
     default:
       return '/'
   }

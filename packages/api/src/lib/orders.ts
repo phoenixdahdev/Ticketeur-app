@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 import { and, asc, eq, sql } from 'drizzle-orm'
 import { tasks } from '@trigger.dev/sdk'
 
@@ -10,16 +12,77 @@ import {
   tickets,
 } from '@ticketur/db'
 
-import { formatEventDate } from '@/lib/event-display'
+import { formatEventDateRange } from './dates'
+import { generateAndStoreTicketsPdf, ticketUrl } from './tickets-pdf'
 
-// PDF generation lives in the api package so both the FW webhook (paid) and
-// the public.checkout.start mutation (free) can reach it.
-export {
-  generateAndStoreTicketsPdf,
-  ticketUrl,
-} from '@ticketur/api/lib/tickets-pdf'
+// Re-exported so callers get the whole order/fulfillment surface from one
+// module (the PDF helpers live in tickets-pdf for import-cycle reasons).
+export { generateAndStoreTicketsPdf, ticketUrl }
 
-import { generateAndStoreTicketsPdf as _genPdf } from '@ticketur/api/lib/tickets-pdf'
+// The tier ran out of stock between checkout and minting. Thrown by
+// mintOrderTickets so each caller can react in its own way (checkout surfaces
+// a CONFLICT to the buyer; fulfillment marks the order failed).
+export class TicketStockError extends Error {
+  constructor(public readonly tierName?: string) {
+    super('Ticket stock no longer available')
+    this.name = 'TicketStockError'
+  }
+}
+
+// The tx handle drizzle hands to `db.transaction(async (tx) => …)`.
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+// The one guarded ticket-minting path, shared by the free checkout flow and
+// paid fulfillment. For each line it bumps tier.sold with a conditional update
+// (`sold + qty <= quantity`) so two concurrent claims can't oversell — a zero-
+// row result means the tier just sold out — then mints one ticket row per unit.
+// Must run inside a transaction so the sold-bump and the ticket rows commit
+// together with the caller's other writes.
+export async function mintOrderTickets(
+  tx: DbTransaction,
+  args: {
+    orderId: string
+    eventId: string
+    lines: { tierId: string; quantity: number; tierName?: string }[]
+  }
+): Promise<void> {
+  const ticketRows: {
+    id: string
+    orderId: string
+    eventId: string
+    tierId: string
+    code: string
+  }[] = []
+
+  for (const line of args.lines) {
+    const updated = await tx
+      .update(ticketTiers)
+      .set({ sold: sql`${ticketTiers.sold} + ${line.quantity}` })
+      .where(
+        and(
+          eq(ticketTiers.id, line.tierId),
+          sql`${ticketTiers.sold} + ${line.quantity} <= ${ticketTiers.quantity}`
+        )
+      )
+      .returning({ id: ticketTiers.id })
+    if (updated.length === 0) {
+      throw new TicketStockError(line.tierName)
+    }
+    for (let i = 0; i < line.quantity; i += 1) {
+      ticketRows.push({
+        id: `tkt_${randomUUID()}`,
+        orderId: args.orderId,
+        eventId: args.eventId,
+        tierId: line.tierId,
+        code: randomUUID().replace(/-/g, ''),
+      })
+    }
+  }
+
+  if (ticketRows.length > 0) {
+    await tx.insert(tickets).values(ticketRows)
+  }
+}
 
 export type OrderWithDetails = NonNullable<
   Awaited<ReturnType<typeof loadOrderById>>
@@ -115,28 +178,14 @@ export async function fulfillOrder({
       .from(orderItems)
       .where(eq(orderItems.orderId, order.id))
 
-    // For each tier line: bump tier.sold and confirm we still have stock,
-    // then mint one ticket row per unit with that line's tier.
-    const ticketRows: {
-      id: string
-      orderId: string
-      eventId: string
-      tierId: string
-      code: string
-    }[] = []
-    for (const item of items) {
-      const updated = await tx
-        .update(ticketTiers)
-        .set({ sold: sql`${ticketTiers.sold} + ${item.quantity}` })
-        .where(
-          and(
-            eq(ticketTiers.id, item.tierId),
-            sql`${ticketTiers.sold} + ${item.quantity} <= ${ticketTiers.quantity}`
-          )
-        )
-        .returning({ id: ticketTiers.id })
-
-      if (updated.length === 0) {
+    try {
+      await mintOrderTickets(tx, {
+        orderId: order.id,
+        eventId: order.eventId,
+        lines: items,
+      })
+    } catch (err) {
+      if (err instanceof TicketStockError) {
         // Stock disappeared between checkout and fulfillment. Mark failed.
         await tx
           .update(orders)
@@ -146,20 +195,7 @@ export async function fulfillOrder({
           'Stock no longer available for one of the selected tiers'
         )
       }
-
-      for (let i = 0; i < item.quantity; i += 1) {
-        ticketRows.push({
-          id: `tkt_${crypto.randomUUID()}`,
-          orderId: order.id,
-          eventId: order.eventId,
-          tierId: item.tierId,
-          code: crypto.randomUUID().replace(/-/g, ''),
-        })
-      }
-    }
-
-    if (ticketRows.length > 0) {
-      await tx.insert(tickets).values(ticketRows)
+      throw err
     }
 
     const paidAt = new Date()
@@ -203,7 +239,7 @@ export async function notifyOrderFulfilled({
 
   let pdfUrl: string | null = null
   try {
-    pdfUrl = await _genPdf({ orderId, baseUrl })
+    pdfUrl = await generateAndStoreTicketsPdf({ orderId, baseUrl })
   } catch (err) {
     console.error('PDF generation failed', err)
   }
@@ -220,7 +256,7 @@ export async function notifyOrderFulfilled({
     email: head.order.buyerEmail,
     firstName,
     eventTitle: head.event.title,
-    eventDate: formatEventDate(head.event.eventDate, head.event.endDate),
+    eventDate: formatEventDateRange(head.event.eventDate, head.event.endDate),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
     ticketTier: summaryLabel || 'Ticket',

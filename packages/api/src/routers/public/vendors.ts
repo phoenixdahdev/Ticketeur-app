@@ -11,13 +11,7 @@ import {
 } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
-
-// A user is hidden from public surfaces only while an active ban applies.
-// Permanent bans (banExpires is null) and unexpired temp bans both hide;
-// already-expired temp bans fall through so vendors reappear automatically
-// without waiting for them to sign in (Better Auth lazily clears those on
-// the next session.create.before hook).
-const notCurrentlyBanned = sql`(${user.banned} IS NOT TRUE OR (${user.banExpires} IS NOT NULL AND ${user.banExpires} < NOW()))`
+import { notCurrentlyBanned } from '../../lib/predicates'
 
 const listInput = z.object({
   q: z.string().default(''),

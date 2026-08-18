@@ -1,17 +1,16 @@
-import { and, count, desc, eq, ne, sql } from 'drizzle-orm'
+import { count, desc, eq, sql } from 'drizzle-orm'
 
 import { events, orders, reports, user } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
+import {
+  NOT_ADMIN,
+  NOT_DRAFT,
+  VENDOR_PENDING,
+  EVENT_PENDING,
+  REPORT_OPEN,
+} from '../../lib/predicates'
 
-const NOT_ADMIN = ne(user.role, 'admin')
-const NOT_DRAFT = ne(events.status, 'draft')
-const VENDOR_PENDING = and(
-  eq(user.role, 'vendor'),
-  eq(user.vendorApprovalStatus, 'pending')
-)
-const EVENT_PENDING = eq(events.status, 'in-review')
-const REPORT_OPEN = eq(reports.status, 'open')
 
 export const adminOverviewRouter = createTRPCRouter({
   // One round-trip for the four cards on the overview page.

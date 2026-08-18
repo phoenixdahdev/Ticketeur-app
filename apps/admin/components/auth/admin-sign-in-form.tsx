@@ -58,6 +58,19 @@ export function AdminSignInForm() {
         return
       }
 
+      // This app is admin-only. If a valid non-admin account signs in, drop the
+      // session again and explain — the proxy would otherwise bounce them
+      // straight back to this page with no reason shown.
+      const role = (result as { user?: { role?: string | null } } | null)?.user
+        ?.role
+      if (role !== 'admin') {
+        await authClient.signOut()
+        toast.error('Not an admin account', {
+          description: 'This dashboard is for platform administrators only.',
+        })
+        return
+      }
+
       toast.success('Welcome back')
       router.push('/')
     })

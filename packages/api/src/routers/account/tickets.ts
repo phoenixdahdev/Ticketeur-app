@@ -1,8 +1,9 @@
 import { desc, eq, or, sql } from 'drizzle-orm'
 
-import { events, orderItems, orders, tickets } from '@ticketur/db'
+import { events, orders, tickets } from '@ticketur/db'
 
 import { createTRPCRouter, protectedProcedure } from '../../trpc'
+import { tierSummarySql } from '../../lib/predicates'
 
 export const accountTicketsRouter = createTRPCRouter({
   // Lists every paid order belonging to the signed-in user — matched on
@@ -19,10 +20,7 @@ export const accountTicketsRouter = createTRPCRouter({
 
     // Comma-joined tier names for the order, cheapest first (e.g. "General,
     // VIP"). An order can span several tiers, so there's no single tier.
-    const tierSummary =
-      sql<string>`COALESCE((SELECT string_agg(${orderItems.tierName}, ', ' ORDER BY ${orderItems.unitPriceMinor}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), '')`.as(
-        'tier_summary'
-      )
+    const tierSummary = tierSummarySql.as('tier_summary')
 
     const rows = await ctx.db
       .select({
