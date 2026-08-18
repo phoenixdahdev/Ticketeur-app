@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { getSession } from '@/lib/auth'
 import { MyTicketsContent } from '@/components/sections/account/my-tickets-content'
+import { getServerTRPC, HydrateClient } from '@/lib/trpc-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,5 +17,11 @@ export default async function MyTicketsPage() {
   if (!session) {
     redirect('/login?redirect=/account/tickets')
   }
-  return <MyTicketsContent />
+  const { trpc, queryClient } = await getServerTRPC()
+  await queryClient.prefetchQuery(trpc.account.tickets.list.queryOptions())
+  return (
+    <HydrateClient>
+      <MyTicketsContent />
+    </HydrateClient>
+  )
 }

@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm'
 import { db, events } from '@ticketur/db'
 
 import { EventDetailContent } from '@/components/sections/event-detail/event-detail-content'
+import { getServerTRPC, HydrateClient } from '@/lib/trpc-server'
 import { formatEventDate } from '@/lib/event-display'
 
 const SITE_NAME = 'Ticketeur'
@@ -112,5 +113,15 @@ export default async function EventDetailPage({
   params,
 }: PageProps<'/events/[slug]'>) {
   const { slug } = await params
-  return <EventDetailContent slug={slug} />
+  // Prefetch the event so the detail view (and the tickets tab, which shares
+  // this query key) hydrate instead of fetching client-side.
+  const { trpc, queryClient } = await getServerTRPC()
+  await queryClient.prefetchQuery(
+    trpc.public.events.bySlug.queryOptions({ slug })
+  )
+  return (
+    <HydrateClient>
+      <EventDetailContent slug={slug} />
+    </HydrateClient>
+  )
 }
