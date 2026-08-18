@@ -10,6 +10,7 @@ import {
 } from '@ticketur/db'
 
 import { createTRPCRouter, vendorProcedure } from '../../trpc'
+import { stillRunning, alreadyEnded } from '../../lib/predicates'
 
 const listInput = z.object({
   tab: z.enum(['all', 'upcoming', 'past']).default('all'),
@@ -28,12 +29,12 @@ export const vendorEventsRouter = createTRPCRouter({
     if (input.tab === 'upcoming') {
       // TBD events (null date) count as upcoming.
       filters.push(
-        sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
+        stillRunning(today)
       )
     }
     if (input.tab === 'past') {
       filters.push(
-        sql`COALESCE(${events.endDate}, ${events.eventDate}) < ${today}`
+        alreadyEnded(today)
       )
     }
     if (input.q.trim().length > 0) {

@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import { events, eventVendors, user } from '@ticketur/db'
 
 import { createTRPCRouter, vendorProcedure } from '../../trpc'
+import { stillRunning, alreadyEnded } from '../../lib/predicates'
 
 const REQUIRED_FIELDS = [
   'businessName',
@@ -36,8 +37,8 @@ export const vendorDashboardRouter = createTRPCRouter({
     const counts = await ctx.db
       .select({
         total: sql<number>`COUNT(*)::int`,
-        upcoming: sql<number>`COUNT(*) FILTER (WHERE (${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today}) AND ${events.status} = 'upcoming')::int`,
-        past: sql<number>`COUNT(*) FILTER (WHERE COALESCE(${events.endDate}, ${events.eventDate}) < ${today})::int`,
+        upcoming: sql<number>`COUNT(*) FILTER (WHERE ${stillRunning(today)} AND ${events.status} = 'upcoming')::int`,
+        past: sql<number>`COUNT(*) FILTER (WHERE ${alreadyEnded(today)})::int`,
       })
       .from(eventVendors)
       .innerJoin(events, eq(events.id, eventVendors.eventId))
@@ -89,7 +90,7 @@ export const vendorDashboardRouter = createTRPCRouter({
       .where(
         and(
           eq(eventVendors.vendorId, vendorId),
-          sql`(${events.eventDate} IS NULL OR COALESCE(${events.endDate}, ${events.eventDate}) >= ${today})`
+          stillRunning(today)
         )
       )
       .orderBy(asc(events.eventDate))

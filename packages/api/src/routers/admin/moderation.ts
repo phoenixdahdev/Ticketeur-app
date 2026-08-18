@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import { and, asc, count, desc, eq, ne, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { tasks } from '@trigger.dev/sdk'
-import { addDays, format } from 'date-fns'
+import { addDays } from 'date-fns'
 
 import {
   events,
@@ -16,29 +16,17 @@ import {
 } from '@ticketur/db'
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
+import { formatEventDateRange } from '../../lib/dates'
+import {
+  NOT_ADMIN,
+  VENDOR_PENDING,
+  EVENT_PENDING,
+  REPORT_OPEN,
+} from '../../lib/predicates'
 
-const NOT_ADMIN = ne(user.role, 'admin')
-const VENDOR_PENDING = and(
-  eq(user.role, 'vendor'),
-  eq(user.vendorApprovalStatus, 'pending')
-)
-const EVENT_PENDING = eq(events.status, 'in-review')
-const REPORT_OPEN = eq(reports.status, 'open')
-
+// The public web URL as seen from the admin app (a separate deploy), used
+// to build organizer-facing links in emails. Not the admin app's own origin.
 const PUBLIC_BASE = 'https://www.useticketeur.com'
-
-// Pre-formatted date string for emails. Single-day → "MMMM d, yyyy".
-// Multi-day → "MMMM d, yyyy – MMMM d, yyyy".
-function formatRange(start: string | null, end: string | null) {
-  if (!start) return 'TBD'
-  const startDate = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(startDate.getTime())) return start
-  const startStr = format(startDate, 'MMMM d, yyyy')
-  if (!end || end === start) return startStr
-  const endDate = new Date(`${end}T00:00:00`)
-  if (Number.isNaN(endDate.getTime())) return startStr
-  return `${startStr} – ${format(endDate, 'MMMM d, yyyy')}`
-}
 
 export const adminModerationRouter = createTRPCRouter({
   stats: adminProcedure.query(async ({ ctx }) => {
@@ -465,7 +453,7 @@ export const adminModerationRouter = createTRPCRouter({
           email: organizer.email,
           organizerName: organizer.orgName ?? organizer.name,
           eventTitle: ev.title,
-          eventDate: formatRange(ev.eventDate, ev.endDate),
+          eventDate: formatEventDateRange(ev.eventDate, ev.endDate),
           eventLocation: ev.location,
           publicUrl: `${PUBLIC_BASE}/events/${ev.slug}`,
           manageUrl: `${PUBLIC_BASE}/org/events/${ev.id}`,

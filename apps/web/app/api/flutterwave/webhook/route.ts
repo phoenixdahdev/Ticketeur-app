@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getBaseUrl } from '@ticketur/api/lib/base-url'
 import { eq } from 'drizzle-orm'
 
 import { db, orders } from '@ticketur/db'
@@ -18,14 +19,6 @@ type ChargeCompletedEvent = {
     tx_ref?: string
     status?: string
   }
-}
-
-function getBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.BETTER_AUTH_URL ??
-    'http://localhost:3000'
-  )
 }
 
 export async function POST(req: Request) {

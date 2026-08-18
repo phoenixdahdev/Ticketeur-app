@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getBaseUrl } from '@ticketur/api/lib/base-url'
 import { and, eq } from 'drizzle-orm'
 
 import { db, events } from '@ticketur/db'
@@ -8,14 +9,6 @@ import { formatEventDate } from '@/lib/event-display'
 
 const SITE_NAME = 'Ticketeur'
 const FALLBACK_IMAGE = '/hero-bg.png'
-
-function getBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.BETTER_AUTH_URL ??
-    'http://localhost:3000'
-  )
-}
 
 // Strip markdown to plain text for use in <meta name="description">.
 // We don't need a perfect renderer — just remove the obvious noisy tokens.

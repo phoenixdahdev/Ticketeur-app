@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getBaseUrl } from '@ticketur/api/lib/base-url'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -32,14 +33,6 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Your tickets',
   description: 'View and present your Ticketeur event tickets.',
-}
-
-function getBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.BETTER_AUTH_URL ??
-    'http://localhost:3000'
-  )
 }
 
 function eventStanding(

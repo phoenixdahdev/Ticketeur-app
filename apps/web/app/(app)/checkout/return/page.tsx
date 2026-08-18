@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getBaseUrl } from '@ticketur/api/lib/base-url'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
@@ -64,10 +65,7 @@ export default async function CheckoutReturnPage({
           flwTransactionId: String(tx.id),
         })
         if (result?.justFulfilled) {
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL ??
-            process.env.BETTER_AUTH_URL ??
-            'http://localhost:3000'
+          const baseUrl = getBaseUrl()
           await notifyOrderFulfilled({ orderId: order.id, baseUrl })
         }
       } catch {

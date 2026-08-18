@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 
 import { TRPCError } from '@trpc/server'
 import { tasks } from '@trigger.dev/sdk'
-import { format } from 'date-fns'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -14,10 +13,11 @@ import {
   tickets,
   user,
 } from '@ticketur/db'
-import { env } from '@ticketur/env/core'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 import { newId } from '../../lib/ids'
+import { getBaseUrl } from '../../lib/base-url'
+import { formatEventDateRange } from '../../lib/dates'
 import { createPayment } from '../../lib/flutterwave'
 import { generateAndStoreTicketsPdf } from '../../lib/tickets-pdf'
 import { calculateFeeMinor } from '../../lib/fees'
@@ -41,24 +41,9 @@ const startInput = z.object({
   buyerPhone: z.string().trim().min(7, 'Phone required'),
 })
 
-function formatEventDate(start: string | null, end: string | null) {
-  if (!start) return 'TBD'
-  const startDate = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(startDate.getTime())) return start
-  const startStr = format(startDate, 'MMMM d, yyyy')
-  if (!end || end === start) return startStr
-  const endDate = new Date(`${end}T00:00:00`)
-  if (Number.isNaN(endDate.getTime())) return startStr
-  // Cross-year is rare for tickets; one safe format covers all cases.
-  return `${startStr} – ${format(endDate, 'MMMM d, yyyy')}`
-}
-
 export const publicCheckoutRouter = createTRPCRouter({
   start: publicProcedure.input(startInput).mutation(async ({ ctx, input }) => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ??
-      env.BETTER_AUTH_URL ??
-      'http://localhost:3000'
+    const baseUrl = getBaseUrl()
 
     // Collapse duplicate tier lines so each tier appears at most once.
     const mergedQty = new Map<string, number>()
@@ -268,7 +253,7 @@ export const publicCheckoutRouter = createTRPCRouter({
         email: input.buyerEmail,
         firstName,
         eventTitle: result.eventTitle,
-        eventDate: formatEventDate(result.eventDate, result.endDate),
+        eventDate: formatEventDateRange(result.eventDate, result.endDate),
         eventTime: result.eventTime,
         eventLocation: result.eventLocation,
         ticketTier: summaryLabel,
