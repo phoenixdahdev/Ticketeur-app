@@ -430,6 +430,7 @@ export const adminModerationRouter = createTRPCRouter({
       const [ev] = await ctx.db
         .select({
           id: events.id,
+          slug: events.slug,
           title: events.title,
           eventDate: events.eventDate,
           endDate: events.endDate,
@@ -466,7 +467,7 @@ export const adminModerationRouter = createTRPCRouter({
           eventTitle: ev.title,
           eventDate: formatRange(ev.eventDate, ev.endDate),
           eventLocation: ev.location,
-          publicUrl: `${PUBLIC_BASE}/events/${ev.id}`,
+          publicUrl: `${PUBLIC_BASE}/events/${ev.slug}`,
           manageUrl: `${PUBLIC_BASE}/org/events/${ev.id}`,
         })
       }
