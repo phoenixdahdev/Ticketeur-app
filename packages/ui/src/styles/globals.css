@@ -128,7 +128,7 @@
     var(--font-transforma-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-trap), ui-sans-serif, system-ui, sans-serif;
   --font-mono:
-    var(--font-inter), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @layer base {
