@@ -1,142 +1,216 @@
 import { TRPCError } from '@trpc/server'
-import { tasks } from '@trigger.dev/sdk'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
-import {
-  events,
-  orders,
-  orderItems,
-  ticketTiers,
-  user,
-} from '@ticketur/db'
+import { events, orders, orderItems, ticketTiers, user, vouchers } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
 import { newId } from '../../lib/ids'
 import { getBaseUrl } from '../../lib/base-url'
-import { formatEventDateRange } from '../../lib/dates'
 import { createPayment } from '../../lib/flutterwave'
-import { generateAndStoreTicketsPdf } from '../../lib/tickets-pdf'
-import { mintOrderTickets, TicketStockError } from '../../lib/orders'
+import {
+  mintOrderTickets,
+  notifyOrderFulfilled,
+  TicketStockError,
+  type MintTicket,
+} from '../../lib/orders'
 import { calculateFeeMinor } from '../../lib/fees'
+import { validateVoucher } from '../../lib/vouchers'
 
-// A cart is one or more tier lines. The buyer can mix tiers (e.g. a free
-// tier + VIP + General) in a single order; the whole cart is one order and,
-// if anything is payable, one Flutterwave transaction.
-const startInput = z.object({
-  eventId: z.string(),
-  items: z
-    .array(
-      z.object({
-        tierId: z.string(),
-        quantity: z.number().int().min(1).max(20),
-      })
-    )
-    .min(1, 'Select at least one ticket')
-    .max(20, 'Too many tiers in one order'),
-  buyerName: z.string().trim().min(1, 'Name required'),
-  buyerEmail: z.email('Enter a valid email'),
-  buyerPhone: z.string().trim().min(7, 'Phone required'),
+const MAX_TICKETS_PER_ORDER = 50
+
+const attendeeInput = z.object({
+  name: z.string().trim().min(1, 'Attendee name required'),
+  email: z.email('Enter a valid attendee email'),
+  tierId: z.string(),
 })
+
+// A cart is one or more tier lines. Two modes:
+//   self  — buyer picks quantities per tier; every ticket is theirs.
+//   group — buyer names each attendee (name + email + tier); each ticket is
+//           minted to and emailed to that attendee ("multi-email distribution").
+const startInput = z
+  .object({
+    eventId: z.string(),
+    mode: z.enum(['self', 'group']).default('self'),
+    items: z
+      .array(
+        z.object({
+          tierId: z.string(),
+          quantity: z.number().int().min(1).max(MAX_TICKETS_PER_ORDER),
+        })
+      )
+      .max(20, 'Too many tiers in one order')
+      .optional(),
+    attendees: z.array(attendeeInput).max(MAX_TICKETS_PER_ORDER).optional(),
+    buyerName: z.string().trim().min(1, 'Name required'),
+    buyerEmail: z.email('Enter a valid email'),
+    buyerPhone: z.string().trim().min(7, 'Phone required'),
+    voucherCode: z.string().trim().optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.mode === 'self' && !(v.items && v.items.length > 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['items'],
+        message: 'Select at least one ticket',
+      })
+    }
+    if (v.mode === 'group' && !(v.attendees && v.attendees.length > 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['attendees'],
+        message: 'Add at least one attendee',
+      })
+    }
+  })
 
 export const publicCheckoutRouter = createTRPCRouter({
   start: publicProcedure.input(startInput).mutation(async ({ ctx, input }) => {
     const baseUrl = getBaseUrl()
 
-    // Collapse duplicate tier lines so each tier appears at most once.
+    // Per-tier quantity, derived from items (self) or attendee counts (group).
     const mergedQty = new Map<string, number>()
-    for (const item of input.items) {
-      mergedQty.set(
-        item.tierId,
-        (mergedQty.get(item.tierId) ?? 0) + item.quantity
-      )
+    if (input.mode === 'group') {
+      for (const a of input.attendees ?? []) {
+        mergedQty.set(a.tierId, (mergedQty.get(a.tierId) ?? 0) + 1)
+      }
+    } else {
+      for (const item of input.items ?? []) {
+        mergedQty.set(
+          item.tierId,
+          (mergedQty.get(item.tierId) ?? 0) + item.quantity
+        )
+      }
     }
     const totalQuantity = [...mergedQty.values()].reduce((a, b) => a + b, 0)
-    if (totalQuantity > 50) {
+    if (totalQuantity < 1) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        message: 'You can buy at most 50 tickets per order.',
+        message: 'Select at least one ticket',
       })
     }
+    if (totalQuantity > MAX_TICKETS_PER_ORDER) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `You can buy at most ${MAX_TICKETS_PER_ORDER} tickets per order.`,
+      })
+    }
+
+    // ── Validate event + tiers and price the cart (reads only) ──────────────
+    const [event] = await ctx.db
+      .select({
+        id: events.id,
+        title: events.title,
+        eventDate: events.eventDate,
+        endDate: events.endDate,
+        eventTime: events.eventTime,
+        location: events.location,
+        status: events.status,
+      })
+      .from(events)
+      .where(eq(events.id, input.eventId))
+      .limit(1)
+    if (!event) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+    }
+    if (event.status !== 'upcoming') {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'Event is not on sale' })
+    }
+
+    const tierIds = [...mergedQty.keys()]
+    const tierRows = await ctx.db
+      .select({
+        id: ticketTiers.id,
+        name: ticketTiers.name,
+        quantity: ticketTiers.quantity,
+        sold: ticketTiers.sold,
+        priceMinor: ticketTiers.priceMinor,
+      })
+      .from(ticketTiers)
+      .where(
+        and(eq(ticketTiers.eventId, event.id), inArray(ticketTiers.id, tierIds))
+      )
+    const tierById = new Map(tierRows.map((t) => [t.id, t]))
+
+    // Stock pre-check for friendly per-tier messages. The conditional UPDATE at
+    // mint time is the real oversell guard.
+    const lines = tierIds.map((tierId) => {
+      const tier = tierById.get(tierId)
+      if (!tier) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'One of the selected tiers is unavailable',
+        })
+      }
+      const quantity = mergedQty.get(tierId)!
+      const remaining = tier.quantity - tier.sold
+      if (remaining < quantity) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            remaining <= 0
+              ? `${tier.name} is sold out — sorry!`
+              : `Only ${remaining} ${tier.name} ticket${remaining === 1 ? '' : 's'} left.`,
+        })
+      }
+      return { tier, quantity, lineSubtotal: tier.priceMinor * quantity }
+    })
+
+    const subtotalMinor = lines.reduce((s, l) => s + l.lineSubtotal, 0)
+
+    // ── Voucher (optional) ──────────────────────────────────────────────────
+    let discountMinor = 0
+    let voucherId: string | null = null
+    if (input.voucherCode) {
+      const result = await validateVoucher(ctx.db, {
+        eventId: event.id,
+        code: input.voucherCode,
+        subtotalMinor,
+      })
+      if (!result.ok) {
+        const message =
+          result.reason === 'expired'
+            ? 'That voucher has expired.'
+            : result.reason === 'maxed'
+              ? 'That voucher has reached its redemption limit.'
+              : result.reason === 'not_started'
+                ? 'That voucher is not active yet.'
+                : 'That voucher code is not valid for this event.'
+        throw new TRPCError({ code: 'BAD_REQUEST', message })
+      }
+      discountMinor = result.discountMinor
+      voucherId = result.voucher.id
+    }
+
+    const discountedSubtotal = Math.max(0, subtotalMinor - discountMinor)
+    const feeMinor = calculateFeeMinor(discountedSubtotal)
+    const totalMinor = discountedSubtotal + feeMinor
+    const isFree = totalMinor === 0
 
     const orderId = newId('ord')
     const txRef = `tckt_${orderId}_${Date.now()}`
 
-    // Validate event + every tier + stock and create the order plus its line
-    // items in one tx. For a fully-free cart we also generate ticket rows and
-    // bump tier.sold here so the buyer is fulfilled immediately without FW.
-    const result = await ctx.db.transaction(async (tx) => {
-      const [event] = await tx
-        .select({
-          id: events.id,
-          title: events.title,
-          eventDate: events.eventDate,
-          endDate: events.endDate,
-          eventTime: events.eventTime,
-          location: events.location,
-          status: events.status,
-        })
-        .from(events)
-        .where(eq(events.id, input.eventId))
-        .limit(1)
-      if (!event) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
-      }
-      if (event.status !== 'upcoming') {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Event is not on sale',
-        })
-      }
-
-      const tierIds = [...mergedQty.keys()]
-      const tierRows = await tx
-        .select({
-          id: ticketTiers.id,
-          name: ticketTiers.name,
-          quantity: ticketTiers.quantity,
-          sold: ticketTiers.sold,
-          priceMinor: ticketTiers.priceMinor,
-        })
-        .from(ticketTiers)
-        .where(
-          and(
-            eq(ticketTiers.eventId, event.id),
-            inArray(ticketTiers.id, tierIds)
+    // Recipients for each ticket: the buyer (self) or each attendee (group).
+    const buildMintTickets = (): MintTicket[] =>
+      input.mode === 'group'
+        ? (input.attendees ?? []).map((a) => ({
+            tierId: a.tierId,
+            tierName: tierById.get(a.tierId)?.name,
+            recipientName: a.name,
+            recipientEmail: a.email,
+          }))
+        : lines.flatMap((l) =>
+            Array.from({ length: l.quantity }, () => ({
+              tierId: l.tier.id,
+              tierName: l.tier.name,
+              recipientName: input.buyerName,
+              recipientEmail: input.buyerEmail,
+            }))
           )
-        )
-      const tierById = new Map(tierRows.map((t) => [t.id, t]))
 
-      // Build the lines, asserting each tier exists, belongs to the event,
-      // and has stock. The conditional UPDATE below is the real race guard;
-      // this pre-check just produces friendly per-tier messages.
-      const lines = tierIds.map((tierId) => {
-        const tier = tierById.get(tierId)
-        if (!tier) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'One of the selected tiers is unavailable',
-          })
-        }
-        const quantity = mergedQty.get(tierId)!
-        const remaining = tier.quantity - tier.sold
-        if (remaining < quantity) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              remaining <= 0
-                ? `${tier.name} is sold out — sorry!`
-                : `Only ${remaining} ${tier.name} ticket${remaining === 1 ? '' : 's'} left.`,
-          })
-        }
-        return { tier, quantity, lineSubtotal: tier.priceMinor * quantity }
-      })
-
-      const subtotalMinor = lines.reduce((s, l) => s + l.lineSubtotal, 0)
-      const feeMinor = calculateFeeMinor(subtotalMinor)
-      const totalMinor = subtotalMinor + feeMinor
-      const isFree = totalMinor === 0
-
+    // ── Persist order (+ mint immediately when free) ────────────────────────
+    await ctx.db.transaction(async (tx) => {
       const [existing] = await tx
         .select({ id: user.id })
         .from(user)
@@ -146,8 +220,6 @@ export const publicCheckoutRouter = createTRPCRouter({
       await tx.insert(orders).values({
         id: orderId,
         eventId: event.id,
-        // Multi-tier orders carry their tiers in order_items; the legacy
-        // single tierId stays null.
         tierId: null,
         buyerId: existing?.id ?? null,
         buyerEmail: input.buyerEmail,
@@ -155,8 +227,14 @@ export const publicCheckoutRouter = createTRPCRouter({
         buyerPhone: input.buyerPhone,
         quantity: totalQuantity,
         subtotalMinor,
+        discountMinor,
         feeMinor,
         totalMinor,
+        voucherId,
+        // Persist attendees so a paid group order can mint to them at webhook
+        // fulfillment (tickets aren't minted until payment for paid orders).
+        attendees:
+          input.mode === 'group' ? (input.attendees ?? []) : null,
         status: isFree ? 'paid' : 'pending',
         flwTxRef: isFree ? null : txRef,
         paidAt: isFree ? new Date() : null,
@@ -174,18 +252,11 @@ export const publicCheckoutRouter = createTRPCRouter({
       )
 
       if (isFree) {
-        // Mint immediately — no payment step. Same guarded path as paid
-        // fulfillment (see mintOrderTickets); a sold-out tier surfaces as a
-        // CONFLICT the buyer can retry.
         try {
           await mintOrderTickets(tx, {
             orderId,
             eventId: event.id,
-            lines: lines.map((l) => ({
-              tierId: l.tier.id,
-              quantity: l.quantity,
-              tierName: l.tier.name,
-            })),
+            tickets: buildMintTickets(),
           })
         } catch (err) {
           if (err instanceof TicketStockError) {
@@ -196,62 +267,29 @@ export const publicCheckoutRouter = createTRPCRouter({
           }
           throw err
         }
-      }
-
-      return {
-        totalMinor,
-        isFree,
-        eventTitle: event.title,
-        eventDate: event.eventDate,
-        endDate: event.endDate,
-        eventTime: event.eventTime,
-        eventLocation: event.location,
-        items: lines.map((l) => ({
-          tierName: l.tier.name,
-          quantity: l.quantity,
-        })),
+        if (voucherId) {
+          await tx
+            .update(vouchers)
+            .set({ redeemedCount: sql`${vouchers.redeemedCount} + 1` })
+            .where(eq(vouchers.id, voucherId))
+        }
       }
     })
 
-    const totalQty = result.items.reduce((s, i) => s + i.quantity, 0)
-    // "2× VIP, 1× General" — used for the FW description, the email subject
-    // line summary, and the legacy single `ticketTier` field.
-    const summaryLabel = result.items
-      .map((i) => `${i.quantity}× ${i.tierName}`)
-      .join(', ')
-
-    if (result.isFree) {
-      // Free path — no FW. Generate the PDF (with QR codes) and email it
-      // so the buyer can scan at the gate just like a paid ticket.
-      let pdfUrl: string | null = null
-      try {
-        pdfUrl = await generateAndStoreTicketsPdf({ orderId, baseUrl })
-      } catch (err) {
-        console.error('free ticket PDF generation failed', err)
-      }
-
-      const firstName = input.buyerName.split(' ')[0] ?? input.buyerName
-      void tasks.trigger('send-ticket-confirmation', {
-        email: input.buyerEmail,
-        firstName,
-        eventTitle: result.eventTitle,
-        eventDate: formatEventDateRange(result.eventDate, result.endDate),
-        eventTime: result.eventTime,
-        eventLocation: result.eventLocation,
-        ticketTier: summaryLabel,
-        items: result.items,
-        quantity: totalQty,
-        ticketsUrl: `${baseUrl}/tickets/${orderId}`,
-        pdfUrl: pdfUrl ?? undefined,
-        pdfFilename: pdfUrl ? `${result.eventTitle}-tickets.pdf` : undefined,
-      })
+    if (isFree) {
+      // Free path — fulfilled in-line. Reuse the shared notifier so self orders
+      // get one combined email and group orders get per-attendee delivery.
+      await notifyOrderFulfilled({ orderId, baseUrl })
       return { orderId, txRef: null, paymentUrl: null, free: true }
     }
 
     // Paid path — hand off to Flutterwave. Amount in major units (NGN).
+    const summaryLabel = lines
+      .map((l) => `${l.quantity}× ${l.tier.name}`)
+      .join(', ')
     const { link } = await createPayment({
       txRef,
-      amount: Math.round(result.totalMinor / 100),
+      amount: Math.round(totalMinor / 100),
       currency: 'NGN',
       redirectUrl: `${baseUrl}/checkout/return`,
       customer: {
@@ -259,13 +297,10 @@ export const publicCheckoutRouter = createTRPCRouter({
         name: input.buyerName,
         phonenumber: input.buyerPhone,
       },
-      meta: {
-        orderId,
-        eventId: input.eventId,
-      },
+      meta: { orderId, eventId: input.eventId },
       customizations: {
-        title: result.eventTitle,
-        description: `${totalQty} ticket${totalQty === 1 ? '' : 's'} — ${summaryLabel}`,
+        title: event.title,
+        description: `${totalQuantity} ticket${totalQuantity === 1 ? '' : 's'} — ${summaryLabel}`,
       },
     })
 

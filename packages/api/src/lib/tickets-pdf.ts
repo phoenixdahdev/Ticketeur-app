@@ -1,5 +1,5 @@
 import { put } from '@vercel/blob'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import PDFDocument from 'pdfkit'
 import QRCode from 'qrcode'
 
@@ -11,12 +11,21 @@ export function ticketUrl(baseUrl: string, code: string) {
   return `${baseUrl}/tickets/code/${code}`
 }
 
+// Generate a tickets PDF and store it on blob storage.
+//
+// Without `recipientEmail` this renders every ticket on the order (the "For
+// Myself" case) and records the URL on orders.ticketsPdfUrl. With it, the PDF
+// is scoped to one attendee's tickets (the "For Multiple" case, where each
+// recipient is emailed their own PDF) and stored under a per-recipient key,
+// leaving orders.ticketsPdfUrl for the buyer-facing combined copy.
 export async function generateAndStoreTicketsPdf({
   orderId,
   baseUrl,
+  recipientEmail,
 }: {
   orderId: string
   baseUrl: string
+  recipientEmail?: string
 }): Promise<string | null> {
   const [head] = await db
     .select({
@@ -37,10 +46,18 @@ export async function generateAndStoreTicketsPdf({
       code: tickets.code,
       createdAt: tickets.createdAt,
       tierName: ticketTiers.name,
+      recipientName: tickets.recipientName,
     })
     .from(tickets)
     .leftJoin(ticketTiers, eq(ticketTiers.id, tickets.tierId))
-    .where(eq(tickets.orderId, orderId))
+    .where(
+      recipientEmail
+        ? and(
+            eq(tickets.orderId, orderId),
+            eq(tickets.recipientEmail, recipientEmail)
+          )
+        : eq(tickets.orderId, orderId)
+    )
     .orderBy(tickets.createdAt)
   if (ticketRows.length === 0) return null
 
@@ -51,24 +68,30 @@ export async function generateAndStoreTicketsPdf({
     }),
     eventTime: head.event.eventTime,
     eventLocation: head.event.location,
-    buyerName: head.order.buyerName || 'Guest',
     tickets: ticketRows.map((t) => ({
       code: t.code,
       url: ticketUrl(baseUrl, t.code),
       tierName: t.tierName ?? 'General',
+      holderName: t.recipientName || head.order.buyerName || 'Guest',
     })),
   })
 
-  const blob = await put(`tickets/${orderId}.pdf`, pdf, {
+  const key = recipientEmail
+    ? `tickets/${orderId}/${recipientEmail.replace(/[^a-z0-9]+/gi, '-')}.pdf`
+    : `tickets/${orderId}.pdf`
+  const blob = await put(key, pdf, {
     access: 'public',
     contentType: 'application/pdf',
     allowOverwrite: true,
   })
 
-  await db
-    .update(orders)
-    .set({ ticketsPdfUrl: blob.url })
-    .where(eq(orders.id, orderId))
+  // Only the combined (buyer) PDF is recorded on the order.
+  if (!recipientEmail) {
+    await db
+      .update(orders)
+      .set({ ticketsPdfUrl: blob.url })
+      .where(eq(orders.id, orderId))
+  }
 
   return blob.url
 }
@@ -78,8 +101,12 @@ async function renderTicketsPdf(input: {
   eventDate: string
   eventTime: string
   eventLocation: string
-  buyerName: string
-  tickets: { code: string; url: string; tierName: string }[]
+  tickets: {
+    code: string
+    url: string
+    tierName: string
+    holderName: string
+  }[]
 }): Promise<Buffer> {
   const doc = new PDFDocument({ size: 'A4', margin: 48 })
   const chunks: Buffer[] = []
@@ -109,7 +136,7 @@ async function renderTicketsPdf(input: {
     doc.fontSize(10).fillColor('#6b7280')
     doc.text(`Ticket ${i + 1} of ${input.tickets.length}`, { align: 'center' })
     doc.text(`Tier: ${ticket.tierName}`, { align: 'center' })
-    doc.text(`Holder: ${input.buyerName}`, { align: 'center' })
+    doc.text(`Holder: ${ticket.holderName}`, { align: 'center' })
     doc.text(`Code: ${ticket.code}`, { align: 'center' })
   }
 
