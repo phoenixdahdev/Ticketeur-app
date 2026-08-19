@@ -207,8 +207,23 @@ export const orders = pgTable(
     // feeMinor      = platform service fee applied at checkout
     // totalMinor    = subtotalMinor + feeMinor (this is what the buyer pays)
     subtotalMinor: integer('subtotal_minor').notNull().default(0),
+    // Voucher discount applied to the subtotal (minor units). 0 when none.
+    discountMinor: integer('discount_minor').notNull().default(0),
     feeMinor: integer('fee_minor').notNull().default(0),
     totalMinor: integer('total_minor').notNull(),
+    // Soft pointer to vouchers.id (no FK: vouchers references events, so a real
+    // FK here would form an import cycle — same pattern as reports.subjectId).
+    // The applied amount is captured in discountMinor regardless.
+    voucherId: text('voucher_id'),
+    // Group ("For Multiple") orders: the per-attendee recipients captured at
+    // checkout. NULL for a "For Myself" order. Needed because paid orders mint
+    // their tickets later (at webhook fulfillment), so the attendee list has to
+    // survive between checkout and payment. Post-fulfillment the source of
+    // truth is each ticket's recipient columns.
+    attendees:
+      jsonb('attendees').$type<
+        { name: string; email: string; tierId: string }[]
+      >(),
     status: text('status').$type<OrderStatus>().notNull().default('pending'),
     // Flutterwave correlation — tx_ref is what we send, transaction_id is
     // what FW returns once the customer pays.
@@ -313,6 +328,11 @@ export const tickets = pgTable(
     // Opaque token used for QR + check-in. Distinct from the row id so we
     // can rotate it (e.g. on reissue) without breaking foreign keys.
     code: text('code').notNull().unique(),
+    // Recipient of this specific ticket. For a "For Myself" order these mirror
+    // the buyer; for a "For Multiple" (group) order each ticket carries its own
+    // attendee, and the confirmation email goes to recipientEmail.
+    recipientName: text('recipient_name'),
+    recipientEmail: text('recipient_email'),
     checkedIn: boolean('checked_in').notNull().default(false),
     checkedInAt: timestamp('checked_in_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),

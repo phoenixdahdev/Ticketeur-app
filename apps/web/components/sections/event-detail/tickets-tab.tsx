@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useQuery } from '@tanstack/react-query'
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs'
@@ -9,6 +10,11 @@ import { formatNaira } from '@/lib/event-display'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
 import { TicketSelector } from '@/components/sections/event-detail/ticket-selector'
 import { CheckoutView } from '@/components/sections/event-detail/checkout-view'
+import { GroupCheckoutView } from '@/components/sections/event-detail/group-checkout-view'
+import {
+  PurchaseModeDialog,
+  type PurchaseMode,
+} from '@/components/sections/event-detail/purchase-mode-dialog'
 
 export type TicketTierStatus = 'sold-out' | 'available' | 'limited'
 
@@ -25,6 +31,8 @@ export type TicketTier = {
 }
 
 const STATE_KEYS = {
+  // Purchase mode chosen in the overlay. Null until the buyer picks.
+  mode: parseAsStringLiteral(['self', 'group'] as const),
   step: parseAsStringLiteral(['select', 'checkout']).withDefault('select'),
   // Cart encoded as "tierId:qty,tierId:qty". Tier ids never contain ':' or ','.
   cart: parseAsString.withDefault(''),
@@ -93,6 +101,16 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
 
   const goTo = (step: 'select' | 'checkout') => setState({ step })
 
+  // The Purchase Mode overlay opens automatically when no mode is chosen yet
+  // (i.e. the buyer just landed on the tickets tab), and can be reopened to
+  // switch modes.
+  const [chooserOpen, setChooserOpen] = useState(() => state.mode === null)
+
+  const chooseMode = (mode: PurchaseMode) => {
+    void setState({ mode, step: 'select' })
+    setChooserOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -116,42 +134,95 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
     )
   }
 
+  const dateLabel = event.time ? `${event.date} • ${event.time}` : event.date
+
   return (
     <div className="relative">
-      <AnimatePresence mode="wait" initial={false}>
-        {state.step === 'select' ? (
-          <motion.div
-            key="select"
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      <PurchaseModeDialog
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        event={{
+          title: event.title,
+          dateLabel,
+          location: event.location,
+          imageUrl: event.imageUrl,
+        }}
+        onSelect={chooseMode}
+      />
+
+      {state.mode === null ? (
+        <div className="border-border bg-muted/20 flex min-h-60 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed p-10 text-center">
+          <p className="font-heading text-foreground text-lg font-semibold">
+            How would you like to buy?
+          </p>
+          <button
+            type="button"
+            onClick={() => setChooserOpen(true)}
+            className="text-primary hover:text-primary-hover text-sm font-semibold"
           >
-            <TicketSelector
+            Choose purchase mode
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Buying:</span>
+            <span className="text-foreground font-semibold">
+              {state.mode === 'group' ? 'For Multiple Attendees' : 'For Myself'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setChooserOpen(true)}
+              className="text-primary hover:text-primary-hover font-semibold"
+            >
+              Change
+            </button>
+          </div>
+
+          {state.mode === 'group' ? (
+            <GroupCheckoutView
               event={event}
               tiers={tiers}
-              quantities={quantities}
-              onQuantityChange={setTierQty}
-              onCheckout={() => goTo('checkout')}
+              onBack={() => setChooserOpen(true)}
             />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="checkout"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <CheckoutView
-              event={event}
-              tiers={tiers}
-              quantities={quantities}
-              onBack={() => goTo('select')}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ) : (
+            <AnimatePresence mode="wait" initial={false}>
+              {state.step === 'select' ? (
+                <motion.div
+                  key="select"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <TicketSelector
+                    event={event}
+                    tiers={tiers}
+                    quantities={quantities}
+                    onQuantityChange={setTierQty}
+                    onCheckout={() => goTo('checkout')}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="checkout"
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 12 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <CheckoutView
+                    event={event}
+                    tiers={tiers}
+                    quantities={quantities}
+                    onBack={() => goTo('select')}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+        </>
+      )}
     </div>
   )
 }

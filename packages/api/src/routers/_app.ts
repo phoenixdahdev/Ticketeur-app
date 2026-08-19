@@ -5,6 +5,7 @@ import { dashboardRouter } from './dashboard'
 import { eventsRouter } from './events'
 import { vendorsRouter } from './vendors'
 import { orgProfileRouter } from './org/profile'
+import { orgVouchersRouter } from './org/vouchers'
 import { vendorRouter } from './vendor/_index'
 import { publicRouter } from './public/_index'
 import { accountRouter } from './account/_index'
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
     events: eventsRouter,
     vendors: vendorsRouter,
     profile: orgProfileRouter,
+    vouchers: orgVouchersRouter,
   }),
   vendor: vendorRouter,
   public: publicRouter,
