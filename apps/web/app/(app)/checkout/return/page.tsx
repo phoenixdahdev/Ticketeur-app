@@ -1,19 +1,34 @@
 import type { Metadata } from 'next'
 import { getBaseUrl } from '@ticketur/api/lib/base-url'
+import Image from 'next/image'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  Calendar03Icon,
+  CheckmarkCircle02Icon,
+  Location01Icon,
+  Mail01Icon,
+} from '@hugeicons/core-free-icons'
 
 import { Button } from '@ticketur/ui/components/button'
 import { db, orders } from '@ticketur/db'
 import { verifyTransaction } from '@ticketur/api/lib/flutterwave'
+import {
+  fulfillOrder,
+  loadOrderById,
+  loadOrderItems,
+  notifyOrderFulfilled,
+  type OrderItemRow,
+  type OrderWithDetails,
+} from '@ticketur/api/lib/orders'
 
-import { fulfillOrder, notifyOrderFulfilled } from '@ticketur/api/lib/orders'
+import { formatEventDate, formatNaira } from '@/lib/event-display'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Checkout',
+  title: 'Payment',
 }
 
 type SP = Promise<{
@@ -37,8 +52,6 @@ export default async function CheckoutReturnPage({
   const txRef = pickFirst(sp.tx_ref)
   const transactionId = pickFirst(sp.transaction_id)
 
-  // Customer cancelled or payment failed at FW. Surface a recoverable
-  // message and let them try again from the event page.
   if (status === 'cancelled' || status === 'failed' || !txRef) {
     return (
       <FailedScreen reason={status === 'cancelled' ? 'cancelled' : 'failed'} />
@@ -52,10 +65,9 @@ export default async function CheckoutReturnPage({
     .limit(1)
   if (!order) return <FailedScreen reason="missing" />
 
-  // Belt-and-braces: the webhook should have already fulfilled this order,
-  // but in case the user beat the webhook back to our domain we re-verify
-  // and fulfill ourselves. Idempotent inside the helper — only the path
-  // that did the pending→paid transition fires the email + PDF.
+  // Belt-and-braces: the webhook should have already fulfilled this order, but
+  // if the user beat it back we re-verify and fulfill here. Idempotent — only
+  // the pending→paid transition fires the email + PDF.
   if (order.status !== 'paid' && transactionId) {
     const tx = await verifyTransaction(transactionId)
     if (tx && tx.status === 'successful' && tx.tx_ref === txRef) {
@@ -65,16 +77,185 @@ export default async function CheckoutReturnPage({
           flwTransactionId: String(tx.id),
         })
         if (result?.justFulfilled) {
-          const baseUrl = getBaseUrl()
-          await notifyOrderFulfilled({ orderId: order.id, baseUrl })
+          await notifyOrderFulfilled({ orderId: order.id, baseUrl: getBaseUrl() })
         }
       } catch {
-        // fall through — show pending screen
+        // fall through — show the processing screen
       }
     }
   }
 
-  redirect(`/tickets/${order.id}`)
+  const head = await loadOrderById(order.id)
+  if (!head) return <FailedScreen reason="missing" />
+  if (head.order.status !== 'paid') return <ProcessingScreen orderId={order.id} />
+
+  const items = await loadOrderItems(order.id)
+  return <SuccessScreen head={head} items={items} />
+}
+
+function orderRef(id: string) {
+  return `#${id.replace(/^ord_/, '').slice(0, 8).toUpperCase()}`
+}
+
+function SuccessScreen({
+  head,
+  items,
+}: {
+  head: OrderWithDetails
+  items: OrderItemRow[]
+}) {
+  const { order, event } = head
+  const paidWhen = new Date(order.paidAt ?? order.createdAt).toLocaleDateString(
+    'en-US',
+    { month: 'short', day: '2-digit', year: 'numeric' }
+  )
+
+  return (
+    <section className="mx-auto flex w-full max-w-160 flex-col items-center gap-8 px-5 py-14 md:py-20">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="flex size-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+          <HugeiconsIcon
+            icon={CheckmarkCircle02Icon}
+            className="size-8"
+            strokeWidth={2}
+          />
+        </span>
+        <div className="flex flex-col gap-1.5">
+          <h1 className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-4xl">
+            Payment Successful!
+          </h1>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Your tickets for {event.title} are confirmed.
+          </p>
+        </div>
+      </div>
+
+      {/* Summary card */}
+      <div className="border-border bg-card w-full overflow-hidden rounded-2xl border">
+        <div className="flex items-start gap-4 p-5 md:p-6">
+          <div className="bg-muted relative size-20 shrink-0 overflow-hidden rounded-xl">
+            {event.bannerUrl ? (
+              <Image
+                src={event.bannerUrl}
+                alt=""
+                fill
+                sizes="80px"
+                className="object-cover"
+                unoptimized={event.bannerUrl.startsWith('data:')}
+              />
+            ) : (
+              <div className="from-primary/30 to-background absolute inset-0 bg-linear-to-br" />
+            )}
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase">
+                Order {orderRef(order.id)}
+              </span>
+              <span className="text-muted-foreground text-xs">{paidWhen}</span>
+            </div>
+            <h2 className="font-heading text-foreground text-xl font-bold">
+              {event.title}
+            </h2>
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+              <HugeiconsIcon
+                icon={Calendar03Icon}
+                className="text-primary size-4 shrink-0"
+                strokeWidth={1.8}
+              />
+              <span>
+                {formatEventDate(event.eventDate, event.endDate)} ·{' '}
+                {event.eventTime}
+              </span>
+            </div>
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+              <HugeiconsIcon
+                icon={Location01Icon}
+                className="text-primary size-4 shrink-0"
+                strokeWidth={1.8}
+              />
+              <span className="truncate">{event.location}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-border flex flex-col gap-2 border-t p-5 text-sm md:p-6">
+          {items.map((item) => (
+            <Row
+              key={item.id}
+              label={`${item.tierName} × ${item.quantity}`}
+              value={
+                item.unitPriceMinor === 0
+                  ? 'Free'
+                  : formatNaira(item.unitPriceMinor * item.quantity)
+              }
+            />
+          ))}
+          <div className="border-border/60 mt-1 flex flex-col gap-2 border-t pt-3">
+            <Row label="Subtotal" value={formatNaira(order.subtotalMinor)} />
+            {order.discountMinor > 0 ? (
+              <Row
+                label="Discount"
+                value={`−${formatNaira(order.discountMinor)}`}
+                valueClassName="text-emerald-600 dark:text-emerald-400"
+              />
+            ) : null}
+            {order.feeMinor > 0 ? (
+              <Row label="Service Fee" value={formatNaira(order.feeMinor)} />
+            ) : null}
+          </div>
+          <div className="border-border/60 flex items-baseline justify-between gap-4 border-t pt-3">
+            <span className="font-heading text-foreground text-base font-semibold">
+              Total Paid
+            </span>
+            <span className="font-heading text-primary text-xl font-bold md:text-2xl">
+              {order.totalMinor === 0 ? 'Free' : formatNaira(order.totalMinor)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-muted-foreground flex items-center justify-center gap-2 text-center text-sm">
+        <HugeiconsIcon
+          icon={Mail01Icon}
+          className="text-primary size-4 shrink-0"
+          strokeWidth={1.8}
+        />
+        <span>
+          Your QR code and ticket details have been sent to your email address.
+        </span>
+      </div>
+
+      <div className="flex w-full flex-col gap-3 sm:flex-row">
+        <Button asChild size="xl" className="flex-1">
+          <Link href={`/tickets/${order.id}`}>View my tickets</Link>
+        </Button>
+        <Button asChild variant="outline" size="xl" className="flex-1">
+          <Link href="/events">Explore more events</Link>
+        </Button>
+      </div>
+    </section>
+  )
+}
+
+function ProcessingScreen({ orderId }: { orderId: string }) {
+  return (
+    <section className="mx-auto flex w-full max-w-180 flex-col items-center gap-6 px-6 py-20 text-center md:py-28">
+      <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase">
+        Processing
+      </p>
+      <h1 className="font-heading text-foreground text-3xl font-bold tracking-tight md:text-4xl">
+        We&apos;re confirming your payment
+      </h1>
+      <p className="text-muted-foreground text-sm leading-7">
+        This usually only takes a moment. Your tickets will appear here and in
+        your email as soon as it clears.
+      </p>
+      <Button asChild size="xl">
+        <Link href={`/tickets/${orderId}`}>Check my tickets</Link>
+      </Button>
+    </section>
+  )
 }
 
 function FailedScreen({
@@ -103,5 +284,24 @@ function FailedScreen({
         <Link href="/events">Browse events</Link>
       </Button>
     </section>
+  )
+}
+
+function Row({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  valueClassName?: string
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`text-foreground font-semibold ${valueClassName ?? ''}`}>
+        {value}
+      </span>
+    </div>
   )
 }

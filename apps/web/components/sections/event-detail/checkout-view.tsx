@@ -20,6 +20,8 @@ import { calculateFeeMinor } from '@ticketur/api/lib/fees'
 
 import type { TicketTier } from '@/components/sections/event-detail/tickets-tab'
 import type { EventDetailData } from '@/components/sections/event-detail/types'
+import { useVoucher } from '@/components/sections/event-detail/use-voucher'
+import { VoucherField } from '@/components/sections/event-detail/voucher-field'
 import { useTRPC } from '@/lib/trpc'
 import { useSession } from '@/lib/auth-client'
 
@@ -52,12 +54,19 @@ export function CheckoutView({
     (sum, t) => sum + t.price * (quantities[t.id] ?? 0),
     0
   )
-  // Compute the fee through the same helper the server uses, so the shown
-  // total always matches what's charged. Helper works in minor units, so
-  // bridge in/out by multiplying/dividing by 100.
-  const serviceFee = calculateFeeMinor(subtotal * 100) / 100
-  const isFree = subtotal === 0 && selected.length > 0
-  const total = subtotal + serviceFee
+
+  // All money math in minor units, mirroring the server: discount comes off the
+  // subtotal, the fee is charged on the discounted subtotal, total is the sum.
+  const subtotalMinor = Math.round(subtotal * 100)
+  const voucher = useVoucher(event.id, subtotalMinor)
+  const discountMinor = voucher.discountMinor
+  const discountedMinor = Math.max(0, subtotalMinor - discountMinor)
+  const feeMinor = calculateFeeMinor(discountedMinor)
+  const totalMinor = discountedMinor + feeMinor
+  const serviceFee = feeMinor / 100
+  const discount = discountMinor / 100
+  const total = totalMinor / 100
+  const isFree = totalMinor === 0 && selected.length > 0
 
   const start = useMutation(
     trpc.public.checkout.start.mutationOptions({
@@ -116,6 +125,7 @@ export function CheckoutView({
         buyerName: form.name.trim(),
         buyerEmail: form.email.trim(),
         buyerPhone: form.phone.trim(),
+        ...(voucher.code ? { voucherCode: voucher.code } : {}),
       })
     })
   }
@@ -316,8 +326,25 @@ export function CheckoutView({
             )}
           </div>
 
+          {selected.length > 0 && subtotal > 0 ? (
+            <div className="border-border border-t pt-4">
+              <VoucherField
+                voucher={voucher}
+                discount={discount}
+                disabled={submitting}
+              />
+            </div>
+          ) : null}
+
           <div className="border-border flex flex-col gap-2 border-t pt-4">
             <Row label="Subtotal" value={`₦${subtotal.toLocaleString()}.00`} />
+            {discount > 0 ? (
+              <Row
+                label={`Discount (${voucher.code})`}
+                value={`−₦${discount.toLocaleString()}.00`}
+                valueClassName="text-emerald-600 dark:text-emerald-400"
+              />
+            ) : null}
             {serviceFee > 0 ? (
               <Row
                 label="Service Fee"
@@ -394,11 +421,21 @@ function Field({
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  valueClassName?: string
+}) {
   return (
     <div className={cn('flex items-baseline justify-between gap-4 text-sm')}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-foreground font-semibold">{value}</span>
+      <span className={cn('text-foreground font-semibold', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }

@@ -10,6 +10,7 @@ import {
   orders,
   ticketTiers,
   tickets,
+  vouchers,
 } from '@ticketur/db'
 
 import { formatEventDateRange } from './dates'
@@ -32,56 +33,69 @@ export class TicketStockError extends Error {
 // The tx handle drizzle hands to `db.transaction(async (tx) => …)`.
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
+// One ticket to mint, already resolved to its recipient. For "For Myself"
+// orders every entry carries the buyer; for "For Multiple" each carries its
+// own attendee.
+export type MintTicket = {
+  tierId: string
+  // Only used for the friendly sold-out message.
+  tierName?: string
+  recipientName: string | null
+  recipientEmail: string | null
+}
+
 // The one guarded ticket-minting path, shared by the free checkout flow and
-// paid fulfillment. For each line it bumps tier.sold with a conditional update
-// (`sold + qty <= quantity`) so two concurrent claims can't oversell — a zero-
-// row result means the tier just sold out — then mints one ticket row per unit.
-// Must run inside a transaction so the sold-bump and the ticket rows commit
-// together with the caller's other writes.
+// paid fulfillment. Takes a flat list — one entry per ticket — groups it by
+// tier to bump tier.sold with a conditional update (`sold + n <= quantity`) so
+// two concurrent claims can't oversell (a zero-row result means the tier just
+// sold out), then mints one ticket row per entry carrying its recipient. Must
+// run inside a transaction so the sold-bump and the ticket rows commit together
+// with the caller's other writes.
 export async function mintOrderTickets(
   tx: DbTransaction,
   args: {
     orderId: string
     eventId: string
-    lines: { tierId: string; quantity: number; tierName?: string }[]
+    tickets: MintTicket[]
   }
 ): Promise<void> {
-  const ticketRows: {
-    id: string
-    orderId: string
-    eventId: string
-    tierId: string
-    code: string
-  }[] = []
+  if (args.tickets.length === 0) return
 
-  for (const line of args.lines) {
+  // Count per tier for the oversell guard.
+  const byTier = new Map<string, { count: number; tierName?: string }>()
+  for (const t of args.tickets) {
+    const entry = byTier.get(t.tierId) ?? { count: 0, tierName: t.tierName }
+    entry.count += 1
+    byTier.set(t.tierId, entry)
+  }
+
+  for (const [tierId, { count, tierName }] of byTier) {
     const updated = await tx
       .update(ticketTiers)
-      .set({ sold: sql`${ticketTiers.sold} + ${line.quantity}` })
+      .set({ sold: sql`${ticketTiers.sold} + ${count}` })
       .where(
         and(
-          eq(ticketTiers.id, line.tierId),
-          sql`${ticketTiers.sold} + ${line.quantity} <= ${ticketTiers.quantity}`
+          eq(ticketTiers.id, tierId),
+          sql`${ticketTiers.sold} + ${count} <= ${ticketTiers.quantity}`
         )
       )
       .returning({ id: ticketTiers.id })
     if (updated.length === 0) {
-      throw new TicketStockError(line.tierName)
-    }
-    for (let i = 0; i < line.quantity; i += 1) {
-      ticketRows.push({
-        id: `tkt_${randomUUID()}`,
-        orderId: args.orderId,
-        eventId: args.eventId,
-        tierId: line.tierId,
-        code: randomUUID().replace(/-/g, ''),
-      })
+      throw new TicketStockError(tierName)
     }
   }
 
-  if (ticketRows.length > 0) {
-    await tx.insert(tickets).values(ticketRows)
-  }
+  await tx.insert(tickets).values(
+    args.tickets.map((t) => ({
+      id: `tkt_${randomUUID()}`,
+      orderId: args.orderId,
+      eventId: args.eventId,
+      tierId: t.tierId,
+      code: randomUUID().replace(/-/g, ''),
+      recipientName: t.recipientName,
+      recipientEmail: t.recipientEmail,
+    }))
+  )
 }
 
 export type OrderWithDetails = NonNullable<
@@ -130,6 +144,8 @@ export async function loadTicketsForOrder(orderId: string) {
       tierId: tickets.tierId,
       tierName: ticketTiers.name,
       code: tickets.code,
+      recipientName: tickets.recipientName,
+      recipientEmail: tickets.recipientEmail,
       checkedIn: tickets.checkedIn,
       checkedInAt: tickets.checkedInAt,
       createdAt: tickets.createdAt,
@@ -173,16 +189,38 @@ export async function fulfillOrder({
     const items = await tx
       .select({
         tierId: orderItems.tierId,
+        tierName: orderItems.tierName,
         quantity: orderItems.quantity,
       })
       .from(orderItems)
       .where(eq(orderItems.orderId, order.id))
 
+    // Resolve who each ticket belongs to. A group order carries its attendees
+    // (captured at checkout); a "for myself" order mints to the buyer, expanding
+    // each tier line by quantity.
+    const tierNameById = new Map(items.map((i) => [i.tierId, i.tierName]))
+    const mint: MintTicket[] =
+      order.attendees && order.attendees.length > 0
+        ? order.attendees.map((a) => ({
+            tierId: a.tierId,
+            tierName: tierNameById.get(a.tierId),
+            recipientName: a.name,
+            recipientEmail: a.email,
+          }))
+        : items.flatMap((i) =>
+            Array.from({ length: i.quantity }, () => ({
+              tierId: i.tierId,
+              tierName: i.tierName,
+              recipientName: order.buyerName || null,
+              recipientEmail: order.buyerEmail || null,
+            }))
+          )
+
     try {
       await mintOrderTickets(tx, {
         orderId: order.id,
         eventId: order.eventId,
-        lines: items,
+        tickets: mint,
       })
     } catch (err) {
       if (err instanceof TicketStockError) {
@@ -196,6 +234,17 @@ export async function fulfillOrder({
         )
       }
       throw err
+    }
+
+    // Count the voucher redemption now that payment succeeded. Unconditional:
+    // the cap is enforced at checkout (validateVoucher), and the buyer has
+    // already paid the discounted amount, so we honour it even in the rare
+    // race where the voucher maxed out between checkout and payment.
+    if (order.voucherId) {
+      await tx
+        .update(vouchers)
+        .set({ redeemedCount: sql`${vouchers.redeemedCount} + 1` })
+        .where(eq(vouchers.id, order.voucherId))
     }
 
     const paidAt = new Date()
@@ -221,9 +270,13 @@ export async function fulfillOrder({
 }
 
 /**
- * Generate the PDF + dispatch the confirmation email for a paid order.
+ * Generate the PDF(s) + dispatch confirmation email(s) for a paid order.
  * Both the FW webhook and the /checkout/return page call this — guarded
  * by `justFulfilled` from `fulfillOrder` so it runs exactly once.
+ *
+ * "For Myself" orders send one email to the buyer with a combined PDF. "For
+ * Multiple" orders send each attendee their own email + a PDF scoped to just
+ * their tickets — the multi-email distribution the feature is named for.
  */
 export async function notifyOrderFulfilled({
   orderId,
@@ -235,35 +288,77 @@ export async function notifyOrderFulfilled({
   const head = await loadOrderById(orderId)
   if (!head) return
 
-  const items = await loadOrderItems(orderId)
+  const ticketRows = await loadTicketsForOrder(orderId)
+  if (ticketRows.length === 0) return
 
-  let pdfUrl: string | null = null
-  try {
-    pdfUrl = await generateAndStoreTicketsPdf({ orderId, baseUrl })
-  } catch (err) {
-    console.error('PDF generation failed', err)
+  // Group tickets by recipient (email = identity). A "for myself" order
+  // collapses to a single group: the buyer.
+  type Recipient = {
+    name: string
+    email: string
+    firstCode: string
+    tiers: Map<string, number>
+    count: number
+  }
+  const recipients = new Map<string, Recipient>()
+  for (const t of ticketRows) {
+    const email = t.recipientEmail || head.order.buyerEmail
+    const name = t.recipientName || head.order.buyerName || 'there'
+    const r =
+      recipients.get(email) ??
+      ({ name, email, firstCode: t.code, tiers: new Map(), count: 0 } as Recipient)
+    const tierName = t.tierName ?? 'General'
+    r.tiers.set(tierName, (r.tiers.get(tierName) ?? 0) + 1)
+    r.count += 1
+    recipients.set(email, r)
   }
 
-  const firstName =
-    (head.order.buyerName || head.order.buyerEmail || 'there').split(' ')[0] ??
-    'there'
-  // "2× VIP, 1× General" — summary for the subject/fallback field.
-  const summaryLabel = items
-    .map((i) => `${i.quantity}× ${i.tierName}`)
-    .join(', ')
+  const isGroup =
+    recipients.size > 1 || (head.order.attendees?.length ?? 0) > 0
+  const eventDate = formatEventDateRange(
+    head.event.eventDate,
+    head.event.endDate
+  )
 
-  void tasks.trigger('send-ticket-confirmation', {
-    email: head.order.buyerEmail,
-    firstName,
-    eventTitle: head.event.title,
-    eventDate: formatEventDateRange(head.event.eventDate, head.event.endDate),
-    eventTime: head.event.eventTime,
-    eventLocation: head.event.location,
-    ticketTier: summaryLabel || 'Ticket',
-    items: items.map((i) => ({ tierName: i.tierName, quantity: i.quantity })),
-    quantity: head.order.quantity,
-    ticketsUrl: `${baseUrl}/tickets/${head.order.id}`,
-    pdfUrl: pdfUrl ?? undefined,
-    pdfFilename: pdfUrl ? `${head.event.title}-tickets.pdf` : undefined,
-  })
+  for (const r of recipients.values()) {
+    let pdfUrl: string | null = null
+    try {
+      pdfUrl = await generateAndStoreTicketsPdf({
+        orderId,
+        baseUrl,
+        // Self order → one combined PDF recorded on the order. Group order →
+        // a PDF scoped to just this attendee's tickets.
+        recipientEmail: isGroup ? r.email : undefined,
+      })
+    } catch (err) {
+      console.error('PDF generation failed', err)
+    }
+
+    const items = [...r.tiers.entries()].map(([tierName, quantity]) => ({
+      tierName,
+      quantity,
+    }))
+    const summaryLabel = items
+      .map((i) => `${i.quantity}× ${i.tierName}`)
+      .join(', ')
+
+    void tasks.trigger('send-ticket-confirmation', {
+      email: r.email,
+      firstName: r.name.split(' ')[0] ?? r.name,
+      eventTitle: head.event.title,
+      eventDate,
+      eventTime: head.event.eventTime,
+      eventLocation: head.event.location,
+      ticketTier: summaryLabel || 'Ticket',
+      items,
+      quantity: r.count,
+      // Self order links to the full order view; a group attendee links to
+      // their own ticket (they shouldn't see the rest of the order).
+      ticketsUrl: isGroup
+        ? ticketUrl(baseUrl, r.firstCode)
+        : `${baseUrl}/tickets/${head.order.id}`,
+      pdfUrl: pdfUrl ?? undefined,
+      pdfFilename: pdfUrl ? `${head.event.title}-tickets.pdf` : undefined,
+    })
+  }
 }
