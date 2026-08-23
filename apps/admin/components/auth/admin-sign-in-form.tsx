@@ -1,23 +1,21 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Controller, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { toast } from 'sonner'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { ViewIcon, ViewOffSlashIcon } from '@hugeicons/core-free-icons'
-
-import { Button } from '@ticketur/ui/components/button'
-import { Input } from '@ticketur/ui/components/input'
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from '@ticketur/ui/components/field'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Input } from '@ticketur/ui/components/input'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Button } from '@ticketur/ui/components/button'
+import { ViewIcon, ViewOffSlashIcon } from '@hugeicons/core-free-icons'
 
 import { authClient } from '@/lib/auth-client'
 
@@ -58,9 +56,6 @@ export function AdminSignInForm() {
         return
       }
 
-      // This app is admin-only. If a valid non-admin account signs in, drop the
-      // session again and explain — the proxy would otherwise bounce them
-      // straight back to this page with no reason shown.
       const role = (result as { user?: { role?: string | null } } | null)?.user
         ?.role
       if (role !== 'admin') {
@@ -123,12 +118,6 @@ export function AdminSignInForm() {
                 >
                   Password
                 </FieldLabel>
-                <Link
-                  href="/forgot-password"
-                  className="text-primary text-sm font-medium hover:underline"
-                >
-                  Forgot password?
-                </Link>
               </div>
               <div className="relative">
                 <Input

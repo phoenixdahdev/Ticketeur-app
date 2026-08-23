@@ -1,8 +1,6 @@
 import { createAccessControl } from 'better-auth/plugins/access'
 import { defaultStatements, adminAc } from 'better-auth/plugins/admin/access'
 
-// Resource statements — the actions our roles can perform on each resource.
-// Merged with Better Auth's default admin statements (user, session).
 const statement = {
   ...defaultStatements,
   event: ['create', 'update', 'delete', 'view'],
@@ -11,8 +9,6 @@ const statement = {
 } as const
 
 export const ac = createAccessControl(statement)
-
-// ─── Business roles ─────────────────────────────────────────────────────────
 
 export const attendee = ac.newRole({
   event: ['view'],
@@ -29,10 +25,6 @@ export const vendor = ac.newRole({
   event: ['view'],
 })
 
-// ─── Platform admin ─────────────────────────────────────────────────────────
-// Required when using custom access control — Better Auth's default `admin`
-// role only exists when no `ac`/`roles` are passed. Since we pass both, we
-// must explicitly define `admin` and list it in `adminRoles`.
 export const admin = ac.newRole({
   ...adminAc.statements,
   event: ['create', 'update', 'delete', 'view'],
