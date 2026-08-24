@@ -7,6 +7,7 @@ import { events, vouchers } from '@ticketur/db'
 
 import { createTRPCRouter, organizerProcedure } from '../../trpc'
 import { newId } from '../../lib/ids'
+import { sendVoucherCode, voucherSendInput } from '../../lib/voucher-send'
 
 const discountTypeEnum = z.enum(['percent', 'fixed'])
 
@@ -166,10 +167,7 @@ export const orgVouchersRouter = createTRPCRouter({
         .select({ id: vouchers.id })
         .from(vouchers)
         .where(
-          and(
-            eq(vouchers.id, input.id),
-            eq(vouchers.organizerId, organizerId)
-          )
+          and(eq(vouchers.id, input.id), eq(vouchers.organizerId, organizerId))
         )
         .limit(1)
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' })
@@ -191,6 +189,17 @@ export const orgVouchersRouter = createTRPCRouter({
         })
         .where(eq(vouchers.id, input.id))
       return { id: input.id }
+    }),
+
+  // Email one of the organizer's own codes to a list of addresses, or to
+  // everyone holding a ticket for one of their events.
+  send: organizerProcedure
+    .input(voucherSendInput)
+    .mutation(async ({ ctx, input }) => {
+      return sendVoucherCode(ctx.db, {
+        input,
+        ownerId: ctx.session.user.id,
+      })
     }),
 
   setActive: organizerProcedure

@@ -120,6 +120,13 @@
       "when": 1787498699042,
       "tag": "0016_account_issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787545307671,
+      "tag": "0017_platform_vouchers",
+      "breakpoints": true
     }
   ]
 }
