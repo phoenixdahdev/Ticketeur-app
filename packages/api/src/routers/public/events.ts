@@ -1,15 +1,22 @@
-import { and, asc, desc, eq, ilike, ne, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { events, eventVendors, ticketTiers, user } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
-import { notCurrentlyBanned, stillRunning } from '../../lib/predicates'
-
+import {
+  alreadyEnded,
+  notCurrentlyBanned,
+  stillRunning,
+} from '../../lib/predicates'
 
 const listInput = z.object({
   q: z.string().default(''),
   category: z.string().default('all'),
+  // 'upcoming' — still running (or TBD); 'past' — already finished. Past is a
+  // showcase of what the platform has actually hosted, so it is ordered
+  // most-recent-first and carries an attendee count instead of a price.
+  tab: z.enum(['upcoming', 'past']).default('upcoming'),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(50).default(12),
 })
@@ -18,7 +25,20 @@ export const publicEventsRouter = createTRPCRouter({
   list: publicProcedure.input(listInput).query(async ({ ctx, input }) => {
     const today = new Date().toISOString().slice(0, 10)
 
-    const filters = [eq(events.status, 'upcoming'), stillRunning(today)]
+    const isPast = input.tab === 'past'
+    // A concluded event keeps status 'upcoming' — it is the date that makes it
+    // past, so nothing has to sweep the table to retire events.
+    //
+    // The past tab also surfaces 'archived' events: archiving is the organizer
+    // clearing their own active list, not a request to erase an event that
+    // already happened publicly. 'suspended' is deliberately NOT included —
+    // that is an admin moderation state and must stay hidden everywhere.
+    const filters = [
+      isPast
+        ? inArray(events.status, ['upcoming', 'archived'])
+        : eq(events.status, 'upcoming'),
+      isPast ? alreadyEnded(today) : stillRunning(today),
+    ]
     if (input.q.trim().length > 0) {
       filters.push(ilike(events.title, `%${input.q.trim()}%`))
     }
@@ -28,6 +48,12 @@ export const publicEventsRouter = createTRPCRouter({
     const minPriceExpr =
       sql<number>`COALESCE(MIN(${ticketTiers.priceMinor}), 0)::int`.as(
         'minPrice'
+      )
+    // Tickets sold across the event's tiers — the "we hosted this and people
+    // came" number shown on past events.
+    const attendeeCountExpr =
+      sql<number>`COALESCE(SUM(${ticketTiers.sold}), 0)::int`.as(
+        'attendeeCount'
       )
 
     const rows = await ctx.db
@@ -41,13 +67,15 @@ export const publicEventsRouter = createTRPCRouter({
         location: events.location,
         bannerUrl: events.bannerUrl,
         minPrice: minPriceExpr,
+        attendeeCount: attendeeCountExpr,
       })
       .from(events)
       .innerJoin(user, eq(user.id, events.organizerId))
       .leftJoin(ticketTiers, eq(ticketTiers.eventId, events.id))
       .where(and(...filters, notCurrentlyBanned))
       .groupBy(events.id)
-      .orderBy(asc(events.eventDate))
+      // Upcoming: soonest first. Past: most recent first.
+      .orderBy(isPast ? desc(events.eventDate) : asc(events.eventDate))
       .limit(input.pageSize)
       .offset((input.page - 1) * input.pageSize)
 
@@ -152,7 +180,11 @@ export const publicEventsRouter = createTRPCRouter({
         .where(
           and(
             eq(events.slug, input.slug),
-            eq(events.status, 'upcoming'),
+            // 'archived' is allowed through so a past event listed in the
+            // past tab still resolves; the date check below drops an archived
+            // event that hasn't happened yet (the organizer withdrew it).
+            // 'suspended' never resolves — admin moderation.
+            inArray(events.status, ['upcoming', 'archived']),
             notCurrentlyBanned
           )
         )
@@ -186,11 +218,24 @@ export const publicEventsRouter = createTRPCRouter({
         null as number | null
       )
 
+      // A finished event stays reachable (its page is the public record of it)
+      // but must not sell tickets. checkout.start rejects it server-side too;
+      // this flag is what lets the UI say so instead of failing on submit.
+      // A TBD event (null date) is never treated as ended.
+      const today = new Date().toISOString().slice(0, 10)
+      const lastDay = event.endDate ?? event.eventDate
+      const hasEnded = lastDay !== null && lastDay < today
+
+      // An archived event is public only as a record of something that already
+      // happened. Archived and still upcoming means the organizer pulled it.
+      if (event.status === 'archived' && !hasEnded) return null
+
       return {
         event,
         tiers,
         vendors,
         minPriceMinor: minPrice ?? 0,
+        hasEnded,
       }
     }),
 })

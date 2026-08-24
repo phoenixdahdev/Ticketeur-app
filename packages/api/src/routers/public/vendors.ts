@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ilike, lt, ne, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, ilike, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { Database } from '@ticketur/db'
@@ -11,7 +11,11 @@ import {
 } from '@ticketur/db'
 
 import { createTRPCRouter, publicProcedure } from '../../trpc'
-import { notCurrentlyBanned } from '../../lib/predicates'
+import {
+  alreadyEnded,
+  notCurrentlyBanned,
+  stillRunning,
+} from '../../lib/predicates'
 
 const listInput = z.object({
   q: z.string().default(''),
@@ -206,7 +210,11 @@ export const publicVendorsRouter = createTRPCRouter({
         .where(
           and(
             eq(eventVendors.vendorId, vendor.id),
-            eq(events.status, 'upcoming')
+            eq(events.status, 'upcoming'),
+            // Without this an event that has already finished stayed in the
+            // "participating" list and also matched `past` below, showing up
+            // in both at once.
+            stillRunning(today)
           )
         )
         .orderBy(asc(events.eventDate))
@@ -244,7 +252,9 @@ export const publicVendorsRouter = createTRPCRouter({
         .where(
           and(
             eq(eventVendors.vendorId, vendor.id),
-            lt(events.eventDate, today),
+            // Was `lt(events.eventDate, today)`, which ignored endDate — a
+            // multi-day event still running read as past on its second day.
+            alreadyEnded(today),
             ne(events.status, 'suspended')
           )
         )
