@@ -126,3 +126,16 @@ export type AccountRemovedPayload = z.infer<typeof accountRemovedSchema>
 export type VendorApprovedPayload = z.infer<typeof vendorApprovedSchema>
 export type VendorRejectedPayload = z.infer<typeof vendorRejectedSchema>
 export type EventRejectedPayload = z.infer<typeof eventRejectedSchema>
+
+export const voucherCodeSchema = z.object({
+  // One send fans out to many recipients; the task loops so a single failure
+  // doesn't lose the rest of the batch.
+  emails: z.array(z.email()).min(1).max(200),
+  code: z.string(),
+  discountLabel: z.string(),
+  eventTitle: z.string().nullable().default(null),
+  expiresOn: z.string().nullable().default(null),
+  ctaUrl: z.url(),
+  note: z.string().nullable().default(null),
+})
+export type VoucherCodePayload = z.infer<typeof voucherCodeSchema>

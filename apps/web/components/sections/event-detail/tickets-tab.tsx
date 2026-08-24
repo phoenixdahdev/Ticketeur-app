@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { AnimatePresence, motion } from 'motion/react'
 import { useQuery } from '@tanstack/react-query'
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs'
@@ -117,6 +118,29 @@ export function TicketsTab({ event }: { event: EventDetailData }) {
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="bg-muted h-32 animate-pulse rounded-2xl" />
         ))}
+      </div>
+    )
+  }
+
+  // A finished event keeps its page as the public record of it, but the whole
+  // purchase flow is withdrawn — checkout.start would reject the order anyway,
+  // so failing here (before the buyer fills anything in) is the honest path.
+  // Takes precedence over the no-tiers state below.
+  if (data?.hasEnded) {
+    return (
+      <div className="border-border bg-muted/20 flex min-h-60 flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+        <p className="font-heading text-foreground text-lg font-semibold">
+          This event has ended
+        </p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Tickets are no longer on sale. Browse what&apos;s coming up next.
+        </p>
+        <Link
+          href="/events"
+          className="text-primary hover:text-primary-hover mt-4 text-sm font-semibold"
+        >
+          Browse upcoming events
+        </Link>
       </div>
     )
   }

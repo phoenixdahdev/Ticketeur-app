@@ -12,10 +12,7 @@ import {
 } from '@ticketur/ui/components/native-select'
 
 import { useTRPC } from '@/lib/trpc'
-import {
-  SendVoucherDialog,
-  type SendTarget,
-} from '@/components/dashboard/send-voucher-dialog'
+import { SendVoucherDialog } from '@/components/dashboard/vouchers/send-voucher-dialog'
 
 const ALL_EVENTS = '__all__'
 
@@ -45,25 +42,32 @@ function discountLabel(type: 'percent' | 'fixed', value: number) {
     : `₦${(value / 100).toLocaleString()}`
 }
 
-export function OrgVouchersContent() {
+export function AdminVouchersContent() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
-  const [sendTarget, setSendTarget] = useState<SendTarget | null>(null)
+  const [sendTarget, setSendTarget] = useState<{
+    id: string
+    code: string
+    eventId: string | null
+  } | null>(null)
 
-  const listQuery = useQuery(trpc.org.vouchers.list.queryOptions())
-  const eventsQuery = useQuery(trpc.org.vouchers.eventOptions.queryOptions())
+  const listQuery = useQuery(trpc.admin.vouchers.list.queryOptions())
+  const eventsQuery = useQuery(trpc.admin.vouchers.eventOptions.queryOptions())
+  const orgOwnedQuery = useQuery(
+    trpc.admin.vouchers.listOrganizerOwned.queryOptions()
+  )
 
   function invalidateList() {
     void queryClient.invalidateQueries({
-      queryKey: trpc.org.vouchers.list.queryKey(),
+      queryKey: trpc.admin.vouchers.list.queryKey(),
     })
   }
 
   const create = useMutation(
-    trpc.org.vouchers.create.mutationOptions({
+    trpc.admin.vouchers.create.mutationOptions({
       onSuccess: () => {
-        toast.success('Voucher created')
+        toast.success('Platform voucher created')
         setForm(EMPTY_FORM)
         invalidateList()
       },
@@ -73,7 +77,7 @@ export function OrgVouchersContent() {
   )
 
   const setActive = useMutation(
-    trpc.org.vouchers.setActive.mutationOptions({
+    trpc.admin.vouchers.setActive.mutationOptions({
       onSuccess: () => invalidateList(),
       onError: (err) =>
         toast.error('Could not update voucher', { description: err.message }),
@@ -113,17 +117,18 @@ export function OrgVouchersContent() {
 
   const vouchers = listQuery.data ?? []
   const events = eventsQuery.data ?? []
+  const orgOwned = orgOwnedQuery.data ?? []
 
   return (
-    <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="font-heading text-foreground text-2xl font-bold md:text-3xl">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 md:gap-8">
+      <header className="flex flex-col gap-1.5">
+        <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
           Vouchers
         </h1>
-        <p className="text-muted-foreground text-sm">
-          Create discount codes for your events. Leave the event as{' '}
-          <span className="font-medium">All events</span> to make a code that
-          works across everything you run.
+        <p className="text-muted-foreground text-sm md:text-base">
+          Platform-wide discount codes. Leave the event as{' '}
+          <span className="font-medium">All events</span> for a code that works
+          anywhere on Ticketeur.
         </p>
       </header>
 
@@ -138,7 +143,7 @@ export function OrgVouchersContent() {
             onChange={(e) =>
               setForm({ ...form, code: e.target.value.toUpperCase() })
             }
-            placeholder="EARLY20"
+            placeholder="LAUNCH10"
             disabled={create.isPending}
           />
         </Field>
@@ -188,7 +193,7 @@ export function OrgVouchersContent() {
             inputMode="numeric"
             value={form.value}
             onChange={(e) => setForm({ ...form, value: e.target.value })}
-            placeholder={form.discountType === 'percent' ? '20' : '1500'}
+            placeholder={form.discountType === 'percent' ? '10' : '1500'}
             disabled={create.isPending}
           />
         </Field>
@@ -222,10 +227,10 @@ export function OrgVouchersContent() {
         </div>
       </form>
 
-      {/* List */}
+      {/* Platform vouchers */}
       <section className="flex flex-col gap-3">
         <h2 className="font-heading text-foreground text-lg font-semibold">
-          Your vouchers
+          Platform vouchers
         </h2>
         {listQuery.isLoading ? (
           <div className="flex flex-col gap-2">
@@ -235,7 +240,7 @@ export function OrgVouchersContent() {
           </div>
         ) : vouchers.length === 0 ? (
           <p className="text-muted-foreground border-border rounded-xl border border-dashed p-8 text-center text-sm">
-            No vouchers yet. Create one above.
+            No platform vouchers yet. Create one above.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -295,6 +300,55 @@ export function OrgVouchersContent() {
                   >
                     {v.active ? 'Deactivate' : 'Activate'}
                   </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Organizer-owned, read-only */}
+      <section className="flex flex-col gap-3">
+        <h2 className="font-heading text-foreground text-lg font-semibold">
+          Organizer vouchers
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Codes created by organizers, shown for visibility. Edit them from the
+          organizer&apos;s own dashboard.
+        </p>
+        {orgOwned.length === 0 ? (
+          <p className="text-muted-foreground border-border rounded-xl border border-dashed p-8 text-center text-sm">
+            No organizer vouchers yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {orgOwned.map((v) => (
+              <li
+                key={v.id}
+                className="border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-heading text-foreground font-semibold">
+                      {v.code}
+                    </span>
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                      {discountLabel(v.discountType, v.discountValue)}
+                    </span>
+                    {!v.active ? (
+                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                        Inactive
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-muted-foreground text-xs">
+                    {v.organizerName} · {v.eventTitle ?? 'All their events'} ·{' '}
+                    {v.redeemedCount}
+                    {v.maxRedemptions != null
+                      ? `/${v.maxRedemptions}`
+                      : ''}{' '}
+                    used
+                  </span>
                 </div>
               </li>
             ))}

@@ -88,11 +88,13 @@ export function EventsGridSection() {
       ? 1
       : 0)
 
-  // Server-side filter/search/page. Sort, category and location filters are
-  // not yet supported by the public.events.list router and are kept client-
-  // visible for now; they'll re-engage once the router gains those fields.
+  // Server-side tab/filter/search/page. Sort, category and location filters
+  // are not yet supported by the public.events.list router and are kept
+  // client-visible for now; they'll re-engage once the router gains those
+  // fields.
   const listQuery = useQuery(
     trpc.public.events.list.queryOptions({
+      tab: state.tab,
       q: state.q,
       page: state.page,
       pageSize: PAGE_SIZE,
@@ -103,12 +105,21 @@ export function EventsGridSection() {
   const rows = listQuery.data?.rows ?? []
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const currentPage = Math.min(state.page, totalPages)
+  const isPast = state.tab === 'past'
   const pageItems = rows.map((ev) => ({
     id: ev.id,
     title: ev.title,
     category: '',
-    status: 'upcoming' as const,
-    price: ev.minPrice > 0 ? formatNaira(ev.minPrice) : 'Free',
+    status: isPast ? ('past' as const) : ('upcoming' as const),
+    // A finished event's ticket price is no longer actionable, so the slot
+    // carries the turnout instead — the reason to show past events at all.
+    price: isPast
+      ? ev.attendeeCount > 0
+        ? `${ev.attendeeCount.toLocaleString()} ${ev.attendeeCount === 1 ? 'attendee' : 'attendees'}`
+        : 'Hosted'
+      : ev.minPrice > 0
+        ? formatNaira(ev.minPrice)
+        : 'Free',
     date: ev.eventDate,
     endDate: ev.endDate,
     location: ev.location,
@@ -183,7 +194,7 @@ export function EventsGridSection() {
               ))}
             </div>
           ) : pageItems.length === 0 ? (
-            <EmptyState />
+            <EmptyState tab={state.tab} />
           ) : (
             <motion.div
               layout
@@ -242,14 +253,16 @@ export function EventsGridSection() {
   )
 }
 
-function EmptyState() {
+function EmptyState({ tab }: { tab: 'upcoming' | 'past' }) {
   return (
     <div className="border-border bg-muted/20 flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
       <p className="font-heading text-foreground text-lg font-semibold">
-        No events match your filters
+        {tab === 'past' ? 'No past events yet' : 'No events match your filters'}
       </p>
       <p className="text-muted-foreground mt-1 text-sm">
-        Try clearing some filters or searching for something else.
+        {tab === 'past'
+          ? 'Events show up here once they have finished.'
+          : 'Try clearing some filters or searching for something else.'}
       </p>
     </div>
   )
