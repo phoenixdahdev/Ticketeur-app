@@ -42,19 +42,17 @@ export function computeDiscountMinor(
  * (an admin-created voucher, `organizerId` NULL, valid on any event). Either
  * may additionally be scoped to a single event or left open to all.
  *
- * Because both owners can mint the same code, up to two rows may match. They
- * are ranked most-specific-first and the winner takes it:
+ * Each owner can hold at most one row per code — the (organizerId, lower(code))
+ * index enforces that per organizer, and the partial index on lower(code) WHERE
+ * organizerId IS NULL does the same for the platform. So a code matches at most
+ * two rows here: the organizer's and the platform's. The organizer's wins, and
+ * a platform-wide promo can therefore never quietly override what an organizer
+ * set up for their own event. (The secondary sort on eventId is defensive; with
+ * one row per owner per code it is never the deciding factor.)
  *
- *   1. the organizer's own code scoped to this event
- *   2. the organizer's own code for all their events
- *   3. a platform code scoped to this event
- *   4. a platform code for all events
- *
- * An organizer's code therefore always beats a platform code of the same name,
- * so a platform-wide promo can never quietly override what an organizer set up
- * for their own event. Validity (active, window, redemption cap) is checked on
- * the winner only — a spent organizer code does not silently fall through to a
- * platform code, which would surprise both the buyer and the organizer.
+ * Validity — active, window, redemption cap — is checked on the winner only. A
+ * spent organizer code does not silently fall through to a platform code, which
+ * would surprise the buyer and the organizer alike.
  */
 export async function validateVoucher(
   db: Database,
