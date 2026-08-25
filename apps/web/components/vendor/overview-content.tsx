@@ -33,7 +33,7 @@ export function VendorOverviewContent({
   const upcoming = (upcomingQuery.data ?? []).map(serverToCard)
 
   return (
-    <div className="flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
+    <div className="flex min-h-0 flex-1 scrollbar-none flex-col gap-6 overflow-y-auto md:gap-8 [&::-webkit-scrollbar]:hidden">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight md:text-[28px]">
           Hello, {vendorName}
@@ -82,6 +82,9 @@ export function VendorOverviewContent({
           }
           pillTone={(stats?.profileCompletion ?? 0) >= 100 ? 'green' : 'red'}
           progress={stats?.profileCompletion ?? 0}
+          // The card reports profile completeness, so clicking it goes to the
+          // page where you act on it.
+          href="/vendor/profile"
         />
       </div>
 
