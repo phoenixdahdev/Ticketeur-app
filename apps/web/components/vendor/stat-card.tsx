@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { HugeiconsIcon } from '@hugeicons/react'
 import type { IconSvgElement } from '@hugeicons/react'
 
@@ -33,6 +34,7 @@ export function VendorStatCard({
   pill,
   pillTone: pTone,
   progress,
+  href,
 }: {
   label: string
   value: string
@@ -41,9 +43,11 @@ export function VendorStatCard({
   pill?: string
   pillTone?: VendorStatTone
   progress?: number
+  /** When set, the whole card becomes a link to this route. */
+  href?: string
 }) {
-  return (
-    <div className="border-border/60 bg-background flex flex-col gap-3 rounded-2xl border p-4 shadow-sm shadow-black/[0.02] md:p-5">
+  const body = (
+    <>
       <div className="flex items-start justify-between">
         <div
           className={cn(
@@ -84,6 +88,28 @@ export function VendorStatCard({
           </div>
         ) : null}
       </div>
-    </div>
+    </>
+  )
+
+  const shell =
+    'border-border/60 bg-background flex flex-col gap-3 rounded-2xl border p-4 shadow-sm shadow-black/[0.02] md:p-5'
+
+  if (!href) {
+    return <div className={shell}>{body}</div>
+  }
+
+  // A stat card is not obviously clickable, so a linked one gets hover and
+  // focus affordances. The card's own text (label + value) is the accessible
+  // name, which reads as e.g. "Profile Incomplete 60%".
+  return (
+    <Link
+      href={href}
+      className={cn(
+        shell,
+        'hover:border-primary/50 hover:bg-muted/30 focus-visible:ring-primary/50 transition-colors outline-none focus-visible:ring-2'
+      )}
+    >
+      {body}
+    </Link>
   )
 }
