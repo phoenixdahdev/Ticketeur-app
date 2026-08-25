@@ -14,21 +14,30 @@ import { events } from './events'
 
 // ─── Vouchers (organizer-created discount codes) ────────────────────────────
 
-// A voucher belongs to an organizer and discounts checkout on that organizer's
-// events. `eventId` is nullable: NULL means the code works across *all* of the
-// organizer's events ("All events" in the create form); a set eventId scopes it
-// to that one event. Codes are unique per organizer (case-insensitive), so a
-// code resolves to exactly one voucher for a given organizer — no ambiguity
-// between an all-events and an event-scoped code of the same name.
+// A voucher discounts checkout, and has two possible owners:
+//
+//   organizerId set  — the organizer's own code, valid only on their events.
+//   organizerId NULL — a platform code created by an admin, valid on any
+//                      event (or on one specific event via `eventId`).
+//
+// `eventId` is nullable independently: NULL means "every event this voucher's
+// owner can discount"; a set eventId narrows it to that one event.
+//
+// Uniqueness is per owner and case-insensitive. Two indexes are needed because
+// Postgres treats every NULL as distinct, so a single index on
+// (organizerId, lower(code)) would not stop two platform codes sharing a name:
+// one index covers organizer-owned rows, a partial index covers platform rows.
 export type VoucherDiscountType = 'percent' | 'fixed'
 
 export const vouchers = pgTable(
   'vouchers',
   {
     id: text('id').primaryKey(),
-    organizerId: text('organizer_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    // NULL = platform voucher, owned by the admin team rather than an organizer.
+    organizerId: text('organizer_id').references(() => user.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
     // NULL = applies to all of this organizer's events.
     eventId: text('event_id').references(() => events.id, {
       onDelete: 'cascade',
@@ -53,6 +62,11 @@ export const vouchers = pgTable(
       t.organizerId,
       sql`lower(${t.code})`
     ),
+    // Platform codes (organizerId NULL) are unique among themselves. The index
+    // above cannot enforce this: NULL != NULL in a unique index.
+    uniqueIndex('vouchers_platform_code_unique')
+      .on(sql`lower(${t.code})`)
+      .where(sql`${t.organizerId} is null`),
     index('vouchers_organizer_idx').on(t.organizerId),
     index('vouchers_event_idx').on(t.eventId),
   ]

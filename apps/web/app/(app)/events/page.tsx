@@ -21,7 +21,10 @@ export default async function EventsPage() {
   await Promise.all([
     queryClient.prefetchQuery(trpc.public.events.featured.queryOptions()),
     queryClient.prefetchQuery(
+      // Must mirror the grid's default query input exactly — including `tab` —
+      // or the key won't match and the client refetches after hydration.
       trpc.public.events.list.queryOptions({
+        tab: 'upcoming',
         q: '',
         page: 1,
         pageSize: GRID_PAGE_SIZE,
