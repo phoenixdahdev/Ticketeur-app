@@ -6,11 +6,17 @@ import {
   Calendar03Icon,
   Call02Icon,
   CheckmarkBadge02Icon,
+  Facebook01Icon,
   Globe02Icon,
   InformationCircleIcon,
   InstagramIcon,
+  Linkedin01Icon,
   Location01Icon,
   Mail02Icon,
+  NewTwitterIcon,
+  TiktokIcon,
+  WhatsappIcon,
+  YoutubeIcon,
 } from '@hugeicons/core-free-icons'
 
 import { MarkdownView } from '@ticketur/ui/components/markdown-view'
@@ -23,6 +29,12 @@ export type VendorContact = {
   location: string
   websiteUrl: string | null
   instagramUrl: string | null
+  twitterUrl: string | null
+  facebookUrl: string | null
+  tiktokUrl: string | null
+  linkedinUrl: string | null
+  youtubeUrl: string | null
+  whatsapp: string | null
 }
 
 export function VendorAbout({
@@ -119,18 +131,68 @@ export function VendorAbout({
             )}
           </ul>
 
-          {contact.instagramUrl && (
+          {contact.instagramUrl ||
+          contact.twitterUrl ||
+          contact.facebookUrl ||
+          contact.tiktokUrl ||
+          contact.linkedinUrl ||
+          contact.youtubeUrl ||
+          contact.whatsapp ? (
             <div className="border-border flex flex-col gap-3 border-t pt-4">
               <span className="text-muted-foreground text-xs font-medium">
                 Social Media
               </span>
-              <ContactRow
-                icon={InstagramIcon}
-                label={contact.instagramUrl.replace(/^https?:\/\//, '')}
-                href={contact.instagramUrl}
-              />
+              {contact.whatsapp && (
+                <ContactRow
+                  icon={WhatsappIcon}
+                  label={contact.whatsapp}
+                  href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, '')}`}
+                />
+              )}
+              {contact.instagramUrl && (
+                <ContactRow
+                  icon={InstagramIcon}
+                  label={contact.instagramUrl.replace(/^https?:\/\//, '')}
+                  href={contact.instagramUrl}
+                />
+              )}
+              {contact.twitterUrl && (
+                <ContactRow
+                  icon={NewTwitterIcon}
+                  label={contact.twitterUrl.replace(/^https?:\/\//, '')}
+                  href={contact.twitterUrl}
+                />
+              )}
+              {contact.facebookUrl && (
+                <ContactRow
+                  icon={Facebook01Icon}
+                  label={contact.facebookUrl.replace(/^https?:\/\//, '')}
+                  href={contact.facebookUrl}
+                />
+              )}
+              {contact.tiktokUrl && (
+                <ContactRow
+                  icon={TiktokIcon}
+                  label={contact.tiktokUrl.replace(/^https?:\/\//, '')}
+                  href={contact.tiktokUrl}
+                />
+              )}
+              {contact.linkedinUrl && (
+                <ContactRow
+                  icon={Linkedin01Icon}
+                  label={contact.linkedinUrl.replace(/^https?:\/\//, '')}
+                  href={contact.linkedinUrl}
+                />
+              )}
+              {contact.youtubeUrl && (
+                <ContactRow
+                  icon={YoutubeIcon}
+                  label={contact.youtubeUrl.replace(/^https?:\/\//, '')}
+                  href={contact.youtubeUrl}
+                />
+              )}
             </div>
-          )}
+          ) : null}
         </motion.div>
       </div>
 

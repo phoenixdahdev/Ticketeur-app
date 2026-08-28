@@ -1,0 +1,14 @@
+feat(vendors): phone + full socials on the vendor profile
+
+The vendor profile form was missing the phone field and only had Instagram +
+Website. Add the phone number and a full set of socials — X (Twitter),
+Facebook, TikTok, LinkedIn, YouTube, and WhatsApp — end to end:
+
+- schema: six new nullable columns on user (migration 0019, additive).
+- vendor.profile get/update + input now carry phone, whatsapp and the five new
+  social URLs.
+- the profile form renders inputs for all of them (WhatsApp/phone as numbers,
+  the rest as profile URLs), prefilled from and saved back to the server.
+- public /vendors/[id] surfaces them: public.vendors.byId returns the socials
+  and the profile's Contact / Social Media panel links each one that's set
+  (WhatsApp rendered as a wa.me link).
