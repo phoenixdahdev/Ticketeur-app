@@ -156,3 +156,12 @@ export const voucherCodeSchema = z.object({
   note: z.string().nullable().default(null),
 })
 export type VoucherCodePayload = z.infer<typeof voucherCodeSchema>
+
+export const adminBroadcastSchema = z.object({
+  // One batch of recipients; the API fans a large audience into several sends.
+  emails: z.array(z.email()).min(1).max(100),
+  subject: z.string(),
+  // Markdown authored in the admin composer.
+  body: z.string(),
+})
+export type AdminBroadcastPayload = z.infer<typeof adminBroadcastSchema>

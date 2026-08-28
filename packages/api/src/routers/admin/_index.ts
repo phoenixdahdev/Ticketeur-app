@@ -6,6 +6,7 @@ import { adminTransactionsRouter } from './transactions'
 import { adminModerationRouter } from './moderation'
 import { adminOverviewRouter } from './overview'
 import { adminVouchersRouter } from './vouchers'
+import { adminEmailsRouter } from './emails'
 
 export const adminRouter = createTRPCRouter({
   users: adminUsersRouter,
@@ -14,4 +15,5 @@ export const adminRouter = createTRPCRouter({
   moderation: adminModerationRouter,
   overview: adminOverviewRouter,
   vouchers: adminVouchersRouter,
+  emails: adminEmailsRouter,
 })
