@@ -41,6 +41,14 @@ export const user = pgTable('user', {
   vendorBannerUrl: text('vendor_banner_url'),
   vendorInstagramUrl: text('vendor_instagram_url'),
   vendorWebsiteUrl: text('vendor_website_url'),
+  // Socials shown on the public vendor profile. WhatsApp is a phone number
+  // (rendered as a wa.me link); the rest are profile URLs.
+  vendorTwitterUrl: text('vendor_twitter_url'),
+  vendorFacebookUrl: text('vendor_facebook_url'),
+  vendorTiktokUrl: text('vendor_tiktok_url'),
+  vendorLinkedinUrl: text('vendor_linkedin_url'),
+  vendorYoutubeUrl: text('vendor_youtube_url'),
+  vendorWhatsapp: text('vendor_whatsapp'),
   vendorExpertise: text('vendor_expertise'),
   vendorFocus: text('vendor_focus'),
   vendorExperience: text('vendor_experience'),

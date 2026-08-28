@@ -13,7 +13,10 @@ export {
   vendorApprovedSchema,
   vendorRejectedSchema,
   eventRejectedSchema,
+  eventEditApprovedSchema,
+  eventEditRejectedSchema,
   voucherCodeSchema,
+  adminBroadcastSchema,
 } from './schema'
 export type {
   VerificationOtpPayload,
@@ -30,5 +33,8 @@ export type {
   VendorApprovedPayload,
   VendorRejectedPayload,
   EventRejectedPayload,
+  EventEditApprovedPayload,
+  EventEditRejectedPayload,
   VoucherCodePayload,
+  AdminBroadcastPayload,
 } from './schema'

@@ -71,8 +71,15 @@ export function VendorProfileContent({
       businessCategory: data.businessCategory ?? '',
       tagline: data.tagline ?? '',
       businessDescription: data.businessDescription ?? '',
+      phone: data.phone ?? '',
+      whatsapp: data.whatsapp ?? '',
       instagramUrl: data.instagramUrl ?? '',
       websiteUrl: data.websiteUrl ?? '',
+      twitterUrl: data.twitterUrl ?? '',
+      facebookUrl: data.facebookUrl ?? '',
+      tiktokUrl: data.tiktokUrl ?? '',
+      linkedinUrl: data.linkedinUrl ?? '',
+      youtubeUrl: data.youtubeUrl ?? '',
       logoUrl: data.image ?? null,
       bannerUrl: data.bannerUrl ?? null,
       expertise: data.expertise ?? '',
@@ -373,6 +380,135 @@ function BusinessIdentityCard({
                   {...field}
                   value={field.value ?? ''}
                   placeholder="e.g www.tastybite.com"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="phone"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  Phone Number
+                </FieldLabel>
+                <Input
+                  {...field}
+                  type="tel"
+                  value={field.value ?? ''}
+                  placeholder="+234 000 000 0000"
+                  autoComplete="tel"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="whatsapp"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  WhatsApp Number
+                </FieldLabel>
+                <Input
+                  {...field}
+                  type="tel"
+                  value={field.value ?? ''}
+                  placeholder="+234 000 000 0000"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="twitterUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  X (Twitter) URL
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="e.g x.com/tastybites"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="facebookUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  Facebook URL
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="e.g facebook.com/tastybites"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="tiktokUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  TikTok URL
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="e.g tiktok.com/@tastybites"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="linkedinUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  LinkedIn URL
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="e.g linkedin.com/company/tastybites"
+                  aria-invalid={fieldState.invalid}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="youtubeUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel className="text-xs font-semibold">
+                  YouTube URL
+                </FieldLabel>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="e.g youtube.com/@tastybites"
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldError errors={[fieldState.error]} />

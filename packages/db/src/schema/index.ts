@@ -21,6 +21,7 @@ export {
 } from './events'
 export type {
   EventStatus,
+  EventPendingChanges,
   EventVendorStatus,
   ExternalVendorInviteStatus,
   OrderStatus,

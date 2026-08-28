@@ -29,8 +29,16 @@ export const vendorProfileSchema = z.object({
     .string()
     .trim()
     .max(2000, 'Keep your description under 2000 characters'),
+  // Contact + socials shown on the public vendor profile.
+  phone: z.string().trim().max(32).optional(),
+  whatsapp: z.string().trim().max(32).optional(),
   instagramUrl: optionalUrl,
   websiteUrl: optionalUrl,
+  twitterUrl: optionalUrl,
+  facebookUrl: optionalUrl,
+  tiktokUrl: optionalUrl,
+  linkedinUrl: optionalUrl,
+  youtubeUrl: optionalUrl,
   logoUrl: z.string().nullable().optional(),
   bannerUrl: z.string().nullable().optional(),
   // Surfaced on public page as the three highlight stats.
@@ -48,8 +56,15 @@ export const VENDOR_PROFILE_DEFAULTS: VendorProfileValues = {
   businessCategory: '',
   tagline: '',
   businessDescription: '',
+  phone: '',
+  whatsapp: '',
   instagramUrl: '',
   websiteUrl: '',
+  twitterUrl: '',
+  facebookUrl: '',
+  tiktokUrl: '',
+  linkedinUrl: '',
+  youtubeUrl: '',
   logoUrl: null,
   bannerUrl: null,
   expertise: '',

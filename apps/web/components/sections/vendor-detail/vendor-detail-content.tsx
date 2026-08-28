@@ -99,6 +99,12 @@ export function VendorDetailContent({ id }: { id: string }) {
           location: data.location ?? 'Location not set',
           websiteUrl: data.websiteUrl,
           instagramUrl: data.instagramUrl,
+          twitterUrl: data.twitterUrl,
+          facebookUrl: data.facebookUrl,
+          tiktokUrl: data.tiktokUrl,
+          linkedinUrl: data.linkedinUrl,
+          youtubeUrl: data.youtubeUrl,
+          whatsapp: data.whatsapp,
         }}
         showcaseImages={data.showcaseImages}
         upcomingEvents={data.participatingEvents.map(toEventCard)}
