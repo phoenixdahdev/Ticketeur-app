@@ -190,6 +190,13 @@ export function EventDetail({ id }: { id: string }) {
         </Button>
       </header>
 
+      {event.pendingChanges ? (
+        <div className="border-primary/25 bg-primary/5 text-foreground/90 shrink-0 rounded-xl border px-4 py-3 text-sm">
+          You have changes awaiting admin approval. The details below are the
+          current live version — your edits appear once an admin approves them.
+        </div>
+      ) : null}
+
       <div className="flex shrink-0 items-center justify-between gap-3">
         <Link
           href="/org/events"

@@ -9,14 +9,16 @@ import { cn } from '@ticketur/ui/lib/utils'
 import { useTRPC } from '@/lib/trpc'
 import { ModerationVendorsTable } from '@/components/dashboard/moderation/moderation-vendors-table'
 import { ModerationEventsTable } from '@/components/dashboard/moderation/moderation-events-table'
+import { ModerationEventEditsTable } from '@/components/dashboard/moderation/moderation-event-edits-table'
 import { FlaggedActivitiesList } from '@/components/dashboard/moderation/flagged-activities-list'
 
-const TABS = ['vendors', 'events', 'flagged'] as const
+const TABS = ['vendors', 'events', 'edits', 'flagged'] as const
 type Tab = (typeof TABS)[number]
 
 const TAB_LABELS: Record<Tab, string> = {
   vendors: 'Vendors',
   events: 'Events',
+  edits: 'Event Edits',
   flagged: 'Flagged Activities',
 }
 
@@ -36,6 +38,11 @@ export function ModerationTabs() {
   const eventsQuery = useQuery(
     trpc.admin.moderation.pendingEvents.queryOptions(undefined, {
       enabled: tab === 'events',
+    })
+  )
+  const editsQuery = useQuery(
+    trpc.admin.moderation.pendingEventEdits.queryOptions(undefined, {
+      enabled: tab === 'edits',
     })
   )
   const flaggedQuery = useQuery(
@@ -90,6 +97,11 @@ export function ModerationTabs() {
           <ModerationEventsTable
             rows={eventsQuery.data ?? []}
             loading={eventsQuery.isLoading}
+          />
+        ) : tab === 'edits' ? (
+          <ModerationEventEditsTable
+            rows={editsQuery.data ?? []}
+            loading={editsQuery.isLoading}
           />
         ) : (
           <FlaggedActivitiesList
