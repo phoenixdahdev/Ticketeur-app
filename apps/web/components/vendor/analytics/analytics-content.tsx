@@ -99,7 +99,7 @@ export function VendorAnalyticsContent() {
         >
           {tab === 'overall' && <AnalyticsOverallTab range={range} />}
           {tab === 'bookings' && <AnalyticsBookingsTab range={range} />}
-          {tab === 'ratings' && <AnalyticsRatingsTab range={range} />}
+          {tab === 'ratings' && <AnalyticsRatingsTab />}
           {tab === 'reports' && <AnalyticsReportsTab range={range} />}
         </motion.div>
       </AnimatePresence>
