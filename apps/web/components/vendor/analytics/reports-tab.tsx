@@ -139,7 +139,7 @@ export function AnalyticsReportsTab({
                     }}
                     onFocus={() => setDateMode('custom')}
                     aria-label="Choose a specific date"
-                    className="bg-transparent text-sm outline-none"
+                    className="bg-transparent text-sm outline-none [color-scheme:light] dark:[color-scheme:dark]"
                   />
                 </span>
               </label>

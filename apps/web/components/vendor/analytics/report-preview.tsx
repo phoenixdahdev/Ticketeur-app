@@ -70,6 +70,7 @@ const PRINT_CSS = `
   #vendor-report-print {
     position: absolute; left: 0; top: 0; width: 100%;
     max-height: none !important; overflow: visible !important;
+    background: #ffffff !important; color: #111827 !important;
   }
 }
 `
@@ -168,7 +169,7 @@ export function ReportPreviewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-2xl gap-0 overflow-hidden p-0"
+        className="w-full gap-0 overflow-hidden p-0 sm:max-w-2xl"
       >
         <DialogTitle className="sr-only">
           {REPORT_TYPE_LABELS[reportType]}
