@@ -16,6 +16,7 @@ export {
   eventEditApprovedSchema,
   eventEditRejectedSchema,
   voucherCodeSchema,
+  adminBroadcastSchema,
 } from './schema'
 export type {
   VerificationOtpPayload,
@@ -35,4 +36,5 @@ export type {
   EventEditApprovedPayload,
   EventEditRejectedPayload,
   VoucherCodePayload,
+  AdminBroadcastPayload,
 } from './schema'
