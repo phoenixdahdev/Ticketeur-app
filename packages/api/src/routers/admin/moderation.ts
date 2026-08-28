@@ -17,10 +17,13 @@ import {
 
 import { adminProcedure, createTRPCRouter } from '../../trpc'
 import { formatEventDateRange } from '../../lib/dates'
+import { applyEventEdit } from '../../lib/events'
+import { logActivity } from '../../lib/activity'
 import {
   NOT_ADMIN,
   VENDOR_PENDING,
   EVENT_PENDING,
+  EVENT_EDIT_PENDING,
   REPORT_OPEN,
 } from '../../lib/predicates'
 
@@ -42,11 +45,16 @@ export const adminModerationRouter = createTRPCRouter({
       .select({ value: count(reports.id) })
       .from(reports)
       .where(REPORT_OPEN)
+    const [editRow] = await ctx.db
+      .select({ value: count(events.id) })
+      .from(events)
+      .where(EVENT_EDIT_PENDING)
 
     return {
       vendors: Number(vendorRow?.value ?? 0),
       events: Number(eventRow?.value ?? 0),
       flagged: Number(reportRow?.value ?? 0),
+      eventEdits: Number(editRow?.value ?? 0),
     }
   }),
 
@@ -510,6 +518,195 @@ export const adminModerationRouter = createTRPCRouter({
         })
       }
 
+      return { ok: true as const }
+    }),
+
+  // ─── Live-event edit approvals ────────────────────────────────────────────
+  // Edits to a live (upcoming) event are queued as `pendingChanges` rather than
+  // applied straight away, so the public page keeps showing the current version
+  // until an admin approves.
+
+  pendingEventEdits: adminProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db
+      .select({
+        id: events.id,
+        title: events.title,
+        bannerUrl: events.bannerUrl,
+        submittedAt: events.pendingSubmittedAt,
+        organizerName: user.name,
+        organizerOrgName: user.orgName,
+      })
+      .from(events)
+      .innerJoin(user, eq(events.organizerId, user.id))
+      .where(EVENT_EDIT_PENDING)
+      .orderBy(desc(events.pendingSubmittedAt))
+
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      thumbnailUrl: r.bannerUrl ?? '',
+      organizerName: r.organizerOrgName ?? r.organizerName,
+      submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
+    }))
+  }),
+
+  // Current live values + the proposed edit, so the admin can review the diff.
+  eventEditById: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select()
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev || !ev.pendingChanges) return null
+
+      const tiers = await ctx.db
+        .select({
+          id: ticketTiers.id,
+          name: ticketTiers.name,
+          quantity: ticketTiers.quantity,
+          priceMinor: ticketTiers.priceMinor,
+          sold: ticketTiers.sold,
+        })
+        .from(ticketTiers)
+        .where(eq(ticketTiers.eventId, ev.id))
+        .orderBy(asc(ticketTiers.priceMinor), asc(ticketTiers.sortOrder))
+
+      const [organizer] = await ctx.db
+        .select({ name: user.name, orgName: user.orgName })
+        .from(user)
+        .where(eq(user.id, ev.organizerId))
+        .limit(1)
+
+      return {
+        eventId: ev.id,
+        slug: ev.slug,
+        organizerName: organizer?.orgName ?? organizer?.name ?? '',
+        submittedAt: ev.pendingSubmittedAt
+          ? ev.pendingSubmittedAt.toISOString()
+          : null,
+        current: {
+          title: ev.title,
+          description: ev.description,
+          date: ev.eventDate,
+          endDate: ev.endDate,
+          time: ev.eventTime,
+          location: ev.location,
+          bannerUrl: ev.bannerUrl,
+          features: ev.features,
+          tiers,
+        },
+        proposed: ev.pendingChanges,
+      }
+    }),
+
+  approveEventEdit: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select({
+          id: events.id,
+          slug: events.slug,
+          organizerId: events.organizerId,
+          pendingChanges: events.pendingChanges,
+        })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+      }
+      if (!ev.pendingChanges) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This event has no pending changes.',
+        })
+      }
+      const payload = ev.pendingChanges
+
+      // applyEventEdit re-validates sold counts under a row lock; if a tier the
+      // edit shrinks has sold more in the meantime it throws BAD_REQUEST and the
+      // transaction rolls back, leaving the edit pending for the organizer to fix.
+      await ctx.db.transaction(async (tx) => {
+        await applyEventEdit(tx, ev.id, payload)
+        await tx
+          .update(events)
+          .set({ pendingChanges: null, pendingSubmittedAt: null })
+          .where(eq(events.id, ev.id))
+      })
+
+      const [organizer] = await ctx.db
+        .select({ name: user.name, orgName: user.orgName, email: user.email })
+        .from(user)
+        .where(eq(user.id, ev.organizerId))
+        .limit(1)
+      if (organizer) {
+        void tasks.trigger('send-event-edit-approved', {
+          email: organizer.email,
+          organizerName: organizer.orgName ?? organizer.name,
+          eventTitle: payload.title,
+          publicUrl: `${PUBLIC_BASE}/events/${ev.slug}`,
+          manageUrl: `${PUBLIC_BASE}/org/events/${ev.id}`,
+        })
+      }
+      await logActivity(ctx, {
+        organizerId: ev.organizerId,
+        type: 'event.edit_approved',
+        eventId: ev.id,
+        payload: { title: payload.title },
+      })
+      return { ok: true as const }
+    }),
+
+  rejectEventEdit: adminProcedure
+    .input(z.object({ id: z.string().min(1), reason: z.string().default('') }))
+    .mutation(async ({ ctx, input }) => {
+      const [ev] = await ctx.db
+        .select({
+          id: events.id,
+          title: events.title,
+          organizerId: events.organizerId,
+          pendingChanges: events.pendingChanges,
+        })
+        .from(events)
+        .where(eq(events.id, input.id))
+        .limit(1)
+      if (!ev) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' })
+      }
+      if (!ev.pendingChanges) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This event has no pending changes.',
+        })
+      }
+
+      // Discard the proposed edit; the live event is untouched.
+      await ctx.db
+        .update(events)
+        .set({ pendingChanges: null, pendingSubmittedAt: null })
+        .where(eq(events.id, ev.id))
+
+      const [organizer] = await ctx.db
+        .select({ name: user.name, orgName: user.orgName, email: user.email })
+        .from(user)
+        .where(eq(user.id, ev.organizerId))
+        .limit(1)
+      if (organizer) {
+        void tasks.trigger('send-event-edit-rejected', {
+          email: organizer.email,
+          organizerName: organizer.orgName ?? organizer.name,
+          eventTitle: ev.title,
+          reason: input.reason,
+        })
+      }
+      await logActivity(ctx, {
+        organizerId: ev.organizerId,
+        type: 'event.edit_rejected',
+        eventId: ev.id,
+        payload: { title: ev.title },
+      })
       return { ok: true as const }
     }),
 

@@ -127,6 +127,13 @@
       "when": 1787545307671,
       "tag": "0017_platform_vouchers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787896104439,
+      "tag": "0018_event_pending_edits",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,8 @@ export {
   vendorApprovedSchema,
   vendorRejectedSchema,
   eventRejectedSchema,
+  eventEditApprovedSchema,
+  eventEditRejectedSchema,
   voucherCodeSchema,
 } from './schema'
 export type {
@@ -30,5 +32,7 @@ export type {
   VendorApprovedPayload,
   VendorRejectedPayload,
   EventRejectedPayload,
+  EventEditApprovedPayload,
+  EventEditRejectedPayload,
   VoucherCodePayload,
 } from './schema'
