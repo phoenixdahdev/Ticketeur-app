@@ -375,6 +375,7 @@ const XAxis = RechartsPrimitive.XAxis
 const YAxis = RechartsPrimitive.YAxis
 const CartesianGrid = RechartsPrimitive.CartesianGrid
 const Cell = RechartsPrimitive.Cell
+const LabelList = RechartsPrimitive.LabelList
 
 export {
   ChartContainer,
@@ -391,4 +392,5 @@ export {
   YAxis,
   CartesianGrid,
   Cell,
+  LabelList,
 }

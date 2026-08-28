@@ -35,3 +35,38 @@ export type AnalyticsRange = {
   period: AnalyticsPeriod
   date: string | null
 }
+
+// ─── Reports tab ─────────────────────────────────────────────────────────────
+
+export const REPORT_TYPES = [
+  'full',
+  'booking',
+  'ratings',
+  'visibility',
+] as const
+export type ReportType = (typeof REPORT_TYPES)[number]
+
+export const REPORT_TYPE_LABELS: Record<ReportType, string> = {
+  full: 'Full Analytics Report',
+  booking: 'Booking Summary',
+  ratings: 'Ratings Summary',
+  visibility: 'Visibility Report',
+}
+
+// Shown under each report-type option on the Reports tab.
+export const REPORT_TYPE_SHORT_LABELS: Record<ReportType, string> = {
+  full: 'Full Analytics',
+  booking: 'Booking Summary',
+  ratings: 'Ratings Summary',
+  visibility: 'Visibility Report',
+}
+
+export const REPORT_TYPE_DESCRIPTIONS: Record<ReportType, string> = {
+  full: 'All KPIs, activity trends, booking funnel, and reputation summary in one complete report.',
+  booking:
+    'Booking pipeline, funnel conversion, monthly trends, and a full table of booking activity.',
+  ratings:
+    'Reputation score, star distribution, recent reviews, and actionable improvement insights.',
+  visibility:
+    'Profile views, search appearances, conversion rates, and profile completion impact analysis.',
+}

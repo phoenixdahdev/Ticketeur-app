@@ -19,7 +19,11 @@ import { AnalyticsBookingsTab } from './bookings-tab'
 import { AnalyticsRatingsTab } from './ratings-tab'
 import { AnalyticsReportsTab } from './reports-tab'
 
-export function VendorAnalyticsContent() {
+export function VendorAnalyticsContent({
+  vendorName = 'Vendor',
+}: {
+  vendorName?: string
+}) {
   const [{ tab, period, date }, setState] = useQueryStates(
     {
       tab: parseAsStringLiteral(ANALYTICS_TABS).withDefault('overall'),
@@ -100,7 +104,9 @@ export function VendorAnalyticsContent() {
           {tab === 'overall' && <AnalyticsOverallTab range={range} />}
           {tab === 'bookings' && <AnalyticsBookingsTab range={range} />}
           {tab === 'ratings' && <AnalyticsRatingsTab />}
-          {tab === 'reports' && <AnalyticsReportsTab range={range} />}
+          {tab === 'reports' && (
+            <AnalyticsReportsTab range={range} vendorName={vendorName} />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

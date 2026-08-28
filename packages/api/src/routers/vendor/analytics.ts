@@ -285,7 +285,7 @@ export const vendorAnalyticsRouter = createTRPCRouter({
     const months = monthBuckets(6)
     const trendStart = new Date(months[0]!.startMs)
 
-    const [pvRows, funnelRows, trendRows] = await Promise.all([
+    const [pvRows, funnelRows, trendRows, viewTrendRows] = await Promise.all([
       ctx.db
         .select({ count: sql<number>`count(*)::int` })
         .from(vendorProfileViews)
@@ -320,6 +320,20 @@ export const vendorAnalyticsRouter = createTRPCRouter({
           )
         )
         .groupBy(sql`date_trunc('month', ${eventVendors.createdAt})`),
+
+      ctx.db
+        .select({
+          month: sql<string>`to_char(date_trunc('month', ${vendorProfileViews.createdAt}), 'YYYY-MM')`,
+          value: sql<number>`count(*)::int`,
+        })
+        .from(vendorProfileViews)
+        .where(
+          and(
+            eq(vendorProfileViews.vendorId, vendorId),
+            gte(vendorProfileViews.createdAt, trendStart)
+          )
+        )
+        .groupBy(sql`date_trunc('month', ${vendorProfileViews.createdAt})`),
     ])
 
     const trendMap = new Map(trendRows.map((r) => [r.month, r.value]))
@@ -327,10 +341,16 @@ export const vendorAnalyticsRouter = createTRPCRouter({
       label: m.label,
       value: trendMap.get(m.key) ?? 0,
     }))
+    const viewTrendMap = new Map(viewTrendRows.map((r) => [r.month, r.value]))
+    const viewTrends = months.map((m) => ({
+      label: m.label,
+      value: viewTrendMap.get(m.key) ?? 0,
+    }))
 
     const f = funnelRows[0] ?? { invitations: 0, confirmed: 0, completed: 0 }
     return {
       trends,
+      viewTrends,
       funnel: {
         profileViews: pvRows[0]?.count ?? 0,
         invitations: f.invitations,
