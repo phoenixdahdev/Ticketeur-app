@@ -17,6 +17,7 @@ import { newId } from '../lib/ids'
 import { generateUniqueEventSlug } from '../lib/slug'
 import { logActivity } from '../lib/activity'
 import { getBaseUrl } from '../lib/base-url'
+import { applyEventEdit, assertEventEditAllowed } from '../lib/events'
 
 const eventStatusEnum = z.enum(['draft', 'in-review', 'upcoming', 'archived'])
 
@@ -300,100 +301,49 @@ export const eventsRouter = createTRPCRouter({
         })
       }
 
-      await ctx.db.transaction(async (tx) => {
-        // Reconcile tiers against what's already been sold. Read the tiers
-        // inside the transaction with a row lock (`FOR UPDATE`) so a concurrent
-        // purchase can't bump `sold` between our validation and the write.
-        // Tiers are matched by id; anything without a known id is a new tier.
-        const existingTiers = await tx
-          .select()
-          .from(ticketTiers)
-          .where(eq(ticketTiers.eventId, ev.id))
-          .for('update')
-        const existingById = new Map(existingTiers.map((t) => [t.id, t]))
-        const keptIds = new Set(
-          input.tiers
-            .map((t) => t.id)
-            .filter((id): id is string => Boolean(id) && existingById.has(id!))
-        )
+      const payload = {
+        title: input.title,
+        description: input.description,
+        date: input.date,
+        endDate: input.endDate ?? null,
+        time: input.time,
+        location: input.location,
+        bannerUrl: input.bannerUrl ?? null,
+        features: input.features,
+        tiers: input.tiers,
+      }
 
-        // A tier that has sold tickets can neither be removed…
-        for (const t of existingTiers) {
-          if (!keptIds.has(t.id) && t.sold > 0) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Cannot remove "${t.name}" — it already has ${t.sold} ticket(s) sold.`,
-            })
-          }
-        }
-        // …nor have its capacity dropped below what's already been sold.
-        for (const t of input.tiers) {
-          const current = t.id ? existingById.get(t.id) : undefined
-          if (current && t.quantity < current.sold) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `"${t.name}" already has ${current.sold} sold; quantity can't be lower.`,
-            })
-          }
-        }
+      // A live event that an organizer edits doesn't change on the public site
+      // right away: the edit is queued for admin approval and the current
+      // version keeps showing until approved. Admins editing directly bypass
+      // the queue (they are the moderators), and draft/in-review events aren't
+      // public so they apply immediately regardless.
+      const needsApproval =
+        ev.status === 'upcoming' && ctx.session.user.role !== 'admin'
 
-        await tx
+      if (needsApproval) {
+        await assertEventEditAllowed(ev.id, payload)
+        await ctx.db
           .update(events)
-          .set({
-            title: input.title,
-            description: input.description,
-            eventDate: input.date,
-            endDate:
-              input.endDate && input.endDate !== input.date
-                ? input.endDate
-                : null,
-            eventTime: input.time,
-            location: input.location,
-            bannerUrl: input.bannerUrl ?? null,
-            features: input.features,
-            updatedAt: new Date(),
-          })
+          .set({ pendingChanges: payload, pendingSubmittedAt: new Date() })
           .where(eq(events.id, ev.id))
+        await logActivity(ctx, {
+          organizerId: ev.organizerId,
+          type: 'event.edit_submitted',
+          eventId: ev.id,
+          payload: { title: payload.title },
+        })
+        return { id: ev.id, pending: true as const }
+      }
 
-        const removeIds = existingTiers
-          .filter((t) => !keptIds.has(t.id))
-          .map((t) => t.id)
-        if (removeIds.length > 0) {
-          await tx.delete(ticketTiers).where(inArray(ticketTiers.id, removeIds))
-        }
-
-        for (const [idx, tier] of input.tiers.entries()) {
-          if (tier.id && existingById.has(tier.id)) {
-            await tx
-              .update(ticketTiers)
-              .set({
-                name: tier.name,
-                quantity: tier.quantity,
-                priceMinor: tier.priceMinor,
-                sortOrder: idx,
-              })
-              .where(eq(ticketTiers.id, tier.id))
-          } else {
-            await tx.insert(ticketTiers).values({
-              id: newId('tier'),
-              eventId: ev.id,
-              name: tier.name,
-              quantity: tier.quantity,
-              priceMinor: tier.priceMinor,
-              sortOrder: idx,
-            })
-          }
-        }
-      })
-
+      await ctx.db.transaction((tx) => applyEventEdit(tx, ev.id, payload))
       await logActivity(ctx, {
         organizerId: ev.organizerId,
         type: 'event.updated',
         eventId: ev.id,
-        payload: { title: input.title },
+        payload: { title: payload.title },
       })
-
-      return { id: ev.id }
+      return { id: ev.id, pending: false as const }
     }),
 
   publish: organizerProcedure

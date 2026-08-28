@@ -112,6 +112,21 @@ export const eventRejectedSchema = z.object({
   reason: z.string().default(''),
 })
 
+export const eventEditApprovedSchema = z.object({
+  email: z.email(),
+  organizerName: z.string(),
+  eventTitle: z.string(),
+  publicUrl: z.url(),
+  manageUrl: z.url(),
+})
+
+export const eventEditRejectedSchema = z.object({
+  email: z.email(),
+  organizerName: z.string(),
+  eventTitle: z.string(),
+  reason: z.string().default(''),
+})
+
 export type VerificationOtpPayload = z.infer<typeof verificationOtpSchema>
 export type PasswordResetPayload = z.infer<typeof passwordResetSchema>
 export type TwoFactorOtpPayload = z.infer<typeof twoFactorOtpSchema>
@@ -126,6 +141,8 @@ export type AccountRemovedPayload = z.infer<typeof accountRemovedSchema>
 export type VendorApprovedPayload = z.infer<typeof vendorApprovedSchema>
 export type VendorRejectedPayload = z.infer<typeof vendorRejectedSchema>
 export type EventRejectedPayload = z.infer<typeof eventRejectedSchema>
+export type EventEditApprovedPayload = z.infer<typeof eventEditApprovedSchema>
+export type EventEditRejectedPayload = z.infer<typeof eventEditRejectedSchema>
 
 export const voucherCodeSchema = z.object({
   // One send fans out to many recipients; the task loops so a single failure

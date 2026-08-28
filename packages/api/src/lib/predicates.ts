@@ -38,5 +38,7 @@ export const VENDOR_PENDING = and(
   eq(user.vendorApprovalStatus, 'pending')
 )
 export const EVENT_PENDING = eq(events.status, 'in-review')
+// A live event with an organizer edit awaiting admin approval.
+export const EVENT_EDIT_PENDING = sql`${events.pendingChanges} IS NOT NULL`
 export const REPORT_OPEN = eq(reports.status, 'open')
 export const PAID = eq(orders.status, 'paid')

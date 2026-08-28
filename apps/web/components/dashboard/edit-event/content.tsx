@@ -28,7 +28,7 @@ export function EditEventContent({ id }: { id: string }) {
 
   const update = useMutation(
     trpc.org.events.update.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (res) => {
         queryClient.invalidateQueries({
           queryKey: trpc.org.events.byId.queryKey({ id }),
         })
@@ -38,7 +38,14 @@ export function EditEventContent({ id }: { id: string }) {
         queryClient.invalidateQueries({
           queryKey: trpc.org.dashboard.stats.queryKey(),
         })
-        toast.success('Changes saved')
+        if (res.pending) {
+          toast.success('Changes submitted for approval', {
+            description:
+              'Your event stays live as it is until an admin approves the changes.',
+          })
+        } else {
+          toast.success('Changes saved')
+        }
         router.push(`/org/events/${id}`)
       },
       onError: (e) =>
@@ -51,6 +58,40 @@ export function EditEventContent({ id }: { id: string }) {
   const initialValues = useMemo<CreateEventValues | null>(() => {
     if (!data) return null
     const { event, tiers, vendors, externalInvites } = data
+    const soldById = new Map(tiers.map((t) => [t.id, t.sold]))
+    const assignedVendorIds = vendors.map((v) => v.vendor.id)
+    const invites = externalInvites.map((inv) => ({
+      businessName: inv.businessName,
+      contactName: inv.contactName,
+      email: inv.email,
+      phone: inv.phone,
+    }))
+
+    // If a pending edit exists, prefill from it so the organizer sees and can
+    // adjust what's queued; otherwise prefill from the live event. `sold` is
+    // read from the live tier so the form's capacity guard still works.
+    const pc = event.pendingChanges
+    if (pc) {
+      return {
+        title: pc.title,
+        description: pc.description,
+        date: pc.date ?? '',
+        endDate: pc.endDate ?? null,
+        time: pc.time,
+        location: pc.location,
+        features: pc.features,
+        tiers: pc.tiers.map((t) => ({
+          id: t.id,
+          sold: t.id ? (soldById.get(t.id) ?? 0) : 0,
+          name: t.name,
+          quantity: t.quantity,
+          price: t.priceMinor / 100,
+        })),
+        assignedVendorIds,
+        externalInvites: invites,
+      }
+    }
+
     return {
       title: event.title,
       description: event.description,
@@ -68,13 +109,8 @@ export function EditEventContent({ id }: { id: string }) {
         quantity: t.quantity,
         price: t.priceMinor / 100,
       })),
-      assignedVendorIds: vendors.map((v) => v.vendor.id),
-      externalInvites: externalInvites.map((inv) => ({
-        businessName: inv.businessName,
-        contactName: inv.contactName,
-        email: inv.email,
-        phone: inv.phone,
-      })),
+      assignedVendorIds,
+      externalInvites: invites,
     }
   }, [data])
 
@@ -102,14 +138,38 @@ export function EditEventContent({ id }: { id: string }) {
     )
   }
 
+  const isLive = status === 'upcoming'
+  const pending = Boolean(data.event.pendingChanges)
+  const initialBanner =
+    data.event.pendingChanges?.bannerUrl ?? data.event.bannerUrl
+  const primaryLabel = update.isPending
+    ? isLive
+      ? 'Submitting…'
+      : 'Saving…'
+    : isLive
+      ? pending
+        ? 'Update pending changes'
+        : 'Submit for approval'
+      : 'Save Changes'
+
   return (
-    <EditForm
-      id={id}
-      initialValues={initialValues}
-      initialBanner={data.event.bannerUrl}
-      submitting={update.isPending}
-      onSave={update.mutate}
-    />
+    <div className="flex flex-col gap-5">
+      {isLive ? (
+        <div className="border-primary/25 bg-primary/5 text-foreground/90 rounded-xl border px-4 py-3 text-sm">
+          {pending
+            ? 'You have changes awaiting admin approval. Your event stays live with its current details — editing here updates what’s pending.'
+            : 'This event is live. Changes you submit go to an admin for approval before they appear on the website; the current version stays up until then.'}
+        </div>
+      ) : null}
+      <EditForm
+        id={id}
+        initialValues={initialValues}
+        initialBanner={initialBanner}
+        submitting={update.isPending}
+        primaryLabel={primaryLabel}
+        onSave={update.mutate}
+      />
+    </div>
   )
 }
 
@@ -118,12 +178,14 @@ function EditForm({
   initialValues,
   initialBanner,
   submitting,
+  primaryLabel,
   onSave,
 }: {
   id: string
   initialValues: CreateEventValues
   initialBanner: string | null
   submitting: boolean
+  primaryLabel: string
   onSave: (input: {
     id: string
     title: string
@@ -185,7 +247,7 @@ function EditForm({
       onSaveDraft={() => {}}
       heading="Edit Event"
       subheading="Update your event details and ticketing."
-      primaryLabel={submitting ? 'Saving…' : 'Save Changes'}
+      primaryLabel={primaryLabel}
       secondaryLabel={null}
       showVendors={false}
       submitting={submitting}

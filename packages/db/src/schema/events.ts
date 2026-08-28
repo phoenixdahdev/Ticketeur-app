@@ -19,6 +19,22 @@ import { user } from './auth'
 export type EventStatus =
   'draft' | 'in-review' | 'upcoming' | 'archived' | 'suspended'
 
+// A proposed edit to a live event, awaiting admin approval. Mirrors the
+// updateEvent input minus the id — the whole payload including the tiers to
+// reconcile. Stored on the event so the live columns stay untouched (and the
+// public page keeps showing the current version) until an admin approves.
+export type EventPendingChanges = {
+  title: string
+  description: string
+  date: string
+  endDate?: string | null
+  time: string
+  location: string
+  bannerUrl?: string | null
+  features: string[]
+  tiers: { id?: string; name: string; quantity: number; priceMinor: number }[]
+}
+
 export const events = pgTable(
   'events',
   {
@@ -43,6 +59,10 @@ export const events = pgTable(
     bannerUrl: text('banner_url'),
     features: jsonb('features').$type<string[]>().notNull().default([]),
     status: text('status').$type<EventStatus>().notNull().default('draft'),
+    // Pending edit to a live (upcoming) event, awaiting admin approval. NULL
+    // when nothing is pending. The columns above stay untouched until approval.
+    pendingChanges: jsonb('pending_changes').$type<EventPendingChanges>(),
+    pendingSubmittedAt: timestamp('pending_submitted_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -367,6 +387,9 @@ export type ActivityType =
   | 'event.archived'
   | 'event.published'
   | 'event.deleted'
+  | 'event.edit_submitted'
+  | 'event.edit_approved'
+  | 'event.edit_rejected'
   | 'order.placed'
 
 export const activityLog = pgTable(
