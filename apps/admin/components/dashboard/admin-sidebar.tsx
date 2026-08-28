@@ -13,6 +13,7 @@ import {
   CreditCardIcon,
   Shield01Icon,
   CouponPercentIcon,
+  Mail01Icon,
   Logout02Icon,
 } from '@hugeicons/core-free-icons'
 
@@ -45,6 +46,7 @@ const NAV_LINKS: NavLink[] = [
   { href: '/events', label: 'Events', icon: Calendar03Icon },
   { href: '/transactions', label: 'Transactions', icon: CreditCardIcon },
   { href: '/vouchers', label: 'Vouchers', icon: CouponPercentIcon },
+  { href: '/emails', label: 'Emails', icon: Mail01Icon },
   { href: '/moderation', label: 'Moderation', icon: Shield01Icon },
 ]
 
